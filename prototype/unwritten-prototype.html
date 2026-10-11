@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unwritten — Prototype</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121820; --panel2:#171f29; --line:#232e3b;
+  --txt:#e6edf5; --dim:#8899ab; --dimmer:#5d6b7c;
+  --accent:#4ade80; --warn:#fbbf24; --bad:#f87171; --info:#60a5fa;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+nav{background:var(--panel);border-right:1px solid var(--line);padding:20px 0;position:sticky;top:0;height:100vh;overflow:auto}
+nav h1{font-size:15px;margin:0 20px 2px;letter-spacing:-.2px}
+nav .sub{font-size:11px;color:var(--dimmer);margin:0 20px 20px}
+nav a{display:block;padding:9px 20px;color:var(--dim);text-decoration:none;font-size:13.5px;border-left:2px solid transparent}
+nav a:hover{color:var(--txt);background:var(--panel2)}
+nav a.on{color:var(--accent);border-left-color:var(--accent);background:var(--panel2)}
+nav .grp{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--dimmer);margin:22px 20px 6px}
+main{padding:28px 32px 90px;max-width:960px}
+h2{font-size:21px;margin:0 0 4px;letter-spacing:-.3px}
+.lede{color:var(--dim);font-size:13.5px;margin:0 0 24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:12px}
+.card.click{cursor:pointer} .card.click:hover{border-color:#31465c}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.rule{font-size:15.5px;margin:0 0 7px}
+.meta{font-size:11.5px;color:var(--dimmer);font-family:var(--mono)}
+.tag{font-size:10px;text-transform:uppercase;letter-spacing:.7px;padding:3px 7px;border-radius:4px;white-space:nowrap;font-weight:600}
+.t-obs{background:#1e2b3a;color:var(--info)} .t-rat{background:#14301f;color:var(--accent)}
+.t-dri{background:#3a2a12;color:var(--warn)} .t-bad{background:#3a1a1a;color:var(--bad)}
+.conf{height:3px;background:var(--line);border-radius:2px;margin-top:9px;overflow:hidden}
+.conf i{display:block;height:100%;background:var(--accent)}
+.amt{font-family:var(--mono);font-size:19px}
+.btn{background:var(--accent);color:#08140d;border:0;padding:8px 15px;border-radius:7px;font-weight:650;cursor:pointer;font-size:13px}
+.btn.ghost{background:transparent;color:var(--dim);border:1px solid var(--line)}
+.btn.warn{background:var(--warn);color:#1f1603}
+.btns{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.scrub{position:fixed;bottom:0;left:232px;right:0;background:var(--panel);border-top:1px solid var(--line);padding:11px 32px;display:flex;align-items:center;gap:14px;z-index:5}
+.scrub input{flex:1;max-width:340px;accent-color:var(--accent)}
+.scrub b{font-family:var(--mono);font-size:12px;color:var(--accent);min-width:150px}
+.scrub .hint{font-size:11.5px;color:var(--dimmer)}
+.insp{position:fixed;right:0;top:0;bottom:0;width:min(520px,52vw);background:#0a0e13;border-left:1px solid var(--line);
+  transform:translateX(100%);transition:transform .18s;overflow:auto;z-index:10;padding:20px}
+.insp.on{transform:none}
+.insp h3{margin:0 0 3px;font-size:14px}
+.insp .why{font-size:11.5px;color:var(--dimmer);margin:0 0 14px}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:13px;overflow:auto;
+  font-family:var(--mono);font-size:11.5px;line-height:1.6;color:#b8c7d8;margin:0 0 12px}
+.x{float:right;background:none;border:0;color:var(--dim);font-size:19px;cursor:pointer;line-height:1}
+.ev{border-left:2px solid var(--line);padding:8px 0 8px 13px;margin-bottom:3px;font-size:12.5px}
+.ev .meta{margin-top:3px}
+.blob{font-family:var(--mono);font-size:10.5px;color:var(--info);word-break:break-all}
+.empty{color:var(--dimmer);font-size:13.5px;padding:26px;text-align:center;border:1px dashed var(--line);border-radius:10px}
+.ver{display:flex;gap:7px;align-items:center;font-size:11.5px;color:var(--dimmer);font-family:var(--mono);margin-top:9px}
+.ver s{text-decoration:none;opacity:.5}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.kpi div{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+.kpi b{display:block;font-family:var(--mono);font-size:21px;font-weight:500}
+.kpi span{font-size:11px;color:var(--dimmer);text-transform:uppercase;letter-spacing:.6px}
+.arch{background:#0e1420;border:1px solid #1e3a5f}
+.arch .meta{color:var(--info)}
+h4{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--dimmer);margin:26px 0 9px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){
+  main{padding:18px 16px 110px}
+  h2{font-size:19px}
+  .btns{flex-direction:column;align-items:stretch}
+  .btns .btn{width:100%;padding:13px;font-size:15px}
+  .row{flex-direction:column;gap:6px}
+  .amt{font-size:24px}
+  .kpi{grid-template-columns:1fr 1fr}
+  .insp{width:100%}
+  .scrub{padding:10px 16px;flex-wrap:wrap;gap:8px}
+  .scrub b{min-width:0;font-size:11px}
+  .scrub .hint:last-child{display:none}
+}
+@media(max-width:820px){.app{grid-template-columns:1fr}nav{position:static;height:auto}.scrub{left:0}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="app">
+<nav>
+  <h1>Unwritten</h1>
+  <p class="sub">the spending agreement<br>your house already has</p>
+  <div id="nav"></div>
+</nav>
+<main id="view"></main>
+</div>
+
+<div class="scrub">
+  <span class="hint">Week</span>
+  <input id="wk" type="range" min="1" max="6" value="6">
+  <b id="wklab"></b>
+  <span class="hint">— scrub to watch beliefs form and supersede</span>
+</div>
+
+<div class="insp" id="insp"></div>
+
+<script>
+/* ============================================================================
+   FIXTURES — this is the point of the prototype.
+   Every field below is a field the screens actually demanded. The memory schema
+   spec (docs/specs/memory-schema.md) is DERIVED from this, not guessed.
+   Rule: never store item names or anything identifying a member.
+   ========================================================================== */
+
+const HOUSE = {
+  id:'house-wilson',
+  // ref is stable and meaningless. label lives here (deletable DB), NEVER in memory.
+  members:[
+    {ref:'m1', role:'owner',     label:'Alex',  state:'active',   approver:true },
+    {ref:'m2', role:'approver',  label:'Sam',   state:'active',   approver:true },
+    {ref:'m3', role:'spender',   label:'Carol', state:'active',   approver:false},
+    {ref:'m6', role:'spender',   label:'Theo',  state:'declared', approver:false},
+    {ref:'m4', role:'dependent', label:'Max',   state:'subject',  approver:false,
+     walletLimitCents:4000, period:'weekly'},
+    {ref:'m5', role:'approver',  label:'Dana',  state:'invited',  approver:true }
+  ],
+  // two keys in the whole system
+  keys:[
+    {label:'owner · house',  kind:'owner',    heldBy:'admin browser, shown once', usedFor:'create · register delegate · revoke · freeze'},
+    {label:'house · server', kind:'delegate', heldBy:'server env',                usedFor:'all memory reads and writes'}
+  ],
+  // Onboarding asks ONE number. A third band would be configuration nobody was asked for, so the
+  // ladder starts with TWO bands and the agent PROPOSES the middle one once evidence supports it.
+  policy:{ autoApproveCents:1800, soloCeilingCents:null, bothFloorCents:1800,
+           criticalCategories:['health'], deadlineHours:4, dependentApprovalAboveCents:null },
+  learning:{ confidenceFloor:.65, minEvidence:8, recencyHalfLifeDays:21,
+             driftTolerance:.30, rejectedCooldownDays:45 }
+};
+// quorum counts ONLY active approvers. Closes Rosie's identity hole structurally.
+const activeApprovers=()=>HOUSE.members.filter(m=>m.approver&&m.state==='active');
+const nameOf=r=>{const m=HOUSE.members.find(x=>x.ref===r);
+  return m?(m.state==='revoked'?'a former '+m.role:m.label):'unknown';};
+
+// DecisionEvent — namespace `decisions`
+const START=new Date('2026-09-01T12:00:00Z');
+const dayISO=n=>new Date(START.getTime()+(n-1)*864e5).toISOString().slice(0,10);
+// role is captured AS OF the decision — someone may change role later; memory must not lie about then.
+const roleAt=r=>(HOUSE.members.find(m=>m.ref===r)||{}).role||'unknown';
+const mk=(id,wk,day,cat,cents,quorum,by,outcome,lat,esc,src)=>({
+  id, kind:'decision', week:wk, date:dayISO(day),
+  category:cat, amountCents:cents, quorumRequired:quorum,
+  decidedBy:by.map(r=>({ref:r,role:roleAt(r)})),
+  outcome,
+  latencySeconds: by.length? lat : null,   // no human touched it => null, never 0
+  escalated:!!esc, initiatedBy: src || 'member',
+  blobId:'0x'+id.padEnd(8,'a')+'…9f2c'
+});
+const DECISIONS=[
+  mk('d01',1,1,'groceries',3120,'1-of-2',['m1'],'approved',  210),
+  mk('d02',1,2,'household',1240,'auto',  [],    'auto',        0,0,'routine'),
+  mk('d03',1,4,'groceries',2690,'1-of-2',['m1'],'approved',  180),
+  mk('d04',1,5,'pet',       980,'auto',  [],    'auto',        0,0,'routine'),
+  mk('d05',2,8,'groceries',4410,'1-of-2',['m1'],'approved',  240),
+  mk('d06',2,9,'dining',   1510,'auto',  [],    'auto',        0,0,'routine'),
+  mk('d07',2,11,'electronics',12800,'2-of-2',['m1','m2'],'approved',8400),
+  mk('d08',2,12,'groceries',3380,'1-of-2',['m1'],'approved', 150),
+  mk('d09',3,15,'groceries',3950,'1-of-2',['m1'],'approved', 120),
+  mk('d10',3,16,'household',1690,'auto',  [],    'auto',       0,0,'routine'),
+  mk('d11',3,17,'groceries',4280,'1-of-2',['m1'],'approved',  95),
+  mk('d12',3,19,'apparel', 6200,'1-of-2',['m2'],'rejected',1200),
+  mk('d13',4,22,'groceries',4150,'1-of-2',['m1'],'approved',  80),
+  mk('d14',4,23,'electronics',11200,'2-of-2',['m2','m1'],'approved',230),
+  mk('d15',4,24,'groceries',3870,'1-of-2',['m1'],'approved',  70),
+  mk('d16',4,26,'pet',     1120,'auto',  [],    'auto',        0,0,'routine'),
+  mk('d17',5,29,'groceries',4490,'1-of-2',['m1'],'approved',  65),
+  mk('d18',5,30,'electronics',15400,'2-of-2',['m2','m1'],'approved',190),
+  mk('d19',5,31,'household',2240,'1-of-2',['m2'],'approved', 310),
+  mk('d20',5,31,'groceries',4020,'1-of-2',['m1'],'approved',  60),
+  mk('d21',6,33,'electronics',13900,'2-of-2',['m2','m1'],'approved',145),
+  mk('d22',6,34,'groceries',4350,'1-of-2',['m1'],'approved',  55),
+  mk('d23',6,35,'dining',  1620,'auto',  [],    'auto',        0,0,'routine'),
+  mk('d24',6,36,'electronics',10800,'2-of-2',['m2','m1'],'approved',132),
+  // Carol splits a $32 purchase into two $16 requests to stay inside her $18 cap
+  mk('d25',6,37,'groceries',1650,'auto',[],'auto',0,0,'member'),
+  mk('d26',6,37,'groceries',1590,'auto',[],'auto',0,0,'member')
+];
+
+// SpendEvent — namespace `spend`. Observed onchain via Tatum Data API.
+const SPEND=[
+  {id:'s1',kind:'spend',week:5,date:'2026-09-30',amountCents:7400,category:'dining',
+   recipientRef:'r0',wallet:'house',hasApproval:false,approvalId:null,
+   txDigest:'Ht7x…b14Q'},
+  {id:'s2',kind:'spend',week:6,date:'2026-09-34',amountCents:9900,category:'electronics',
+   recipientRef:'r1',wallet:'house',hasApproval:false,approvalId:null,txDigest:'9kPw…22aL'},
+  {id:'s4',kind:'spend',week:5,date:'2026-09-29',amountCents:1299,category:'subscriptions',
+   recipientRef:'r3',wallet:'house',hasApproval:false,approvalId:null,txDigest:'Sb5y…91fA',
+   isCommitment:true,expectedCents:1099},
+  {id:'s5',kind:'spend',week:6,date:'2026-10-06',amountCents:7100,category:'fastfood',
+   recipientRef:'r4',wallet:'house',hasApproval:false,approvalId:null,txDigest:'Pz6t…40bB',
+   offRhythm:'Tuesday, expected Friday'},
+  {id:'s3',kind:'spend',week:6,date:'2026-09-36',amountCents:3900,category:'household',
+   recipientRef:'r2',wallet:'house',hasApproval:false,approvalId:null,
+   txDigest:'Lm3v…77cR'}
+];
+
+// Treasury — inbound is a SCRIPT in the sim, not a product feature. Surfaced on Reality check only.
+const TREASURY={balanceCents:41200,lastTopUpWeek:5,lowThresholdCents:5000};
+
+// Allowance top-ups (house -> dependent). REAL feature: without inbound events the
+// "% of allowance" belief has no honest denominator and cannot tell spending from saving.
+const TOPUPS=[1,2,3,4,5,6].map(w=>({id:'t'+w,kind:'topup',week:w,amountCents:4000,
+  from:'house',to:'m4',txDigest:'Tp'+w+'x…c0de'}));
+
+// Dependent wallet spend — read from Max's wallet via Tatum
+const MAXSPEND=[
+  {week:1,games:2100,food:600,other:300},{week:2,games:2600,food:500,other:200},
+  {week:3,games:3100,food:400,other:300},{week:4,games:2900,food:600,other:200},
+  {week:5,games:3300,food:300,other:200},{week:6,games:3200,food:500,other:100}
+];
+
+// Belief — namespace `beliefs`. Versioned, append-only, supersession chain.
+const BELIEFS=[
+  {id:'b1-v1',dimension:'value_band',version:1,supersedes:null,fromWeek:3,
+   scope:{actor:'m1',category:'groceries'},thresholdCents:4000,streak:[6,6],
+   confidence:.62,evidenceCount:6,evidenceIds:['d01','d03','d05','d08','d09','d11'],
+   state:'observed',ratifiedTx:null,blobId:'0xb1v1…4e81'},
+  {id:'b1-v2',dimension:'value_band',version:2,supersedes:'b1-v1',fromWeek:5,
+   scope:{actor:'m1',category:'groceries'},thresholdCents:4500,streak:[11,11],
+   confidence:.91,evidenceCount:11,
+   evidenceIds:['d01','d03','d05','d08','d09','d11','d13','d15','d17','d20','d22'],
+   state:'ratified',ratifiedTx:'0xRAT…a7c1',blobId:'0xb1v2…9d20'},
+  {id:'b2-v1',dimension:'silence',version:1,supersedes:null,fromWeek:4,
+   scope:{actor:'*',category:'*'},thresholdCents:1800,streak:[7,7],
+   confidence:.88,evidenceCount:7,evidenceIds:['d02','d04','d06','d10','d16','d23'],
+   state:'observed',ratifiedTx:null,blobId:'0xb2v1…1c44'},
+  {id:'b3-v1',dimension:'authority',version:1,supersedes:null,fromWeek:5,
+   scope:{actor:'m2',category:'electronics'},signsFirst:[4,5],
+   confidence:.79,evidenceCount:5,evidenceIds:['d07','d14','d18','d21','d24'],
+   state:'observed',ratifiedTx:null,blobId:'0xb3v1…6a07'},
+  {id:'b4-v1',dimension:'drift',version:1,supersedes:null,fromWeek:6,
+   scope:{actor:'*',category:'electronics'},statedRule:'2-of-2 above $100',
+   medianGapSeconds:170,bypassed:[4,5],
+   confidence:.84,evidenceCount:5,evidenceIds:['d14','d18','d21','d24'],
+   state:'drifting',ratifiedTx:null,blobId:'0xb4v1…ff39'},
+  {id:'b5-v1',dimension:'member_pattern',version:1,supersedes:null,fromWeek:4,
+   scope:{actor:'m4',category:'games'},sharePct:72,
+   confidence:.86,evidenceCount:24,
+   evidenceIds:['tx:Mx1a…77','tx:Mx2b…04','tx:Mx3c…19','tx:Mx4d…5e'],
+   state:'observed',ratifiedTx:null,blobId:'0xb5v1…02be'},
+  {id:'b7-v1',dimension:'rhythm',version:1,supersedes:null,fromWeek:4,
+   scope:{actor:'*',category:'fastfood'},cadence:'weekly',weekday:'Friday',
+   medianCents:3400,variancePct:12,streak:[5,6],isCommitment:false,
+   confidence:.83,evidenceCount:5,evidenceIds:['d06','d23'],
+   state:'observed',ratifiedTx:null,blobId:'0xb7v1…31aa'},
+  {id:'b8-v1',dimension:'rhythm',version:1,supersedes:null,fromWeek:3,
+   scope:{actor:'*',category:'subscriptions'},cadence:'monthly',weekday:null,
+   medianCents:1099,variancePct:0,streak:[3,3],isCommitment:true,
+   confidence:.94,evidenceCount:3,evidenceIds:['sub1','sub2','sub3'],
+   state:'observed',ratifiedTx:null,blobId:'0xb8v1…77de'},
+  {id:'b6-v1',dimension:'friction',version:1,supersedes:null,fromWeek:6,
+   scope:{actor:'*',category:'apparel'},rejections:1,windowWeeks:6,
+   confidence:.41,evidenceCount:1,evidenceIds:['d12'],
+   state:'observed',ratifiedTx:null,blobId:'0xb6v1…8831'}
+];
+
+// say() — the English sentence is GENERATED, never stored. Names resolved at render time.
+function say(b){
+  const who=b.scope.actor==='*'?'the house':nameOf(b.scope.actor);
+  const cat=b.scope.category==='*'?'any category':b.scope.category;
+  switch(b.dimension){
+    case 'value_band':    return `${who} approves alone up to ${money(b.thresholdCents)} · ${cat} · ${b.streak[0]} of ${b.streak[1]}`;
+    case 'silence':       return `Nothing under ${money(b.thresholdCents)} has ever been discussed · ${b.evidenceCount} events, zero conversations`;
+    case 'authority':     return `The house defers to ${who} on ${cat} — signs first in ${b.signsFirst[0]} of ${b.signsFirst[1]}`;
+    case 'drift':         return `The ${b.statedRule} rule is not real — second signature lands within ${Math.round(b.medianGapSeconds/60)} min in ${b.bypassed[0]} of ${b.bypassed[1]}`;
+    case 'member_pattern':return `${b.sharePct}% of ${who}'s allowance goes to ${cat}`;
+    case 'rhythm':
+      return b.isCommitment
+        ? `${cat} renews ${b.cadence} at ${money(b.medianCents)} · ${b.streak[0]} of ${b.streak[1]} · a standing commitment, not a decision`
+        : `${b.weekday} is ${cat} night · ${b.streak[0]} of ${b.streak[1]} weeks · ${money(b.medianCents)} ± ${money(Math.round(b.medianCents*b.variancePct/100))} · never discussed`;
+    case 'friction':      return `${cat} is the only contested category — ${b.rejections} rejection in ${b.windowWeeks} weeks`;
+    default:              return b.dimension;
+  }
+}
+
+// Proposal — the agent asking. Rejection is evidence (cooldown prevents nagging).
+// effect:'supersede' writes belief v+1. effect:'policy' changes policy only — the observation
+// stays true, so there is nothing to supersede. Not every learning produces a new belief.
+const PROPOSALS=[
+  {id:'p1',beliefId:'b1-v2',kind:'raise',fromWeek:4,from:'$20 auto-approve',to:'$45 auto-approve',
+   rationale:'11 of 11 grocery carts in this band approved with no discussion.',status:'accepted',
+   effect:'supersede',patch:{thresholdCents:4500,state:'ratified'},
+   note:'not a tweak — the agent proposes CREATING a middle band that was never configured'},
+  {id:'p2',beliefId:'b4-v1',kind:'remove',fromWeek:6,from:'2-of-2 above $100',to:'1-of-2 above $100',
+   rationale:'The second signature is a formality. Either make it real or drop it.',status:'pending',
+   effect:'supersede',patch:{statedRule:'1-of-2 above $100',bypassed:[0,5],state:'ratified'}},
+  {id:'p3',beliefId:'b5-v1',kind:'add_approval',fromWeek:5,from:'$40/week, no approvals',
+   to:'approval required above $10',rationale:"Max's spend is 72% games and rising.",status:'pending',
+   effect:'policy',policyPatch:{dependentApprovalAboveCents:1000}},
+  {id:'p4',beliefId:'b3-v1',kind:'lower',fromWeek:5,from:'$100 both-signature floor',
+   to:'$60 both-signature floor',rationale:'Electronics is where disagreement actually happens.',
+   status:'rejected',rejectedAtWeek:5,cooldownUntilWeek:11,effect:'policy',policyPatch:{bothFloorCents:6000}}
+];
+
+const WEEK_NOTE={1:'collecting evidence',2:'collecting evidence',3:'first belief forms',
+  4:'first proposal · allowance pattern',5:'ratified → v2',6:'drift + unapproved spend'};
+
+/* ===================== INTERACTION STATE (mutable) =====================
+   The prototype is clickable on purpose: static mockups hide the states that
+   only appear between a tap and a confirmation. Every action is logged. */
+const STATE={ acted:{}, tx:{}, log:[], actingAs:'m1', viewAs:'m1',
+  treasuryFunded:false, invites:{}, requests:[] };
+// Each role gets a different app. The product is abstracted; the hex lives on #proof, which the
+// app never links to — it exists for the README, the blog post and the demo's architecture beat.
+const NAV={
+  owner:    [['Setup','onboarding'],['The Agreement','agreement'],['Notifications','notifications'],['Pending','pending'],
+             ['Weekly digest','digest'],['Reality check','reality'],['Rhythm','rhythm'],
+             ['Allowance','allowance'],['History','history'],['Keys','keys']],
+  approver: [['The Agreement','agreement'],['Notifications','notifications'],['Pending','pending'],['Weekly digest','digest'],
+             ['Reality check','reality'],['Rhythm','rhythm'],['Allowance','allowance'],['History','history']],
+  spender:  [['Ask','ask'],['My requests','myrequests'],['The Agreement','agreement'],['Notifications','notifications']],
+  judge:    [['Proof','proof'],['Observer digest','observer'],['Discovered schema','schema']]
+};
+const viewRole=()=>STATE.viewAs==='judge'?'judge':
+  (HOUSE.members.find(m=>m.ref===STATE.viewAs)||{}).role||'owner';
+function setView(r){STATE.viewAs=r; if(r!=='judge')STATE.actingAs=r;
+  const n=NAV[viewRole()]; location.hash='#'+n[0][1]; logit('viewAs',r==='judge'?'judge':nameOf(r)); render();}
+window.setView=setView;
+function fundHouse(){STATE.treasuryFunded=true;
+  logit('treasury:funded',money(TREASURY.balanceCents)+' mock USDC on testnet — seeding script, not a feature');render();}
+function invite(ref){STATE.invites[ref]='https://unwritten.app/join/'+ref+'-'+Math.random().toString(36).slice(2,8);
+  const m=HOUSE.members.find(x=>x.ref===ref); if(m&&m.state==='declared')m.state='invited';
+  logit('invite:created',nameOf(ref)+' — role baked into the link, admin-generated only');render();}
+function claim(ref){const m=HOUSE.members.find(x=>x.ref===ref); if(!m)return;
+  m.state='active'; logit('invite:claimed',nameOf(ref)+' → active, now counts toward quorum');
+  logit('quorum','active approvers: '+activeApprovers().length);render();}
+function ask(cents,cat){
+  const r=routeRequest(STATE.viewAs,cents);
+  STATE.requests.unshift({id:'q'+(STATE.requests.length+1),by:STATE.viewAs,amountCents:cents,
+    category:cat,state:r.needsApproval?'pending':'auto',signatures:r.signatures||0,cap:r.cap});
+  logit('request:'+(r.needsApproval?'needs approval':'within cap'),
+    nameOf(STATE.viewAs)+' · '+money(cents)+' · cap '+money(r.cap.cents)+' ('+r.cap.source+')'+
+    (r.needsApproval?' → '+r.signatures+' signature(s)':' → nobody was asked'));
+  render();}
+// The house number is everyone's cap by default. A personal cap is an actor-scoped value_band
+// the agent PROPOSES once evidence supports it. Two orthogonal questions:
+//   cap (per person) -> does this need approval at all?
+//   band (per amount) -> if yes, how many signatures?
+function capFor(ref){
+  const b=visibleBeliefs().find(x=>x.dimension==='value_band'&&x.scope.actor===ref&&x.state==='ratified');
+  return b?{cents:b.thresholdCents,source:'personal · '+b.id}
+          :{cents:HOUSE.policy.autoApproveCents,source:'house number'};
+}
+function routeRequest(ref,cents){
+  const cap=capFor(ref);
+  if(cents<=cap.cents) return {needsApproval:false,cap};
+  const n=activeApprovers().length;
+  const signatures=cents>=HOUSE.policy.bothFloorCents?n:1;
+  return {needsApproval:true,cap,signatures,unsatisfiable:signatures>n};
+}
+window.capFor=capFor;window.routeRequest=routeRequest;
+
+// ---- key management. Two destructive owner-only actions with different blast radii. ----
+// revoke  : removeDelegateKey bumps access_counter_version -> the app cannot read or write new
+//           memory. The OWNER can still decrypt, because seal_approve always allows the owner
+//           while the account is active. Memories under the older counter stay readable with the
+//           older key; retracting those would require re-encryption.
+// freeze  : Seal denies decryption to EVERYONE, the owner included. Reversible.
+const KEYS={counter:1,delegateActive:true,frozen:false,confirm:null};
+function ownerOnly(what){
+  const me=HOUSE.members.find(m=>m.ref===STATE.actingAs);
+  if(!me||me.role!=='owner'){logit(what+':DENIED',nameOf(STATE.actingAs)+' — owner key required');render();return false;}
+  return true;
+}
+function ask2(action){ if(!ownerOnly(action))return; KEYS.confirm=action; render(); }
+function doRevoke(){ if(!ownerOnly('revoke'))return;
+  KEYS.delegateActive=false; KEYS.counter++; KEYS.confirm=null;
+  logit('revoke:confirmed','removeDelegateKey → access_counter_version '+(KEYS.counter-1)+' → '+KEYS.counter);
+  logit('consequence','the application lost access to the house memory and cannot stop it');
+  logit('note','the owner can still decrypt; memories under counter '+(KEYS.counter-1)+' stay readable with the older key');
+  render();}
+function doFreeze(){ if(!ownerOnly('freeze'))return;
+  KEYS.frozen=!KEYS.frozen; KEYS.confirm=null;
+  logit(KEYS.frozen?'freeze:on':'freeze:off',KEYS.frozen
+    ?'Seal denies decryption to everyone, the owner included'
+    :'account reactivated — possible unless an AdminCap quarantine is active');
+  render();}
+function newDelegate(){ if(!ownerOnly('delegate'))return;
+  KEYS.delegateActive=true;
+  logit('addDelegateKey','new `house · server` registered under counter '+KEYS.counter+' — writes resume');
+  render();}
+function tryWrite(){
+  if(KEYS.frozen){logit('remember:FAILED','account frozen — Seal denied, nobody can decrypt');render();return;}
+  if(!KEYS.delegateActive){logit('remember:FAILED','no valid delegate — the key was revoked and the counter moved');render();return;}
+  logit('remember:ok','counter read FRESH from chain ('+KEYS.counter+'), never cached, then encrypted');render();}
+// A notification is a RECORD; the channel (in-app, email, push) is a delivery adapter.
+// Only two kinds interrupt. Everything else waits for the weekly digest, because an agent that
+// notifies you about its own learning is unbearable.
+const NKIND={
+  pending_approval:{interrupts:true, text:'A request needs your approval'},
+  unapproved_spend:{interrupts:true, text:'Spend with no approval recorded'},
+  digest_ready:    {interrupts:false,text:'Your weekly digest is ready'},
+  treasury_low:    {interrupts:false,text:'House balance is low'},
+  proposal_ready:  {interrupts:false,text:'A policy proposal is waiting'},
+  // the requester is standing in a shop. This interrupts, and it goes to ONE person.
+  request_resolved:{interrupts:true, text:'Your request was decided'}
+};
+const NOTIFS=[
+  {id:'n1',kind:'digest_ready',    to:['m1','m2'],atHour:0,  read:false},
+  {id:'n2',kind:'unapproved_spend',to:['m1','m2'],atHour:2,  read:false},
+  {id:'n3',kind:'treasury_low',    to:['m1'],     atHour:5,  read:false},
+  {id:'n4',kind:'proposal_ready',  to:['m1','m2'],atHour:7,  read:true },
+  {id:'n5',kind:'request_resolved',to:['m3'],     atHour:1,  read:false}
+];
+const inbox=()=>NOTIFS.filter(n=>n.to.includes(STATE.viewAs));
+const unread=()=>inbox().filter(n=>!n.read).length;
+function notify(kind,to){const n={id:'n'+(NOTIFS.length+1),kind,to,atHour:0,read:false};
+  NOTIFS.unshift(n);
+  logit('notify:'+kind,(NKIND[kind].interrupts?'INTERRUPTS':'waits for the digest')+' → '+to.map(nameOf).join(', '));
+  return n;}
+function readAll(){inbox().forEach(n=>n.read=true);logit('notifications','marked read');render();}
+window.readAll=readAll;window.notify=notify;
+window.ask2=ask2;window.doRevoke=doRevoke;window.doFreeze=doFreeze;
+window.newDelegate=newDelegate;window.tryWrite=tryWrite;
+window.fundHouse=fundHouse;window.invite=invite;window.claim=claim;window.ask=ask;
+const logit=(what,detail)=>STATE.log.unshift({t:new Date().toISOString().slice(11,19),what,detail});
+
+// Ratification is a TWO-PHASE COMMIT across two systems, and Walrus has no delete.
+// Therefore: CHAIN FIRST, MEMORY SECOND, always.
+// An approver can ACCEPT a proposal, but writing policy onchain needs the owner key. So acceptance
+// and ratification are two steps, and the owner is a single point of failure for every policy
+// change. That is inherent: one owner per MemWalAccount. Modelled rather than hidden.
+function accept(pid){
+  const p=PROPOSALS.find(x=>x.id===pid); if(!p) return;
+  const me=HOUSE.members.find(m=>m.ref===STATE.actingAs);
+  if(!me||!me.approver||me.state!=='active'){logit('accept:DENIED','only an active approver can accept');render();return;}
+  p.acceptedBy=p.acceptedBy||[]; if(!p.acceptedBy.includes(me.ref))p.acceptedBy.push(me.ref);
+  if(me.role==='owner'){ logit('accept','owner accepted — can ratify directly'); ratify(pid); return; }
+  STATE.tx[pid]='awaiting_ratification';
+  logit('accept',nameOf(me.ref)+' accepted — AWAITING the owner key to write onchain');
+  logit('bottleneck','the owner is a single point of failure for every policy change (one owner per MemWalAccount)');
+  render();
+}
+window.accept=accept;
+function ratify(pid,outcome){
+  const p=PROPOSALS.find(x=>x.id===pid); if(!p) return;
+  const me=HOUSE.members.find(m=>m.ref===STATE.actingAs);
+  if(!me||me.role!=='owner'){logit('ratify:DENIED',nameOf(STATE.actingAs)+' — ratification needs the owner key');render();return;}
+  STATE.tx[pid]='signing';           logit('ratify:signing', pid+' — owner key unlocked, tx built');
+  setTimeout(()=>{ STATE.tx[pid]='pending'; logit('ratify:pending', pid+' — submitted to Sui'); render(); }, 400);
+  setTimeout(()=>{
+    if(outcome==='fail'){
+      STATE.tx[pid]='failed';
+      logit('ratify:FAILED', pid+' — nothing superseded, NO memory write happened');
+      logit('invariant held','memory write is downstream of tx confirmation');
+    }else{
+      STATE.tx[pid]='confirmed'; STATE.acted[pid]='accepted'; p.status='accepted';
+      const tx='0xRAT…'+pid;
+      logit('ratify:confirmed', pid+' — tx '+tx+' onchain');
+      if(p.effect==='policy'){
+        Object.assign(HOUSE.policy,p.policyPatch);
+        logit('policy:changed', JSON.stringify(p.policyPatch)+' — observation unchanged, NOTHING superseded');
+      }else{
+        const b=BELIEFS.find(x=>x.id===p.beliefId);
+        if(b){
+          const key=b.id.replace(/-v\d+$/,''), nv=b.version+1;
+          const next={...b,...p.patch,id:key+'-v'+nv,version:nv,supersedes:b.id,
+                      fromWeek:W,ratifiedTx:tx,blobId:'0x'+key+'v'+nv+'…new'};
+          BELIEFS.push(next);            // append-only: the old version is NEVER touched
+          logit('memory:write', next.id+' written, supersedes '+b.id+' (append-only, v'+b.version+' untouched)');
+        }
+      }
+    }
+    render();
+  }, outcome==='fail'?1400:1200);
+  render();
+}
+function keepRule(pid){
+  const p=PROPOSALS.find(x=>x.id===pid); if(!p) return;
+  STATE.acted[pid]='rejected';
+  p.status='rejected'; p.rejectedAtWeek=W; p.cooldownUntilWeek=W+Math.ceil(HOUSE.learning.rejectedCooldownDays/7);
+  logit('proposal:rejected', pid+' — NOTHING written to memory, cooldown until week '+p.cooldownUntilWeek);
+  logit('learning','rejection is evidence: stop proposing this');
+  render();
+}
+function resetSim(){ STATE.acted={};STATE.tx={};STATE.log=[];
+  PROPOSALS.forEach(p=>{if(p.id!=='p1'&&p.id!=='p4')p.status='pending'});
+  BELIEFS.forEach(b=>{if(b.id!=='b1-v2'){b.state=b.id==='b4-v1'?'drifting':'observed';b.ratifiedTx=null}});
+  logit('sim','reset'); render(); }
+window.ratify=ratify; window.keepRule=keepRule; window.resetSim=resetSim;
+
+/* ======================= derive state as of week N ======================= */
+const $=s=>document.querySelector(s);
+let W=6;
+const upto=a=>a.filter(x=>(x.week||x.fromWeek)<=W);
+const money=c=>'$'+(c/100).toFixed(2);
+// Nothing is pre-registered except the category enum. Recipients are CLASSIFIED on first
+// contact (one turn, then never again) and the answer becomes a belief with provenance.
+const CATEGORIES=['groceries','subscriptions','games','pets','fastfood','household','unclassified'];
+const RECIPIENTS={
+  r0:{category:'fastfood',    isCommitment:false, by:'m1', week:2},
+  r1:{category:'unclassified',isCommitment:false, by:null, week:null},
+  r2:{category:'household',   isCommitment:false, by:'m2', week:3},
+  r3:{category:'subscriptions',isCommitment:true, by:'m1', week:2},
+  r4:{category:'fastfood',    isCommitment:false, by:'m1', week:2},
+  r5:{category:'unclassified',isCommitment:false, by:null, week:null}
+};
+// Permission is defined by CONSEQUENCE, not by role.
+//  - labelling with no policy effect: anyone
+//  - confirming isCommitment (removes spend from anomaly detection): approver only,
+//    otherwise a spender can make their own spending invisible to the Reality check
+function canClassify(ref,asCommitment){
+  const m=HOUSE.members.find(x=>x.ref===ref);
+  if(!m||m.state!=='active') return {ok:false,why:'not an active member'};
+  if(asCommitment&&!m.approver) return {ok:false,why:'only an approver can confirm a standing commitment — otherwise a spender could hide their own spending'};
+  return {ok:true};
+}
+function classify(rref,cat,asCommitment){
+  const g=canClassify(STATE.actingAs,asCommitment);
+  if(!g.ok){ logit('classify:DENIED',nameOf(STATE.actingAs)+' → '+g.why); render(); return; }
+  RECIPIENTS[rref]={category:cat,isCommitment:!!asCommitment,by:STATE.actingAs,week:W};
+  logit('classify:'+rref,cat+(asCommitment?' · standing commitment':'')+' — by '+nameOf(STATE.actingAs));
+  logit('memory:write','recipient belief written, one turn, never asked again');
+  render();
+}
+window.classify=classify;
+const setActor=r=>{STATE.actingAs=r;logit('actingAs',nameOf(r));render()};
+window.setActor=setActor;
+const recipientSay=r=>{const x=RECIPIENTS[r];
+  if(!x||x.category==='unclassified') return 'unclassified recipient';
+  return (x.isCommitment?'standing · ':'recurring · ')+x.category;};
+const unclassified=()=>Object.entries(RECIPIENTS).filter(([k,v])=>v.category==='unclassified').map(([k])=>k);
+
+const attr=o=>JSON.stringify(o).replace(/'/g,'&#39;');
+// Product views never render a hash. The drawer is the one deliberate leak, phrased in human
+// terms ("3 events · verify"); every blobId and txDigest lives on #proof, which the app never links.
+const HEXKEYS=['blobId','txDigest','ratifiedTx','evidenceIds'];
+const human=o=>{const c=JSON.parse(JSON.stringify(o));
+  const walk=x=>{if(Array.isArray(x))return x.forEach(walk);
+    if(x&&typeof x==='object'){HEXKEYS.forEach(k=>{if(k in x)
+      x[k]=k==='evidenceIds'?x[k].length+' events · verify on the proof page':'on the proof page';});
+      Object.values(x).forEach(walk);}};
+  walk(c);return JSON.stringify(c).replace(/'/g,'&#39;');};  // apostrophes in statements would break single-quoted onclick
+function visibleBeliefs(){
+  const live=upto(BELIEFS);
+  const superseded=new Set(live.map(b=>b.supersedes).filter(Boolean));
+  return live.filter(b=>!superseded.has(b.id));
+}
+const chainOf=b=>{const out=[b];let c=b;while(c.supersedes){c=BELIEFS.find(x=>x.id===c.supersedes);if(!c)break;out.unshift(c);}return out;};
+const TAG={observed:['t-obs','observed'],ratified:['t-rat','ratified'],drifting:['t-dri','drifting']};
+
+/* ============================== inspector ============================== */
+function inspect(title,why,obj,events){
+  let h=`<button class="x" onclick="document.getElementById('insp').classList.remove('on')">×</button>
+    <h3>${title}</h3><p class="why">${why}</p><pre>${JSON.stringify(obj,null,2)}</pre>`;
+  if(events&&events.length){
+    h+=`<h4>Raw evidence on Walrus</h4>`;
+    events.forEach(e=>{h+=`<div class="ev">${money(e.amountCents)} · ${e.category} · ${e.outcome||'observed'}
+      <div class="meta">${e.date} · quorum ${e.quorumRequired||'—'} · ${e.latencySeconds!=null?e.latencySeconds+'s to decide':''}</div>
+      <div class="meta">verify on the proof page</div></div>`;});
+  }
+  $('#insp').innerHTML=h;$('#insp').classList.add('on');
+}
+window.inspect=inspect;
+
+/* ================================ views ================================ */
+const V={};
+
+V.agreement=()=>{
+  const me=HOUSE.members.find(m=>m.ref===STATE.viewAs);
+  const bs=visibleBeliefs();
+  const orient=me&&me.role!=='owner'?`<div class="card arch"><div class="meta">
+    You are ${me.role==='approver'?'an approver':'a spender'} in the Wilson house.
+    ${me.role==='approver'
+      ?'You will be asked whenever a request goes above the house number of '+money(HOUSE.policy.autoApproveCents)+'. You can accept policy proposals, but only Alex can sign them onchain.'
+      :'You have '+money(capFor(me.ref).cents)+' without asking. Above that, an approver is notified.'}
+    </div></div>`:'';
+  if(!bs.length)return`<h2>The Agreement</h2><p class="lede">No rules yet — ${WEEK_NOTE[W]}.</p>`+orient+`
+    <div class="empty">The agreement is still forming.<br>Beliefs need ${HOUSE.learning.minEvidence} events and ${Math.round(HOUSE.learning.confidenceFloor*100)}% confidence before they appear.</div>`;
+  return`<h2>The Agreement</h2><p class="lede">Rules nobody wrote. Discovered from ${upto(DECISIONS).length} decisions over ${W} week(s).</p>`+orient
+  + bs.map(b=>{const[c,l]=TAG[b.state];const ch=chainOf(b);
+    return`<div class="card click" onclick='inspect("${b.id}","Belief · ${b.dimension} · click-through from the Agreement screen",${human(b)},${human(upto(DECISIONS).filter(d=>b.evidenceIds.includes(d.id))).replace(/'/g,"&#39;")})'>
+      <div class="row"><p class="rule">${say(b)}</p><span class="tag ${c}">${l}</span></div>
+      <div class="meta">${b.dimension} · ${b.evidenceCount} events · confidence ${(b.confidence*100).toFixed(0)}%${b.ratifiedTx?' · onchain '+b.ratifiedTx:''}</div>
+      <div class="conf"><i style="width:${b.confidence*100}%"></i></div>
+      ${ch.length>1?`<div class="ver">${ch.map((v,i)=>i<ch.length-1?`<s>v${v.version}</s> →`:`<b>v${v.version}</b>`).join(' ')} · superseded, never edited</div>`:''}
+    </div>`}).join('');
+};
+
+V.pending=()=>{
+  const A=APPROVAL, need=A.state==='escalated'?1:quorumNeeded();
+  const ST={pending:['t-obs','awaiting quorum'],escalated:['t-dri','escalated'],
+            approved:['t-rat','approved'],rejected:['t-bad','rejected'],expired:['t-bad','expired']};
+  const[c,l]=ST[A.state];
+  const rej=upto(PROPOSALS).filter(x=>x.status==='rejected');
+  return`<h2>Pending decision</h2><p class="lede">Clickable: tap as each approver, then advance the clock.</p>
+  <div class="card"><div class="row"><div><p class="rule">3 items · ${A.category}</p>
+    <div class="meta">quorum ${A.quorumRequired} · needs ${need} of ${activeApprovers().length} active ·
+    ${A.notified?A.hoursElapsed+'h since the notification of '+HOUSE.policy.deadlineHours+'h':'<span style="color:var(--warn)">nobody notified yet — the clock has not started</span>'}
+    ${A.soleAuthority?' · sole authority: '+nameOf(A.soleAuthority):''}</div>
+    ${A.decidedBy.length?`<div class="meta" style="color:var(--accent);margin-top:6px">decidedBy (ordered): ${A.decidedBy.map(d=>nameOf(d.ref)+'·'+d.role).join(' → ')}</div>`:''}
+    </div><div style="text-align:right"><span class="amt">${money(A.amountCents)}</span><br><span class="tag ${c}">${l}</span></div></div>
+    <div class="btns">
+      ${activeApprovers().map(m=>`<button class="btn" onclick="tap('${m.ref}')">${m.label} approves</button>`).join('')}
+      <button class="btn ghost" onclick="tap('m1','reject')">Alex rejects</button>
+      ${APPROVAL.notified?'':'<button class="btn" onclick="notifyApproval()">Notify the approvers</button>'}
+      <button class="btn ghost" onclick="advance(2)">+2h</button>
+      <button class="btn ghost" onclick="advance(3)">+3h</button>
+      <button class="btn ghost" onclick="resetApproval()">Reset</button>
+    </div>
+    ${A.state==='expired'?'<div class="card arch" style="margin:12px 0 0"><div class="meta">The cart is saved and nothing was bought. "Nothing is ever purchased without approval" is an invariant, not a setting.</div></div>':''}
+  </div>
+  ${rej.length?`<h4>Rejected — on cooldown</h4>`+rej.map(x=>`<div class="card">
+    <div class="row"><div><p class="rule" style="opacity:.6">${x.from} → ${x.to}</p>
+    <div class="meta">rejected week ${x.rejectedAtWeek} · silent until week ${x.cooldownUntilWeek} · the house prefers the stated rule</div></div>
+    <span class="tag t-bad">cooldown</span></div></div>`).join(''):''}
+  <h4>Interaction log</h4><div class="card" style="background:#0a0e13">
+    ${STATE.log.length?STATE.log.slice(0,10).map(x=>`<div class="ev"><b class="meta">${x.t}</b> <span class="blob">${x.what}</span>
+      <div class="meta">${x.detail}</div></div>`).join(''):'<div class="meta">Tap a button above.</div>'}</div>`;
+};
+
+V.drift=()=>{
+  const d=visibleBeliefs().filter(b=>b.state==='drifting');
+  if(!d.length)return`<h2>Drift</h2><p class="lede">Nothing has diverged yet — ${WEEK_NOTE[W]}.</p><div class="empty">Every ratified rule still matches behaviour.</div>`;
+  return`<h2>Drift</h2><p class="lede">This screen scolds the <em>rule</em>, never the spending.</p>`
+  +d.map(b=>`<div class="card click" onclick='inspect("${b.id}","Drift belief — behaviour diverged from the ratified rule",${human(b)},${human(upto(DECISIONS).filter(x=>b.evidenceIds.includes(x.id)))})'>
+    <div class="row"><p class="rule">${say(b)}</p><span class="tag t-dri">drifting</span></div>
+    <div class="meta">tolerance ${HOUSE.learning.driftTolerance*100}% · ${b.evidenceCount} events · confidence ${(b.confidence*100).toFixed(0)}%</div>
+    <div class="btns"><button class="btn warn">Make the rule real</button><button class="btn ghost">Change the rule</button></div></div>`).join('');
+};
+
+V.reality=()=>{
+  const all=upto(SPEND).filter(x=>!x.hasApproval);
+  // a recognised standing commitment is NOT an anomaly — without this the screen screams monthly
+  // fail-safe: a recipient we have not classified is never treated as a commitment
+  const known=x=>RECIPIENTS[x.recipientRef]&&RECIPIENTS[x.recipientRef].category!=='unclassified';
+  const creep=all.filter(x=>known(x)&&RECIPIENTS[x.recipientRef].isCommitment&&x.amountCents>x.expectedCents);
+  const off=all.filter(x=>x.offRhythm);
+  const unk=all.filter(x=>!known(x));
+  const s=all.filter(x=>known(x)&&!RECIPIENTS[x.recipientRef].isCommitment&&!x.offRhythm);
+  const tot=s.reduce((a,b)=>a+b.amountCents,0);
+  return`<h2>Reality check</h2><p class="lede">The agreement, measured against what actually moved onchain. Read via Tatum Data API.</p>
+  <div class="kpi"><div><span>House balance</span><b${TREASURY.balanceCents<TREASURY.lowThresholdCents?' style="color:var(--warn)"':''}>${money(TREASURY.balanceCents)}</b></div>
+    <div><span>Last top-up</span><b>wk ${TREASURY.lastTopUpWeek}</b></div>
+    <div><span>Decisions recorded</span><b>${upto(DECISIONS).length}</b></div>
+    <div><span>Spend with no approval</span><b style="color:var(--bad)">${s.length}</b></div>
+    <div><span>Unaccounted</span><b style="color:var(--bad)">${money(tot)}</b></div></div>
+  ${unk.length?`<div class="card"><div class="row"><div><p class="rule">${unk.length} charge(s) we cannot classify yet</p>
+    <div class="meta">Unclassified never counts as a standing commitment, so these stay in the anomaly set.
+    Failing to "I don't know, so I told you" beats failing to "probably a subscription, let it through".</div></div>
+    <span class="tag t-bad">unclassified</span></div></div>`:''}
+  ${creep.map(x=>`<div class="card click" onclick='inspect("${x.id}","Standing commitment repriced. Excluded from the anomaly set, alerted on its own.",${human(x)})'>
+    <div class="row"><div><p class="rule">${recipientSay(x.recipientRef)} went from ${money(x.expectedCents)} to ${money(x.amountCents)}</p>
+    <div class="meta">${x.date} · nobody approved it · nobody noticed</div><div class="blob">${x.txDigest}</div></div>
+    <span class="tag t-dri">repriced</span></div></div>`).join('')}
+  ${off.map(x=>`<div class="card click" onclick='inspect("${x.id}","Off-rhythm. Below the approval threshold, so no value band could ever catch this.",${human(x)})'>
+    <div class="row"><div><p class="rule">${money(x.amountCents)} · ${x.category} · ${x.offRhythm}</p>
+    <div class="meta">under the ${money(HOUSE.policy.soloCeilingCents)} ceiling — only cadence catches it</div>
+    <div class="blob">${x.txDigest}</div></div><span class="tag t-dri">off-rhythm</span></div></div>`).join('')}
+  ${s.length?s.map(x=>`<div class="card click" onclick='inspect("${x.id}","SpendEvent — exists only because we read the chain",${human(x)})'>
+    <div class="row"><div><p class="rule">${money(x.amountCents)} · ${x.category}</p>
+    <div class="meta">${x.date} · ${recipientSay(x.recipientRef)} · ${x.wallet} wallet · no approval recorded</div>
+    <div class="blob">${x.txDigest}</div></div><span class="tag t-bad">unapproved</span></div></div>`).join('')
+    :'<div class="empty">Every onchain movement has a matching approval.</div>'}
+  ${(()=>{const g={};upto(DECISIONS).forEach(d=>{const k=d.date+'|'+d.category;(g[k]=g[k]||[]).push(d)});
+    const hits=Object.entries(g).filter(([,v])=>v.length>1&&v.reduce((a,b)=>a+b.amountCents,0)>HOUSE.policy.bothFloorCents
+      &&v.every(x=>x.amountCents<=HOUSE.policy.bothFloorCents));
+    return hits.length?`<h4>Structuring · ${hits.length}</h4>`+hits.map(([k,v])=>`<div class="card">
+      <div class="row"><div><p class="rule">${v.length} requests on ${k.split('|')[0]} summing ${money(v.reduce((a,b)=>a+b.amountCents,0))}</p>
+      <div class="meta">each one under the ${money(HOUSE.policy.bothFloorCents)} floor, the total over it — splitting a purchase to stay inside a cap</div></div>
+      <span class="tag t-dri">split</span></div></div>`).join(''):''})()}
+  <div class="card arch"><div class="meta">THIS SCREEN IS THE DEFENCE OF THE 30%.<br>
+  It shows information the app could not have had without reading the chain. That is what makes the
+  integration load-bearing instead of a sticker — and it is why this screen is mandatory in the demo.</div></div>`;
+};
+
+V.allowance=()=>{
+  const d=MAXSPEND.slice(0,W),tot=d.reduce((a,b)=>a+b.games+b.food+b.other,0),
+        g=d.reduce((a,b)=>a+b.games,0),pct=tot?Math.round(g/tot*100):0;
+  const b=visibleBeliefs().find(x=>x.dimension==='member_pattern');
+  const given=upto(TOPUPS).reduce((a,t)=>a+t.amountCents,0);
+  return`<h2>Allowance</h2><p class="lede">Max has a wallet with an onchain limit and <strong>no delegate key</strong> — he is a subject, not an operator. That is the privacy mechanism.</p>
+  <div class="kpi"><div><span>Weekly limit</span><b>${money(HOUSE.members[3].walletLimitCents)}</b></div>
+    <div><span>Allowance given</span><b>${money(given)}</b></div>
+    <div><span>Spent</span><b>${money(tot)}</b></div>
+    <div><span>Games / allowance</span><b style="color:var(--warn)">${given?Math.round(g/given*100):0}%</b></div></div>
+  <div class="card arch"><div class="meta">THE DENOMINATOR IS THE TOP-UPS, NOT THE SPEND.
+  "78% of his allowance" needs inbound events; "78% of what he spent" is a weaker, different claim —
+  and without the top-ups you cannot tell spending from saving. That is why allowance distribution
+  is a real feature and treasury funding is only a seeding script.</div></div>
+  ${b?`<div class="card click" onclick='inspect("${b.id}","member_pattern belief — derived from Tatum reads of the dependent wallet",${human(b)})'>
+    <div class="row"><p class="rule">${say(b)}</p><span class="tag t-obs">observed</span></div>
+    <div class="meta">source: Tatum Data API · dependent wallet tx history · ${b.evidenceCount} transactions</div>
+    <div class="conf"><i style="width:${b.confidence*100}%"></i></div></div>`
+  :`<div class="empty">Limit set at ${money(HOUSE.members[3].walletLimitCents)} — <strong>provisional</strong>, will be revised in 3 weeks.<br>The agent says so out loud instead of pretending it knows.</div>`}
+  <div class="two">${d.map((w,i)=>`<div class="card"><div class="meta">week ${i+1}</div>
+    <div class="row"><span>games</span><b class="meta">${money(w.games)}</b></div>
+    <div class="row"><span>food</span><b class="meta">${money(w.food)}</b></div></div>`).join('')}</div>`;
+};
+
+V.onboarding=()=>{
+  const act=activeApprovers().length, dec=HOUSE.members.filter(m=>m.approver&&m.state!=='active').length;
+  const st={active:['t-rat','active'],declared:['t-obs','declared'],invited:['t-dri','invited'],
+            subject:['t-obs','subject'],revoked:['t-bad','revoked']};
+  return`<h2>Onboarding</h2><p class="lede">Two keys in the whole system. Members log in with an invite link — no key, no wallet.</p>
+  <h4>Step 3 · the only crypto moment</h4>
+  <div class="card"><p class="rule">Save this key</p>
+  <div class="meta">Generated in this browser. Never sent to our server. Nobody can restore it, including us.</div>
+  <div class="btns"><button class="btn">I saved it</button><button class="btn ghost">Copy</button></div></div>
+  <h4>Step 5 · one number, deliberately wrong</h4>
+  <div class="card"><p class="rule">How much can one person spend without asking?</p>
+  <div class="meta">${money(HOUSE.policy.autoApproveCents)} — we'll revise this once we've seen a few weeks.</div>
+  <div class="card arch" style="margin:12px 0 0"><div class="meta">PLANT THE WRONG NUMBER ON PURPOSE.
+  Without the initial guess there is nothing for week 5 to correct, and without the correction there is no product.</div></div></div>
+  <h4>Step 6 · fund the house</h4>
+  <div class="card"><div class="row"><div><p class="rule">${STATE.treasuryFunded?'House funded · '+money(TREASURY.balanceCents):'The house has no money yet'}</p>
+    <div class="meta">${STATE.treasuryFunded?'Top-ups are a script in the simulation, never a product feature. The only user-facing touch is the low-balance nudge.'
+      :'Until this happens nothing in the app works. Setup that ends here leaves a dead app — this step was missing.'}</div></div>
+    ${STATE.treasuryFunded?'<span class="tag t-rat">funded</span>':''}</div>
+    ${STATE.treasuryFunded?'':`<div class="btns"><button class="btn" onclick="fundHouse()">Receive 412 USDC (testnet)</button></div>`}</div>
+  <h4>Roster — admin can add anyone manually</h4>
+  ${HOUSE.members.map(m=>{const[c,l]=st[m.state];
+    return`<div class="card click" onclick='inspect("${m.ref}","Roster entry. Only state=active counts toward quorum.",${human(m)})'>
+    <div class="row"><div><p class="rule">${m.label} · ${m.role}</p>
+    <div class="meta">ref ${m.ref} · ${m.approver?'approver':'not an approver'}${m.walletLimitCents?' · limit '+money(m.walletLimitCents)+'/'+m.period:''}</div></div>
+    <span class="tag ${c}">${l}</span></div>
+    ${m.state==='declared'?`<div class="btns"><button class="btn ghost" onclick="invite('${m.ref}')">Generate invite link</button></div>`:''}
+    ${STATE.invites[m.ref]&&m.state==='invited'?`<div class="meta" style="margin-top:8px"><span class="blob">${STATE.invites[m.ref]}</span>
+      <div class="btns"><button class="btn ghost" onclick="claim('${m.ref}')">Simulate: they click it</button></div></div>`:''}
+    </div>`}).join('')}
+  ${dec?`<div class="card arch"><div class="meta">${act} of ${act+dec} approvers have joined.
+  2-of-2 is UNSATISFIABLE with ${act} active, so the band above ${money(HOUSE.policy.bothFloorCents)} and all critical
+  categories stay BLOCKED until they join. Never a silent downgrade to one signature — this closes the
+  identity hole Rosie documented (declare three approvers, satisfy 2-of-2 alone).</div></div>`:''}
+  <h4>Keys</h4>
+  ${HOUSE.keys.map(k=>`<div class="card"><div class="row"><p class="rule">${k.label}</p>
+    <span class="tag ${k.kind==='owner'?'t-rat':'t-obs'}">${k.kind}</span></div>
+    <div class="meta">held in ${k.heldBy}<br>used for ${k.usedFor}</div></div>`).join('')}
+  <div class="card arch"><div class="meta">REVOCATION DEMO: revoke the 'house · server' delegate → rotation counter bumps →
+  the application loses access to the house's own memory and cannot stop it. Show the tx.</div></div>`;
+};
+
+const APPROVAL={id:'a1',amountCents:4270,category:'groceries',
+  quorumRequired:'2-of-2',decidedBy:[],state:'pending',hoursElapsed:0,soleAuthority:null,
+  notified:false};  // the deadline runs from the NOTIFICATION, never from creation —
+                    // escalating someone who was never told is not an escalation
+function quorumNeeded(){const n=activeApprovers().length;
+  return APPROVAL.quorumRequired==='2-of-2'?n:1;}
+function tap(ref,verdict){
+  if(!['pending','escalated'].includes(APPROVAL.state))return;
+  if(APPROVAL.state==='escalated'&&ref!==APPROVAL.soleAuthority){
+    logit('tap:ignored',ref+' — escalated, only '+APPROVAL.soleAuthority+' can close it now');render();return;}
+  if(verdict==='reject'){APPROVAL.state='rejected';APPROVAL.decidedBy.push({ref,role:roleAt(ref),verdict});
+    logit('approval:rejected','by '+ref+' — memory records WHO rejected');
+    notify('request_resolved',['m3']);render();return;}
+  if(APPROVAL.decidedBy.some(d=>d.ref===ref)){logit('tap:ignored',ref+' already decided');render();return;}
+  APPROVAL.decidedBy.push({ref,role:roleAt(ref),verdict:'approve'});
+  logit('approval:tap',ref+' approved ('+APPROVAL.decidedBy.length+'/'+(APPROVAL.state==='escalated'?1:quorumNeeded())+')');
+  const need=APPROVAL.state==='escalated'?1:quorumNeeded();
+  if(APPROVAL.decidedBy.filter(d=>d.verdict==='approve').length>=need){
+    APPROVAL.state='approved';
+    logit('approval:approved','quorum met — decidedBy ORDER is the authority dimension');
+    logit('memory:write','DecisionEvent written to ns `decisions` — terminal state only');
+    notify('request_resolved',['m3']);
+  }
+  render();
+}
+function advance(h){
+  if(!['pending','escalated'].includes(APPROVAL.state))return;
+  if(!APPROVAL.notified){
+    logit('advance:blocked','nobody has been notified yet — the deadline cannot run');render();return;}
+  APPROVAL.hoursElapsed+=h;
+  if(APPROVAL.state==='pending'&&APPROVAL.hoursElapsed>=HOUSE.policy.deadlineHours){
+    // Rosie's fix: escalate to ONE specific person with sole authority. Never just extend.
+    const already=APPROVAL.decidedBy.find(d=>d.verdict==='approve')?.ref;
+    APPROVAL.soleAuthority=already||HOUSE.members.find(m=>m.role==='owner').ref;
+    APPROVAL.state='escalated';
+    logit('approval:escalated','sole authority → '+nameOf(APPROVAL.soleAuthority)+
+      ' (priority: whoever already approved > owner > other approver)');
+    logit('note','deadlineHours is stored ON the approval so escalation reuses the same value');
+    if(already){
+      // Their existing signature IS the single signature now required. Asking them to tap again
+      // would be theatre, and waiting would hold the cart hostage to the approver who went quiet.
+      APPROVAL.state='approved';
+      logit('approval:approved','resolved AT escalation — the sole authority had already signed');
+      logit('memory:write','DecisionEvent outcome=approved, escalated=true');
+      notify('request_resolved',['m3']);
+    }
+  } else if(APPROVAL.state==='escalated'&&APPROVAL.hoursElapsed>=HOUSE.policy.deadlineHours*2){
+    APPROVAL.state='expired';
+    logit('approval:expired','nothing was bought — the invariant never breaks');
+    logit('memory:write','DecisionEvent outcome=expired');
+  }
+  render();
+}
+function notifyApproval(){APPROVAL.notified=true;
+  notify('pending_approval',activeApprovers().map(m=>m.ref));render();}
+window.notifyApproval=notifyApproval;
+function resetApproval(){Object.assign(APPROVAL,{decidedBy:[],state:'pending',hoursElapsed:0,soleAuthority:null,notified:false});
+  logit('approval','reset');render();}
+window.tap=tap;window.advance=advance;window.resetApproval=resetApproval;
+
+V.ask=()=>{const cap=capFor(STATE.viewAs);return`<h2>Ask</h2>
+  <p class="lede">Adding is free. The only authority rule is approval.</p>
+  <div class="card"><div class="row"><div><p class="rule">You have ${money(cap.cents)} without asking</p>
+    <div class="meta">${cap.source==='house number'?'This is the house number — the floor of autonomy for everyone. A personal cap is something the agent proposes once it has seen enough.':'Your own cap, proposed by the agent and ratified by an approver.'}</div></div>
+    <span class="tag ${cap.source==='house number'?'t-obs':'t-rat'}">${cap.source==='house number'?'house default':'personal cap'}</span></div></div>
+  <div class="card"><p class="rule">What do you need?</p>
+  <div class="meta">Above your cap, ${activeApprovers().map(m=>m.label).join(' or ')} is asked.</div>
+  <div class="btns">${[1200,2400,4270,13900].map(c=>`<button class="btn ${c<=capFor(STATE.viewAs).cents?'':'ghost'}" onclick="ask(${c},'groceries')">${money(c)} groceries</button>`).join('')}</div></div>
+  <div class="card arch"><div class="meta">A spender sees three screens. No digest (they do not vote on policy),
+  no Reality check (that is oversight), no keys. The role had NO app before this — one nav for everybody
+  hid the fact that three quarters of the household could not use the product.</div></div>`;};
+
+V.myrequests=()=>{
+  const mine=STATE.requests.filter(r=>r.by===STATE.viewAs);
+  const ST={auto:['t-rat','went through'],pending:['t-obs','waiting on an approver'],
+            approved:['t-rat','approved'],rejected:['t-bad','rejected']};
+  return`<h2>My requests</h2><p class="lede">What you asked for, and where it stands.</p>
+  ${mine.length?mine.map(r=>{const[c,l]=ST[r.state];
+    return`<div class="card"><div class="row"><div><p class="rule">${money(r.amountCents)} · ${r.category}</p>
+    <div class="meta">${r.state==='auto'?'within your '+money(r.cap.cents)+' cap ('+r.cap.source+') — nobody was asked'
+      :'above your '+money(r.cap.cents)+' cap · needs '+r.signatures+' signature(s)'}</div></div>
+    <span class="tag ${c}">${l}</span></div></div>`}).join('')
+    :'<div class="empty">Nothing asked yet. Use <strong>Ask</strong>.</div>'}`;
+};
+
+V.landing=()=>`
+  <div style="max-width:640px;padding:40px 0">
+  <p class="eyebrow meta">Unwritten</p>
+  <h2 style="font-size:34px;line-height:1.15;margin:0 0 14px">The spending agreement<br>your house already has.</h2>
+  <p class="lede" style="font-size:16px;max-width:520px">Every household answers one question informally and never
+  writes it down: who can spend what, alone, up to how much. We watch real decisions, write it for you, and tell you
+  when the rule you think you have is not the rule you actually follow.</p>
+  <div class="btns" style="margin:26px 0">
+    <button class="btn" onclick="enterDemo()">Enter the Wilson house →</button>
+    <button class="btn ghost" onclick="setView('judge')">I'm a judge</button>
+  </div>
+  <div class="card"><div class="meta">A seeded six-week household, read-only. Scrub the weeks at the bottom to watch
+  rules form and get rewritten. Switch roles at the top to see what an approver, a spender and a judge each get.</div></div>
+  <div class="two" style="margin-top:14px">
+    <div class="card"><p class="rule" style="font-size:14px">Setup asks one number</p>
+      <div class="meta">On purpose — so there is something for week five to correct.</div></div>
+    <div class="card"><p class="rule" style="font-size:14px">No wallet, no gas</p>
+      <div class="meta">Two keys in the whole system, and members join with a link.</div></div>
+  </div></div>`;
+
+function enterDemo(){STATE.demo=true;W=6;setView('m1');
+  logit('demo','entered the seeded Wilson house as Alex — week 6');}
+window.enterDemo=enterDemo;
+
+V.notifications=()=>{
+  const mine=inbox();
+  return`<h2>Notifications</h2><p class="lede">Only two kinds interrupt. Everything else waits for the weekly digest —
+  an agent that notifies you about its own learning is unbearable.</p>
+  ${mine.length?mine.map(n=>{const k=NKIND[n.kind];
+    return`<div class="card"><div class="row"><div><p class="rule" style="${n.read?'opacity:.55':''}">${k.text}</p>
+      <div class="meta">${n.kind} · ${n.atHour}h ago · to ${n.to.map(nameOf).join(', ')}</div></div>
+      <span class="tag ${k.interrupts?'t-bad':'t-obs'}">${k.interrupts?'interrupts':'digest'}</span></div></div>`}).join('')
+    :'<div class="empty">Nothing for you.</div>'}
+  <div class="btns"><button class="btn ghost" onclick="readAll()">Mark all read</button></div>
+  <div class="card arch"><div class="meta">A notification is a RECORD; the channel is a delivery adapter
+  (in-app here, email in production). This matters for correctness, not polish: the approval deadline runs
+  from the NOTIFICATION, never from creation. Escalating someone who was never told is not an escalation.</div></div>`;
+};
+
+V.keys=()=>{
+  const C=KEYS.confirm;
+  if(C) return `<h2>${C==='revoke'?'Revoke the delegate':KEYS.frozen?'Reactivate the account':'Freeze the account'}</h2>
+    <p class="lede">Destructive and owner-only, so it gets an explicit confirm step.</p>
+    <div class="card"><p class="rule">${C==='revoke'
+      ?'The application will lose access to this house\'s memory immediately.'
+      :KEYS.frozen?'Decryption will be restored for the owner and every delegate.'
+                  :'Decryption will be denied to everyone — including you.'}</p>
+    <div class="meta">${C==='revoke'
+      ?'The rotation counter moves from '+KEYS.counter+' to '+(KEYS.counter+1)+'. Memories already written under '+KEYS.counter+' stay readable with the older key; retracting those would need re-encryption.'
+      :'Reversible, unless an AdminCap quarantine is active.'}</div>
+    <div class="btns"><button class="btn warn" onclick="${C==='revoke'?'doRevoke()':'doFreeze()'}">Yes, ${C} it</button>
+      <button class="btn ghost" onclick="KEYS.confirm=null;render()">Cancel</button></div></div>`;
+  return`<h2>Keys</h2><p class="lede">Two keys in the whole system. Owner-only surface.</p>
+  <div class="kpi"><div><span>Rotation counter</span><b>${KEYS.counter}</b></div>
+    <div><span>Delegate</span><b style="color:${KEYS.delegateActive?'var(--accent)':'var(--bad)'}">${KEYS.delegateActive?'active':'revoked'}</b></div>
+    <div><span>Account</span><b style="color:${KEYS.frozen?'var(--bad)':'var(--accent)'}">${KEYS.frozen?'frozen':'active'}</b></div></div>
+  ${HOUSE.keys.map(k=>`<div class="card"><div class="row"><p class="rule">${k.label}</p>
+    <span class="tag ${k.kind==='owner'?'t-rat':(KEYS.delegateActive?'t-obs':'t-bad')}">${k.kind==='owner'?'owner':(KEYS.delegateActive?'delegate':'revoked')}</span></div>
+    <div class="meta">held in ${k.heldBy}<br>used for ${k.usedFor}</div>
+    ${k.kind==='delegate'?`<div class="btns">${KEYS.delegateActive
+      ?`<button class="btn warn" onclick="ask2('revoke')">Revoke</button>`
+      :`<button class="btn" onclick="newDelegate()">Register a new delegate</button>`}</div>`:''}</div>`).join('')}
+  <div class="card"><div class="row"><div><p class="rule">${KEYS.frozen?'Account is frozen':'Emergency freeze'}</p>
+    <div class="meta">Denies Seal decryption to everyone, the owner included. The kill switch.</div></div>
+    <span class="tag ${KEYS.frozen?'t-bad':'t-obs'}">${KEYS.frozen?'frozen':'available'}</span></div>
+    <div class="btns"><button class="btn ${KEYS.frozen?'':'warn'}" onclick="ask2('freeze')">${KEYS.frozen?'Reactivate':'Freeze'}</button></div></div>
+  <h4>See the consequence</h4>
+  <div class="card"><div class="meta">Try writing a memory in the current key state.</div>
+    <div class="btns"><button class="btn" onclick="tryWrite()">remember()</button></div></div>
+  <h4>Interaction log</h4><div class="card" style="background:#0a0e13">
+    ${STATE.log.length?STATE.log.slice(0,8).map(l=>`<div class="ev"><b class="meta">${l.t}</b> <span class="blob">${l.what}</span>
+      <div class="meta">${l.detail}</div></div>`).join(''):'<div class="meta">Act on a key above.</div>'}</div>
+  <div class="card arch"><div class="meta">THE SCORED MOMENT: revoking the delegate bumps the rotation counter and
+  the application loses access to the house's own memory — and cannot stop it. Show the tx. No chatbot submission
+  will touch this part of the protocol.</div></div>`;
+};
+
+V.history=()=>{
+  const ev=upto(DECISIONS).slice().reverse();
+  return`<h2>History</h2><p class="lede">What was decided, by whom, in order. No hashes — those live on the proof page the app never links to.</p>
+  ${ev.map(e=>`<div class="card"><div class="row"><div><p class="rule">${money(e.amountCents)} · ${e.category}</p>
+    <div class="meta">${e.date} · ${e.outcome}${e.decidedBy.length?' by '+e.decidedBy.map(d=>nameOf(d.ref)).join(' → '):' · nobody was asked'}${e.latencySeconds!=null?' · '+e.latencySeconds+'s':''}</div></div>
+    <span class="tag ${e.outcome==='auto'?'t-obs':e.outcome==='approved'?'t-rat':'t-bad'}">${e.outcome}</span></div></div>`).join('')}`;
+};
+
+V.proof=()=>{
+  const ev=upto(DECISIONS);
+  return`<h2>Proof</h2><p class="lede">For judges. <strong>The app never links here.</strong> Referenced from the README,
+  the blog post and the architecture beat of the demo — so the product stays abstracted and the evidence stays findable.</p>
+  <div class="kpi"><div><span>Memories on Mainnet</span><b>${ev.length+upto(SPEND).length+upto(TOPUPS).length+visibleBeliefs().length}</b></div>
+    <div><span>Requirement</span><b>10+</b></div><div><span>Namespaces</span><b>4</b></div>
+    <div><span>Walrus epochs</span><b>50 ≈ 2y</b></div></div>
+  <h4>decisions · ${ev.length} blobs</h4>
+  ${ev.slice(0,4).map(e=>`<div class="card"><div class="meta">${e.date} · ${money(e.amountCents)} · ${e.category} · ${e.outcome}</div>
+    <div class="blob">${e.blobId}</div></div>`).join('')}
+  <h4>beliefs · supersession chain</h4>
+  ${visibleBeliefs().slice(0,3).map(b=>`<div class="card"><div class="meta">${b.id} · v${b.version}${b.supersedes?' supersedes '+b.supersedes:''}${b.ratifiedTx?' · tx '+b.ratifiedTx:''}</div>
+    <div class="blob">${b.blobId}</div></div>`).join('')}
+  <h4>the four Tatum reads</h4>
+  <div class="card"><div class="meta">Data API · house wallet tx history → unapproved spend<br>
+  Data API · dependent wallet tx history → member_pattern denominator<br>
+  Notifications · real-time spend detection<br>
+  Sui RPC · ratified policy state and approval records<br><br>
+  endpoint: sui-testnet.gateway.tatum.io · one env var switches to mainnet, no branching logic</div></div>
+  <div class="card arch"><div class="meta">Also here: the Observer digest comparison (two accounts, same question,
+  auditable difference) and the seeding disclosure. A disclosed seed is honest; a hidden one gets smelled.</div></div>`;
+};
+
+V.digest=()=>{
+  const open=upto(PROPOSALS).filter(p=>p.status==='pending'&&!STATE.acted[p.id]);
+  const proposed=new Set(upto(PROPOSALS).map(p=>p.beliefId));
+  // drift is the RATIONALE inside a proposal, not a card of its own. It only stands alone when
+  // the agent cannot tell which direction to propose — and then it says so.
+  const drift=visibleBeliefs().filter(b=>b.state==='drifting'&&!proposed.has(b.id));
+  const fresh=visibleBeliefs().filter(b=>b.fromWeek===W);
+  const items=open.length+drift.length+fresh.length;
+  const TX={awaiting_ratification:['t-dri','awaiting the owner'],signing:['t-obs','unlocking owner key…'],pending:['t-dri','waiting for Sui…'],
+            confirmed:['t-rat','onchain'],failed:['t-bad','tx failed']};
+  let h=`<h2>Week ${W} digest</h2>
+  <p class="lede">The admin's real home. Batched on purpose — only a pending approval or an anomaly is allowed to interrupt.</p>`;
+  if(!items) h+=`<div class="empty">Nothing to decide this week.<br>
+    <span class="meta">The agreement matches behaviour. This is the state the product should be in most weeks —
+    and an empty digest still ships, so the admin learns that silence means agreement.</span></div>`;
+  if(open.length){ h+=`<h4>Proposals · ${open.length}</h4>`;
+    h+=open.map(p=>{const st=STATE.tx[p.id]; const b=BELIEFS.find(x=>x.id===p.beliefId);
+    if(st){const[c,l]=TX[st];
+      if(st==='awaiting_ratification')
+        return`<div class="card"><div class="row"><div><p class="rule">${p.from} → ${p.to}</p>
+          <div class="meta">Accepted by ${(p.acceptedBy||[]).map(nameOf).join(', ')}. Writing policy onchain needs the owner key —
+          nothing has been written to memory or chain yet.</div></div><span class="tag t-dri">awaiting the owner</span></div>
+          ${HOUSE.members.find(m=>m.ref===STATE.actingAs)?.role==='owner'
+            ?`<div class="btns"><button class="btn" onclick="ratify('${p.id}')">Sign it</button></div>`
+            :`<div class="meta" style="margin-top:10px">Only Alex can sign. This is the bottleneck, said out loud.</div>`}</div>`;
+      return`<div class="card"><div class="row"><div><p class="rule">${p.from} → ${p.to}</p>
+        <div class="meta">${st==='failed'?'The rule was NOT changed and nothing was written to memory. Safe to retry.':'Chain first, memory second.'}</div></div>
+        <span class="tag ${c}">${l}</span></div>
+        ${st==='failed'?`<div class="btns"><button class="btn" onclick="ratify('${p.id}')">Retry</button></div>`:''}</div>`;}
+    return`<div class="card"><div class="row"><div><p class="rule">${p.from} → ${p.to}</p>
+      <div class="meta">${p.rationale}</div>
+      ${(()=>{const d=BELIEFS.find(x=>x.id===p.beliefId&&x.state==='drifting');
+        return d?`<div class="meta" style="color:var(--warn);margin-top:6px">drift finding: ${say(d)}</div>`:''})()}
+      </div><span class="tag t-obs">${p.kind} · ${p.effect}</span></div>
+      <div class="card" style="background:var(--panel2);margin:12px 0 0"><div class="meta">
+      THIS WRITES ONCHAIN AND SUPERSEDES ${b?b.id:'a belief'} — irreversible, so it needs an explicit confirm step.<br>
+      ${b?`v${b.version} → v${b.version+1} · diff is arithmetic, not string`:''}</div></div>
+      <div class="btns"><button class="btn" onclick="accept('${p.id}')">Make it official</button>
+      <button class="btn ghost" onclick="keepRule('${p.id}')">Keep the rule</button>
+      <button class="btn ghost" onclick="ratify('${p.id}','fail')">Simulate tx failure</button></div></div>`}).join('');
+  }
+  if(drift.length){ h+=`<h4>Drift with no proposal · ${drift.length}</h4>`+drift.map(b=>
+    `<div class="card"><div class="row"><p class="rule">${say(b)}</p><span class="tag t-dri">no direction</span></div>
+     <div class="meta">The rule and the behaviour disagree, but the evidence does not say which one to change.
+     Said out loud rather than left hanging — a section that never clears teaches the admin to skip the digest.</div></div>`).join('');
+  }
+  if(fresh.length){ h+=`<h4>New this week · ${fresh.length}</h4>`+fresh.map(b=>
+    `<div class="card"><p class="rule">${say(b)}</p><div class="meta">${b.dimension} · first seen week ${b.fromWeek}</div></div>`).join('');
+  }
+  const u=unclassified();
+  if(u.length){ h+=`<h4>Never seen before · ${u.length}</h4>`;
+    const me=HOUSE.members.find(m=>m.ref===STATE.actingAs);
+    h+=`<div class="card"><div class="meta" style="margin-bottom:10px">Acting as
+      ${HOUSE.members.filter(m=>m.state==='active').map(m=>`<button class="btn ${m.ref===STATE.actingAs?'':'ghost'}" style="padding:3px 9px;font-size:11px" onclick="setActor('${m.ref}')">${m.label}${m.approver?'':' (spender)'}</button>`).join(' ')}
+      ${HOUSE.members.filter(m=>m.state==='declared').map(m=>`<button class="btn ghost" style="padding:3px 9px;font-size:11px" onclick="setActor('${m.ref}')">${m.label} (declared)</button>`).join(' ')}
+      </div>`;
+    h+=u.map(r=>`<p class="rule" style="margin:10px 0 6px">What is <span class="blob">${r}</span>?</p>
+      <div class="btns">${CATEGORIES.filter(c=>c!=='unclassified').map(c=>`<button class="btn ghost" style="font-size:11px" onclick="classify('${r}','${c}')">${c}</button>`).join('')}</div>
+      <div class="btns"><button class="btn" onclick="classify('${r}','subscriptions',true)">it's a standing commitment</button></div>`).join('');
+    h+=`<div class="meta" style="margin-top:10px">Labelling is open to anyone — "adding is free; the only authority rule is approval".
+      Confirming a <strong>standing commitment</strong> needs an approver, because it removes the spend from anomaly detection.</div></div>`;
+  }
+  h+=`<h4>Interaction log</h4><div class="card" style="background:#0a0e13">
+    ${STATE.log.length?STATE.log.map(l=>`<div class="ev"><b class="meta">${l.t}</b> <span class="blob">${l.what}</span>
+      <div class="meta">${l.detail}</div></div>`).join(''):'<div class="meta">Click a proposal above. Every state transition lands here.</div>'}
+    </div><div class="btns"><button class="btn ghost" onclick="resetSim()">Reset simulation</button></div>`;
+  return h;
+};
+
+V.rhythm=()=>{
+  const DOW=['S','M','T','W','T','F','S'];
+  const cells=[];
+  for(let w=1;w<=W;w++) for(let d=0;d<7;d++){
+    const day=(w-1)*7+d+1;
+    const hit=DECISIONS.filter(x=>x.date===dayISO(day)).reduce((a,b)=>a+b.amountCents,0);
+    cells.push({w,d,hit});
+  }
+  const max=Math.max(1,...cells.map(c=>c.hit));
+  const rb=visibleBeliefs().filter(b=>b.dimension==='rhythm');
+  return`<h2>Rhythm</h2><p class="lede">Not a calendar. A calendar as <em>input</em> would make this a config app — cadence is <strong>derived</strong>, like every other rule.</p>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;max-width:300px;margin:0 0 6px">
+    ${DOW.map(d=>`<div class="meta" style="text-align:center">${d}</div>`).join('')}
+    ${cells.map(c=>`<div title="wk${c.w} ${money(c.hit)}" style="aspect-ratio:1;border-radius:3px;background:${c.hit?`rgba(74,222,128,${.15+.85*c.hit/max})`:'var(--line)'}"></div>`).join('')}
+  </div>
+  <p class="meta" style="margin-bottom:22px">${W} week(s) · spend density · 40px of signal instead of a month grid</p>
+  ${rb.length?rb.map(b=>`<div class="card click" onclick='inspect("${b.id}","rhythm belief · isCommitment=${b.isCommitment}",${attr(b)})'>
+    <div class="row"><p class="rule">${say(b)}</p><span class="tag ${b.isCommitment?'t-rat':'t-obs'}">${b.isCommitment?'commitment':'habit'}</span></div>
+    <div class="meta">${b.cadence}${b.weekday?' · '+b.weekday:''} · variance ${b.variancePct}% · confidence ${(b.confidence*100).toFixed(0)}%</div>
+    <div class="conf"><i style="width:${b.confidence*100}%"></i></div></div>`).join('')
+    :'<div class="empty">No rhythm yet — needs at least 3 cycles.</div>'}
+  <div class="card arch"><div class="meta">ONE DIMENSION, TWO PAYLOADS. isCommitment=true (fixed amount, fixed interval)
+  leaves the anomaly set and turns on price-creep detection — that is what stops the Reality check screaming
+  about Netflix every month. isCommitment=false is the Friday habit, and it catches the $71 Tuesday pizza that
+  sits below every approval threshold.</div></div>`;
+};
+
+V.observer=()=>`<h2>Observer digest</h2>
+  <p class="lede">Delegate authorization is account-wide, so reads cannot be scoped. We scope the <strong>write</strong> instead.</p>
+  <div class="two">
+    <div><h4>House account · raw</h4><pre>${JSON.stringify(upto(DECISIONS).slice(-2),null,2)}</pre></div>
+    <div><h4>Observer account · digest</h4><pre>${JSON.stringify({
+      kind:'digest',period:`weeks 1–${W}`,
+      totalsByCategory:Object.entries(upto(DECISIONS).reduce((a,d)=>((a[d.category]=(a[d.category]||0)+d.amountCents),a),{}))
+        .map(([k,v])=>({category:k,cents:v})),
+      decisionCount:upto(DECISIONS).length,
+      lineItems:'omitted by construction',
+      memberIdentities:'never written'},null,2)}</pre></div>
+  </div>
+  <div class="card arch"><div class="meta">Two MemWalAccounts. The app's delegate key is registered on both.
+  Same question, two answers, auditable difference. The Observer <em>possesses</em> only the aggregate —
+  no filtering trust required. ~15s of the architecture segment. The family never sees this screen.</div></div>`;
+
+V.schema=()=>`<h2>Discovered schema</h2>
+  <p class="lede">Derived from what the screens above actually demanded. This is the input to <code>docs/specs/memory-schema.md</code>.</p>
+  <h4>namespace: decisions</h4><pre>${JSON.stringify(DECISIONS[6],null,2)}</pre>
+  <h4>namespace: spend — the silence made into data</h4><pre>${JSON.stringify(SPEND[0],null,2)}</pre>
+  <h4>namespace: beliefs — versioned, append-only, supersession chain</h4><pre>${JSON.stringify(BELIEFS[1],null,2)}</pre>
+  <h4>proposal — rejection carries a cooldown</h4><pre>${JSON.stringify(PROPOSALS[3],null,2)}</pre>
+  <h4>namespace: topup — the denominator</h4><pre>${JSON.stringify(TOPUPS[0],null,2)}</pre>
+  <h4>learning knobs — no precedent in Rosie, the spec must define these</h4><pre>${JSON.stringify(HOUSE.learning,null,2)}</pre>
+  <div class="card arch"><div class="meta">NEVER WRITTEN TO MEMORY: item names · member identities · recipient addresses in clear ·
+  anything that would need deleting later. There is no delete and no edit — minimisation is structural, not hygiene.<br><br>
+  AND: NOTHING IS WRITTEN TO MEMORY BEFORE THE DECISION RESOLVES. Pending approvals live in your own
+  database; only terminal states reach Walrus. Append-only means a pending state written is a state
+  you can never correct.</div></div>`;
+
+/* ================================ router ================================ */
+function render(){
+  const role=viewRole(), nav=NAV[role];
+  const h=(location.hash||'#'+nav[0][1]).slice(1);
+  const allowed=h==='landing'||nav.some(([,id])=>id===h);
+  $('#view').innerHTML=allowed?(V[h]||V.agreement)():
+    `<h2>Not your screen</h2><p class="lede">${role==='spender'?'A spender has three screens. This one belongs to an approver.':'This screen is not part of this role.'}</p>`;
+  const u=STATE.viewAs==='judge'?0:unread();
+  $('#nav').innerHTML=`<a href="#landing" class="${h==='landing'?'on':''}" style="font-weight:600">← Landing</a>
+    <div class="grp">Viewing as</div>`+
+    HOUSE.members.filter(m=>m.state==='active').map(m=>`<a href="#" onclick="setView('${m.ref}');return false" class="${STATE.viewAs===m.ref?'on':''}">${m.label} · ${m.role}</a>`).join('')+
+    `<a href="#" onclick="setView('judge');return false" class="${STATE.viewAs==='judge'?'on':''}">a judge</a>`+
+    `<div class="grp">${role==='judge'?'Exposed · never linked from the app':role==='spender'?'Spender · 3 screens':'Product'}</div>`+
+    nav.map(([label,id])=>`<a href="#${id}" class="${id===h?'on':''}">${label}${id==='notifications'&&u?` <span class="tag t-bad" style="padding:1px 5px">${u}</span>`:''}</a>`).join('');
+  $('#wklab').textContent=`week ${W} · ${WEEK_NOTE[W]}`;
+  window.scrollTo(0,0);
+}
+$('#wk').addEventListener('input',e=>{W=+e.target.value;render()});
+addEventListener('hashchange',render);
+render();
+</script>
+</body>
+</html>
