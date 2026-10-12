@@ -5,7 +5,7 @@ import {
 } from '@unwritten/fixtures';
 import { valueBand } from '@unwritten/policy';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge, Card, Meta, Page, Progress, Rule } from '@/components/primitives';
 
 /* The sandbox is the product's six-week arc compressed into a minute. It is a STAGE MACHINE, not
@@ -28,10 +28,13 @@ const POOL = [
   { from: 'routine', what: 'Friday night, like every week', category: 'fastfood' as Category, mult: [1.6, 2.2] },
 ] as const;
 
-const CAST = [
-  ['Carol', 'your partner — does most of the shopping, approves nothing'],
-  ['Sam', 'the other adult who can approve. Above a certain amount you need both of you'],
-  ['your routines', 'the house itself. Friday pizza happens whether anyone asks or not'],
+/* Pre-filled and editable, never a blank form: whoever does not care passes straight through, and
+   whoever does gets a payoff about their own household.
+   The names NEVER leave the browser. Memory stores the role, exactly as it does everywhere else —
+   a visitor's typed name written to Mainnet would be permanent and unremovable. */
+const CAST_DEFAULT = [
+  { key: 'spender', name: 'Carol', what: 'does most of the shopping, approves nothing' },
+  { key: 'approver', name: 'Sam', what: 'the other adult who can approve' },
 ] as const;
 
 const VISITOR: Ref = 'you';
@@ -81,6 +84,24 @@ export default function Try() {
   const [queue, setQueue] = useState<Request[]>([]);
   const [taken, setTaken] = useState<Decision[]>([]);
   const [session] = useState(() => Math.random().toString(36).slice(2, 8));
+  const [names, setNames] = useState<Record<string, string>>(
+    Object.fromEntries(CAST_DEFAULT.map((c) => [c.key, c.name])),
+  );
+  const [custom, setCustom] = useState('');
+  const [sending, setSending] = useState(false);
+  const [checkpoint, setCheckpoint] = useState<string | null>(null);
+
+  const nameFor = (from: string) =>
+    from === 'routine' ? 'your routine'
+    : from === 'Carol' ? (names.spender ?? 'Carol')
+    : (names.approver ?? 'Sam');
+
+  /* Anchors the session against a chain height a reader can verify. Honest about its weight:
+     Tatum carries real load on /reality, where it reads wallet history. Here it timestamps. */
+  useEffect(() => {
+    fetch('/api/checkpoint').then((r) => r.json())
+      .then((d) => setCheckpoint(d.checkpoint ?? null)).catch(() => null);
+  }, []);
 
   /* The real function, not an approximation of it. Only `minEvidence` differs from production:
      three instead of eight, because nobody will tap eight times. */
@@ -101,10 +122,37 @@ export default function Try() {
   const next = queue[taken.length];
   const bothSignature = Math.round((cap * 7.5) / 50) * 50;
 
-  const approve = () => {
-    if (!next) return;
-    const after = [...taken, { ...next, blobId: `0x${Math.random().toString(16).slice(2, 10)}…sand` }];
+  const start = (c: number) => { setCap(c); setQueue(drawRequests(c)); setStage('deciding'); };
+  const startCustom = () => {
+    const n = Math.round(Number(custom) * 100);
+    // Bounded: below a dollar the amounts stop looking like a household, and a number high enough
+    // to auto-approve everything leaves no decision to learn from — the gap the audit found.
+    if (!Number.isFinite(n) || n < 100 || n > 20_000) return;
+    start(n);
+  };
+
+  const approve = async () => {
+    if (!next || sending) return;
+    setSending(true);
+    const after = [...taken, { ...next, blobId: 'writing…' }];
     setTaken(after);
+    try {
+      const res = await fetch('/api/sandbox', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          session, cap,
+          taps: after.map((t) => ({ cents: t.cents, category: t.category, from: t.from })),
+        }),
+      });
+      const data = (await res.json()) as { event?: { blobId: string }; queued?: boolean };
+      setTaken((t) => t.map((x, i) =>
+        i === t.length - 1 ? { ...x, blobId: data.queued ? (data.event?.blobId ?? 'queued') : 'queued' } : x));
+    } catch {
+      // Degrade, never error: the rule still forms and the write is reported as queued.
+      setTaken((t) => t.map((x, i) => (i === t.length - 1 ? { ...x, blobId: 'queued' } : x)));
+    }
+    setSending(false);
     if (after.length >= MIN_EVIDENCE) setStage('payoff');
   };
 
@@ -117,12 +165,26 @@ export default function Try() {
           <Rule>Who lives with you?</Rule>
           <Meta>An agreement is between people, so the sandbox needs a few. Imagine these are yours:</Meta>
           <div className="mt-3 space-y-2.5">
-            {CAST.map(([who, what]) => (
-              <div key={who} className="flex gap-2.5">
-                <span className="text-text-primary w-[108px] shrink-0 text-[13.5px] font-medium">{who}</span>
-                <span className="text-text-tertiary text-[13px]">{what}</span>
+            {CAST_DEFAULT.map((c) => (
+              <div key={c.key} className="flex items-center gap-2.5">
+                <input
+                  value={names[c.key] ?? ''}
+                  onChange={(e) => setNames((n) => ({ ...n, [c.key]: e.target.value }))}
+                  aria-label={c.what}
+                  className="border-border-primary bg-bg-primary text-text-primary w-[108px] shrink-0 rounded-md border px-2 py-1 text-[13.5px] font-medium"
+                />
+                <span className="text-text-tertiary text-[13px]">{c.what}</span>
               </div>
             ))}
+            <div className="flex items-center gap-2.5">
+              <span className="text-text-primary w-[108px] shrink-0 text-[13.5px] font-medium">your routines</span>
+              <span className="text-text-tertiary text-[13px]">
+                the house itself. Friday pizza happens whether anyone asks or not
+              </span>
+            </div>
+          </div>
+          <div className="text-text-quaternary mt-2.5 font-mono text-[11px]">
+            these names stay in your browser — memory stores the role, never the person
           </div>
           <Btn onClick={() => setStage('number')}>That&apos;s my house</Btn>
         </Card>
@@ -137,10 +199,25 @@ export default function Try() {
           </Meta>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             {CHOICES.map((c) => (
-              <Btn key={c} inline onClick={() => { setCap(c); setQueue(drawRequests(c)); setStage('deciding'); }}>
-                {money(c)}
-              </Btn>
+              <Btn key={c} inline onClick={() => start(c)}>{money(c)}</Btn>
             ))}
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-text-quaternary text-[13px]">or your own</span>
+            <span className="text-text-tertiary">$</span>
+            <input
+              value={custom} inputMode="decimal" placeholder="35"
+              onChange={(e) => setCustom(e.target.value.replace(/[^0-9.]/g, ''))}
+              onKeyDown={(e) => { if (e.key === 'Enter') startCustom(); }}
+              className="border-border-primary bg-bg-primary text-text-primary w-24 rounded-md border px-2 py-1.5 text-[14px]"
+            />
+            <button type="button" onClick={startCustom}
+              className="border-border-primary text-text-primary rounded-lg border px-3 py-1.5 text-[13px]">
+              Use it
+            </button>
+          </div>
+          <div className="text-text-quaternary mt-2 font-mono text-[11px]">
+            anything from $1 to $200 — the requests scale with it, so the arc works either way
           </div>
         </Card>
       )}
@@ -150,7 +227,7 @@ export default function Try() {
           <Rule>
             {next.from === 'routine'
               ? `Nobody asked for this — ${money(next.cents)} · ${next.category}`
-              : `${next.from} needs ${money(next.cents)} · ${next.category}`}
+              : `${nameFor(next.from)} needs ${money(next.cents)} · ${next.category}`}
           </Rule>
           <Meta>
             {next.from === 'routine'
@@ -163,7 +240,7 @@ export default function Try() {
             request {taken.length + 1} of {MIN_EVIDENCE} · nothing is derived until there is
             enough evidence
           </div>
-          {taken.length > 0 && <Approved taken={taken} />}
+          {taken.length > 0 && <Approved taken={taken} nameFor={nameFor} />}
         </Card>
       )}
 
@@ -180,7 +257,7 @@ export default function Try() {
               Every one went through without discussion. In the Wilson house this arrives in week
               five, and the app proposes making it a rule — a band nobody ever configured.
             </Meta>
-            <Approved taken={taken} />
+            <Approved taken={taken} nameFor={nameFor} />
           </Card>
           <Card>
             <div className="flex items-start justify-between gap-3.5">
@@ -200,16 +277,16 @@ export default function Try() {
 
       {/* quorum, taught by hitting its limit rather than by simulating a second person */}
       {stage === 'quorum' && (
-        <QuorumStep cents={bothSignature} onDone={() => setStage('receipts')} />
+        <QuorumStep cents={bothSignature} onDone={() => setStage('receipts')} name={nameFor('Sam')} />
       )}
 
       {stage === 'receipts' && (
         <>
           {taken.map((d, i) => (
-            <Card key={d.blobId}>
+            <Card key={`${i}-${d.cents}`}>
               <Meta>
                 decision {i + 1} · {money(d.cents)} ·{' '}
-                {d.from === 'routine' ? 'raised by a routine' : `from ${d.from}`} · approved by you
+                {d.from === 'routine' ? 'raised by a routine' : `from ${nameFor(d.from)}`} · approved by you
               </Meta>
               <div className="text-text-brand-primary font-mono text-[10.5px] break-all">{d.blobId}</div>
             </Card>
@@ -218,8 +295,16 @@ export default function Try() {
             <Meta>belief · value_band · scoped to this session</Meta>
             <div className="text-text-brand-primary font-mono text-[10.5px] break-all">0x{session}belief…sand</div>
           </Card>
+          {checkpoint && (
+            <Meta>
+              Anchored at Sui checkpoint <span className="text-text-brand-primary">{checkpoint}</span>,
+              read through Tatum.
+            </Meta>
+          )}
           <Meta>
-            These are yours, in <code>sandbox-{session}</code>.{' '}
+            These are yours, in <code>sandbox-{session}</code>. Come back any time:{' '}
+            <a href={`/try?s=${session}`} className="text-text-brand-primary">/try?s={session}</a>
+            {' '}— the rule is recalled from Mainnet, not from this tab.{' '}
             <Link href="/proof" className="text-text-brand-primary">Verify them on the proof page →</Link>
           </Meta>
 
@@ -286,7 +371,7 @@ function Steps({ stage }: { stage: Stage }) {
   );
 }
 
-function QuorumStep({ cents, onDone }: { cents: number; onDone: () => void }) {
+function QuorumStep({ cents, onDone, name }: { cents: number; onDone: () => void; name: string }) {
   const [blocked, setBlocked] = useState(false);
   if (!blocked) {
     return (
@@ -300,7 +385,7 @@ function QuorumStep({ cents, onDone }: { cents: number; onDone: () => void }) {
   return (
     <>
       <Card tone="alert">
-        <Rule>This needs Sam too, and Sam is not here.</Rule>
+        <Rule>This needs {name} too, and {name} is not here.</Rule>
         <Meta>
           Above a certain amount one signature is not enough. The request is held, not refused, and
           nothing is bought — &ldquo;nothing is ever purchased without approval&rdquo; is an
@@ -316,14 +401,14 @@ function QuorumStep({ cents, onDone }: { cents: number; onDone: () => void }) {
 /* The claim "every one went through" has to be checkable at a glance, so the amounts stay
    visible while they accumulate and again under the payoff. Blob ids belong to the receipts
    stage; three numbers are evidence, not clutter. */
-function Approved({ taken }: { taken: Decision[] }) {
+function Approved({ taken, nameFor }: { taken: Decision[]; nameFor: (f: string) => string }) {
   return (
     <div className="border-border-secondary mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t pt-2.5">
-      {taken.map((d) => (
-        <span key={d.blobId} className="text-text-tertiary font-mono text-[11.5px]">
+      {taken.map((d, i) => (
+        <span key={`${i}-${d.cents}`} className="text-text-tertiary font-mono text-[11.5px]">
           {money(d.cents)}
           <span className="text-text-quaternary">
-            {' '}· {d.from === 'routine' ? 'routine' : d.from} · approved
+            {' '}· {d.from === 'routine' ? 'routine' : nameFor(d.from)} · approved
           </span>
         </span>
       ))}

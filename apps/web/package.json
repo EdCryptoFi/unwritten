@@ -13,7 +13,8 @@
     "next": "15.5.4",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "@unwritten/policy": "workspace:*"
+    "@unwritten/policy": "workspace:*",
+    "@unwritten/memory": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
