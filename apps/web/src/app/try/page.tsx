@@ -1,6 +1,9 @@
 'use client';
 
-import { money } from '@unwritten/fixtures';
+import {
+  type Category, type DecisionEvent, HOUSE, money, type Ref,
+} from '@unwritten/fixtures';
+import { valueBand } from '@unwritten/policy';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Card, Meta, Page, Progress, Rule } from '@/components/primitives';
@@ -17,12 +20,12 @@ const MIN_EVIDENCE = 3;
 const CHOICES = [1000, 1800, 2500] as const;
 
 const POOL = [
-  { from: 'Carol', what: 'the weekly shop', category: 'groceries', mult: [1.7, 2.1] },
-  { from: 'Carol', what: 'school supplies', category: 'household', mult: [1.5, 1.9] },
-  { from: 'Carol', what: 'the dog ran out of food', category: 'pets', mult: [1.6, 2.0] },
-  { from: 'Sam', what: 'topping up the pantry', category: 'groceries', mult: [1.8, 2.3] },
-  { from: 'Sam', what: 'light bulbs and batteries', category: 'household', mult: [1.4, 1.8] },
-  { from: 'routine', what: 'Friday night, like every week', category: 'fastfood', mult: [1.6, 2.2] },
+  { from: 'Carol', what: 'the weekly shop', category: 'groceries' as Category, mult: [1.7, 2.1] },
+  { from: 'Carol', what: 'school supplies', category: 'household' as Category, mult: [1.5, 1.9] },
+  { from: 'Carol', what: 'the dog ran out of food', category: 'pets' as Category, mult: [1.6, 2.0] },
+  { from: 'Sam', what: 'topping up the pantry', category: 'groceries' as Category, mult: [1.8, 2.3] },
+  { from: 'Sam', what: 'light bulbs and batteries', category: 'household' as Category, mult: [1.4, 1.8] },
+  { from: 'routine', what: 'Friday night, like every week', category: 'fastfood' as Category, mult: [1.6, 2.2] },
 ] as const;
 
 const CAST = [
@@ -31,7 +34,26 @@ const CAST = [
   ['your routines', 'the house itself. Friday pizza happens whether anyone asks or not'],
 ] as const;
 
-type Request = { from: string; what: string; category: string; cents: number };
+const VISITOR: Ref = 'you';
+
+type Request = { from: string; what: string; category: Category; cents: number };
+
+/** The sandbox speaks the same schema as the rest of the product, so the same function reads it. */
+const toDecisionEvent = (d: Decision, i: number): DecisionEvent => ({
+  id: `s${i}`,
+  kind: 'decision',
+  week: 1,
+  date: new Date().toISOString().slice(0, 10),
+  category: d.category,
+  amountCents: d.cents,
+  quorumRequired: '1-of-2',
+  decidedBy: [{ ref: VISITOR, role: 'owner' }],
+  outcome: 'approved',
+  latencySeconds: 20,
+  escalated: false,
+  initiatedBy: d.from === 'routine' ? 'routine' : 'member',
+  blobId: d.blobId,
+});
 type Decision = Request & { blobId: string };
 
 /* Bounded on purpose: the amount is a multiple of the number the visitor chose, so every request
@@ -60,7 +82,22 @@ export default function Try() {
   const [taken, setTaken] = useState<Decision[]>([]);
   const [session] = useState(() => Math.random().toString(36).slice(2, 8));
 
-  const threshold = taken.length ? Math.max(...taken.map((d) => d.cents)) : 0;
+  /* The real function, not an approximation of it. Only `minEvidence` differs from production:
+     three instead of eight, because nobody will tap eight times. */
+  const derivedBelief = taken.length
+    ? valueBand(
+        {
+          decisions: taken.map(toDecisionEvent),
+          knobs: { ...HOUSE.learning, minEvidence: MIN_EVIDENCE },
+          policy: HOUSE.policy,
+          week: 1,
+        },
+        VISITOR,
+        '*',
+      )
+    : null;
+  const threshold =
+    derivedBelief?.dimension === 'value_band' ? derivedBelief.thresholdCents : 0;
   const next = queue[taken.length];
   const bothSignature = Math.round((cap * 7.5) / 50) * 50;
 
@@ -150,8 +187,12 @@ export default function Try() {
               <Rule>You approve alone up to {money(threshold)} · {taken.length} of {taken.length}</Rule>
               <Badge tone="brand">observed</Badge>
             </div>
-            <Meta>value_band · {taken.length} events · written to Walrus Mainnet</Meta>
-            <Progress value={0.78} />
+            <Meta>
+              value_band · {taken.length} events · confidence{' '}
+              {derivedBelief ? (derivedBelief.confidence * 100).toFixed(0) : '—'}% · derived by the
+              same function that runs in production
+            </Meta>
+            <Progress value={derivedBelief?.confidence ?? 0} />
           </Card>
           <Btn onClick={() => setStage('quorum')}>One more thing →</Btn>
         </>
