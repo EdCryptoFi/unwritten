@@ -10,19 +10,23 @@ export const NAV: Record<string, Array<[label: string, href: string]>> = {
   owner: [
     ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],
     ['Weekly digest', '/digest'], ['Reality check', '/reality'], ['Rhythm', '/rhythm'],
-    ['Allowance', '/allowance'], ['History', '/history'], ['Keys', '/keys'], ['Setup', '/onboarding'],
+    ['Allowance', '/allowance'], ['History', '/history'], ['Keys', '/keys'],
+    ['Try it yourself', '/try'], ['Setup', '/onboarding'],
   ],
   approver: [
     ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],
     ['Weekly digest', '/digest'], ['Reality check', '/reality'], ['Rhythm', '/rhythm'],
-    ['Allowance', '/allowance'], ['History', '/history'],
+    ['Allowance', '/allowance'], ['History', '/history'], ['Try it yourself', '/try'],
   ],
   spender: [
     ['Ask', '/ask'], ['My requests', '/requests'], ['The Agreement', '/agreement'],
-    ['Notifications', '/notifications'],
+    ['Notifications', '/notifications'], ['Try it yourself', '/try'],
   ],
   // Never linked from the product. Referenced from the README and the write-up only.
-  judge: [['Proof', '/proof'], ['Observer digest', '/observer'], ['Discovered schema', '/schema']],
+  judge: [
+    ['Start here', '/judge'], ['Proof', '/proof'], ['Observer digest', '/observer'],
+    ['Discovered schema', '/schema'],
+  ],
 };
 
 interface Ctx {
