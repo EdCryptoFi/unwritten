@@ -56,18 +56,12 @@ functions must produce.
 
 1. prototype screens (fixtures) — DONE
 2. `memory-schema.md`, `decision-flow.md`, `policy-learning.md`, `demo-script.md` — DONE
-3. **fixtures ported to a typed module** — the shared contract between UI and policy tests
-4. `apps/web`, page by page, against fixtures, no backend:
-   1. Agreement + week scrubber — 0:00–0:30 of the video and the most important interaction
-   2. Reality check — mandatory: it shows information that cannot exist without reading the chain
-   3. Digest + ratification
-   4. Allowance
-   5. Landing + one-click demo entry
-   6. Pending approval (mobile-first — approving is a phone action)
-   7. Proof
-   8. Ask · My requests · History · Keys · Notifications · Rhythm
-   Pages 1–5 carry the entire video. If time runs short, 6–8 are what gets cut.
-   The initial shell for page 1 is generated on ai.tatum.io and documented with screenshots.
+3. **fixtures ported to a typed module** — DONE (`packages/fixtures`, Belief is a discriminated union)
+4. `apps/web` — DONE. 16 routes, all against fixtures, no backend. Role-based navigation, the
+   week scrubber shared across pages, and Tatum's own design tokens (adopted from the AI Builder
+   output). Verified: zero hashes in the 13 product routes, hashes only on /proof, /observer and
+   /schema. Visual review and adjustment pending.
+   The first version of page 1 was generated on ai.tatum.io — see EdCryptoFi/unwritten-ai-builder.
 5. `packages/policy` — the seven dimensions as pure functions, asserted against the fixtures
 6. `packages/memory` — wrapper against the **staging** relayer
 7. testnet: mock coin, one wallet per actor, deterministic 6-week seeder
@@ -101,6 +95,11 @@ Never cut the screens.
   was never told is not an escalation.
 - The live app must open on a landing page with a one-click entry into the seeded Wilson house.
   A first-time visitor who lands on empty onboarding sees the one screen that says "I have nothing".
+- `packages/chain` is built on `server/tatum-client.mjs` from the AI Builder output, which
+  documents traps worth keeping: a key works against `api.tatum.io` OR `api.tatum.dev` and the
+  wrong one returns a 401 that reads as a bad key; `new Headers()` rather than spreading, because
+  spreading a Headers instance yields `{}` and silently drops them; read env per call, never at
+  import; derive the gateway host from the API base; no `@tatumio/tatum` SDK.
 - The proof must be runnable, not just readable: `/proof` page plus a `pnpm verify` script that
   anyone can execute against the live relayer and chain.
 - Ratification is a two-phase commit: **chain first, memory second, always.** Walrus has no delete,
