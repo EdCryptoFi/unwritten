@@ -32,6 +32,14 @@ export interface Input {
  */
 export const roundCap = (cents: number) => Math.ceil(cents / 500) * 500;
 
+/**
+ * Confidence has to account for SAMPLE SIZE, not just purity. Eleven clean observations out of
+ * eleven is strong evidence, but a system that reports 1.0 from eleven events is claiming a
+ * certainty it has not earned — and the number is shown to a family who will act on it.
+ * Laplace smoothing: eleven of eleven becomes 0.92, three of three becomes 0.8.
+ */
+export const confidenceOf = (hits: number, total: number) => (hits + 1) / (total + 2);
+
 const blobStub = (key: string, v: number) => `0x${key}v${v}…pending`;
 
 /** Recent behaviour outweighs old. Mirrors `scoringWeights.recency` on the recall side. */
@@ -72,7 +80,7 @@ export function valueBand(
   // Confidence is the share of decisions in this band that went through without a rejection or an
   // escalation. A band nobody argued about is a band you can trust.
   const clean = relevant.filter((d) => !d.escalated).length;
-  const confidence = clean / relevant.length;
+  const confidence = confidenceOf(clean, relevant.length);
   if (confidence < knobs.confidenceFloor) return null;
 
   const key = `vb-${actor}-${category}`;
@@ -117,7 +125,7 @@ export function silence(input: Input): Belief | null {
   const discussedBelow = input.decisions.filter(
     (d) => d.outcome !== 'auto' && d.amountCents <= threshold,
   ).length;
-  const confidence = auto.length / (auto.length + discussedBelow);
+  const confidence = confidenceOf(auto.length, auto.length + discussedBelow);
   if (confidence < knobs.confidenceFloor) return null;
 
   const key = 'silence';
@@ -161,7 +169,7 @@ export function authority(input: Input, category: Category): Belief | null {
   const [actor, count] = [...firsts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [];
   if (!actor || count === undefined) return null;
 
-  const confidence = count / multi.length;
+  const confidence = confidenceOf(count, multi.length);
   if (confidence < knobs.confidenceFloor) return null;
 
   const key = `auth-${category}`;
@@ -216,7 +224,7 @@ export function memberPattern(
     fromWeek: week,
     scope: { actor, category },
     sharePct,
-    confidence: 0.86,
+    confidence: confidenceOf(evidence.length, evidence.length),
     evidenceCount: evidence.length,
     evidenceIds: evidence.map((t) => t.txDigest),
     state: 'observed',
@@ -249,4 +257,121 @@ export function structuring(decisions: DecisionEvent[], floorCents: number) {
       totalCents: v.reduce((a, b) => a + b.amountCents, 0),
       ids: v.map((d) => d.id),
     }));
+}
+
+/**
+ * `drift` — a ratified rule that is no longer the rule the house follows.
+ *
+ * The product's sharpest moment, and it scolds the RULE rather than the spending. Detected by
+ * measuring how fast the second signature arrives: a quorum where the co-signer rubber-stamps
+ * within minutes is a quorum in name only.
+ */
+export function drift(
+  input: Input,
+  category: Category,
+  statedRule: string,
+  rubberStampSeconds = 300,
+): Belief | null {
+  const { knobs, week, existing } = input;
+  const multi = input.decisions.filter(
+    (d) => d.category === category && d.decidedBy.length > 1 && d.outcome === 'approved',
+  );
+  if (multi.length < Math.min(knobs.minEvidence, 5)) return null;
+
+  const bypassed = multi.filter(
+    (d) => d.latencySeconds !== null && d.latencySeconds <= rubberStampSeconds,
+  );
+  const rate = bypassed.length / multi.length;
+  if (rate < 1 - knobs.driftTolerance) return null;
+
+  const gaps = bypassed.map((d) => d.latencySeconds ?? 0).sort((a, b) => a - b);
+  const median = gaps[Math.floor(gaps.length / 2)] ?? 0;
+
+  const key = `drift-${category}`;
+  const { version, supersedes } = nextVersion(key, existing);
+  return {
+    dimension: 'drift',
+    id: `${key}-v${version}`,
+    version, supersedes, fromWeek: week,
+    scope: { actor: '*', category },
+    statedRule,
+    medianGapSeconds: median,
+    bypassed: [bypassed.length, multi.length],
+    confidence: confidenceOf(bypassed.length, multi.length),
+    evidenceCount: multi.length,
+    evidenceIds: bypassed.map((d) => d.id),
+    state: 'drifting',
+    ratifiedTx: null,
+    blobId: blobStub(key, version),
+  };
+}
+
+/** `friction` — the one category the house actually argues about. */
+export function friction(input: Input, category: Category, windowWeeks: number): Belief | null {
+  const { week, existing } = input;
+  const inCat = input.decisions.filter((d) => d.category === category);
+  const rejections = inCat.filter((d) => d.outcome === 'rejected').length;
+  if (rejections === 0) return null;
+
+  const key = `friction-${category}`;
+  const { version, supersedes } = nextVersion(key, existing);
+  return {
+    dimension: 'friction',
+    id: `${key}-v${version}`,
+    version, supersedes, fromWeek: week,
+    scope: { actor: '*', category },
+    rejections, windowWeeks,
+    // Deliberately low: one rejection is a data point, not a pattern, and the UI shows the number.
+    confidence: confidenceOf(rejections, inCat.length),
+    evidenceCount: rejections,
+    evidenceIds: inCat.filter((d) => d.outcome === 'rejected').map((d) => d.id),
+    state: 'observed',
+    ratifiedTx: null,
+    blobId: blobStub(key, version),
+  };
+}
+
+/**
+ * `rhythm` — one dimension, two payloads, because the two cases are the same function.
+ *
+ * `isCommitment` (fixed amount, fixed interval) leaves the anomaly set and turns on price-creep
+ * detection, which is what stops the Reality check flagging a subscription every month. Otherwise
+ * it is a habit with a variable amount, and that is the only way to catch spend that sits BELOW
+ * every approval threshold — a $71 pizza on a Tuesday.
+ */
+export function rhythm(input: Input, category: Category, weekdayName?: string): Belief | null {
+  const { week, existing } = input;
+  const events = input.decisions.filter((d) => d.category === category);
+  if (events.length < 3) return null;
+
+  const amounts = events.map((e) => e.amountCents).sort((a, b) => a - b);
+  const median = amounts[Math.floor(amounts.length / 2)] ?? 0;
+  const spread = median
+    ? Math.round((Math.max(...amounts) - Math.min(...amounts)) / 2 / median * 100)
+    : 0;
+
+  // A fixed amount at a fixed interval is a commitment; anything that varies is a habit.
+  const isCommitment = spread <= 2;
+  const weeks = new Set(events.map((e) => e.week));
+
+  const key = `rhythm-${category}`;
+  const { version, supersedes } = nextVersion(key, existing);
+  return {
+    dimension: 'rhythm',
+    id: `${key}-v${version}`,
+    version, supersedes, fromWeek: week,
+    scope: { actor: '*', category },
+    cadence: isCommitment ? 'monthly' : 'weekly',
+    weekday: isCommitment ? null : (weekdayName ?? null),
+    medianCents: median,
+    variancePct: spread,
+    streak: [weeks.size, week],
+    isCommitment,
+    confidence: confidenceOf(weeks.size, week),
+    evidenceCount: events.length,
+    evidenceIds: events.map((e) => e.id),
+    state: 'observed',
+    ratifiedTx: null,
+    blobId: blobStub(key, version),
+  };
 }

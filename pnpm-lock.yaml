@@ -20,6 +20,9 @@ importers:
       '@unwritten/memory':
         specifier: workspace:*
         version: link:packages/memory
+      '@unwritten/policy':
+        specifier: workspace:*
+        version: link:packages/policy
     devDependencies:
       '@biomejs/biome':
         specifier: ^1.9.4

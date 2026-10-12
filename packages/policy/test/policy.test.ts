@@ -1,8 +1,10 @@
-import {
-  BELIEFS, DECISIONS, HOUSE, type Input, MAXSPEND, TOPUPS, upTo,
-} from '@unwritten/fixtures';
+import { BELIEFS, DECISIONS, type DecisionEvent, HOUSE, MAXSPEND, TOPUPS, upTo } from '@unwritten/fixtures';
 import { describe, expect, it } from 'vitest';
-import { authority, memberPattern, roundCap, silence, structuring, valueBand } from '../src/index.js';
+import type { Input } from '../src/index.js';
+import {
+  authority, confidenceOf, drift, friction, memberPattern, rhythm, roundCap, silence,
+  structuring, valueBand,
+} from '../src/index.js';
 
 const base = (week = 6): Input => ({
   decisions: upTo(DECISIONS, week),
@@ -21,6 +23,10 @@ describe('value_band', () => {
     // The observed maximum is $44.90; a cap rounds up so it is not brittle against its own
     // history. The fixture the prototype validated says $45, and the function has to agree.
     expect(b.thresholdCents).toBe(4500);
+    // Eleven clean out of eleven is strong, but a system reporting 1.0 from eleven events claims
+    // a certainty it has not earned — and a family acts on that number.
+    expect(b.confidence).toBeCloseTo(0.92, 2);
+    expect(b.confidence).toBeLessThan(1);
     expect(b.scope).toEqual({ actor: 'm1', category: 'groceries' });
   });
 
@@ -69,7 +75,8 @@ describe('silence', () => {
   });
 
   it('cannot assert the line is real without knowing where the line is', () => {
-    expect(silence({ ...base(), policy: undefined })).toBeNull();
+    const { policy: _omitted, ...withoutPolicy } = base();
+    expect(silence(withoutPolicy)).toBeNull();
   });
 });
 
@@ -85,7 +92,7 @@ describe('authority', () => {
 
   it('would reach a different conclusion if the order were reversed', () => {
     const flipped = base();
-    flipped.decisions = flipped.decisions.map((d) =>
+    flipped.decisions = flipped.decisions.map((d: DecisionEvent) =>
       d.decidedBy.length > 1 ? { ...d, decidedBy: [...d.decidedBy].reverse() } : d,
     );
     const b = authority(flipped, 'household');
@@ -132,5 +139,77 @@ describe('the function and the screen agree', () => {
       throw new Error('wrong dimension');
     }
     expect(derived.thresholdCents).toBe(shown.thresholdCents);
+  });
+});
+
+describe('confidence', () => {
+  it('never reaches certainty, because a sample is not a proof', () => {
+    expect(confidenceOf(11, 11)).toBeCloseTo(0.92, 2);
+    expect(confidenceOf(3, 3)).toBeCloseTo(0.8, 2);
+    expect(confidenceOf(1, 1)).toBeCloseTo(0.67, 2);
+    expect(confidenceOf(100, 100)).toBeLessThan(1);
+  });
+
+  it('rises with sample size at the same purity', () => {
+    expect(confidenceOf(20, 20)).toBeGreaterThan(confidenceOf(3, 3));
+  });
+});
+
+describe('drift', () => {
+  it('catches a quorum that is a quorum in name only', () => {
+    const b = drift(base(), 'household', '2-of-2 above $100');
+    expect(b).not.toBeNull();
+    if (b?.dimension !== 'drift') throw new Error('wrong dimension');
+    expect(b.state).toBe('drifting');
+    expect(b.bypassed[0]).toBe(4);
+    expect(b.bypassed[1]).toBe(5);
+  });
+
+  it('does not fire when the co-signer actually deliberates', () => {
+    const slow = base();
+    slow.decisions = slow.decisions.map((d) =>
+      d.decidedBy.length > 1 ? { ...d, latencySeconds: 7200 } : d);
+    expect(drift(slow, 'household', '2-of-2 above $100')).toBeNull();
+  });
+});
+
+describe('friction', () => {
+  it('finds the one contested category', () => {
+    const b = friction(base(), 'games', 6);
+    if (b?.dimension !== 'friction') throw new Error('wrong dimension');
+    expect(b.rejections).toBe(1);
+  });
+
+  it('stays silent where nothing was ever rejected', () => {
+    expect(friction(base(), 'pets', 6)).toBeNull();
+  });
+});
+
+describe('rhythm', () => {
+  it('reads a variable weekly habit as a habit, not a commitment', () => {
+    const b = rhythm(base(), 'fastfood', 'Friday');
+    if (b?.dimension !== 'rhythm') throw new Error('wrong dimension');
+    expect(b.isCommitment).toBe(false);
+    expect(b.weekday).toBe('Friday');
+  });
+
+  it('reads a fixed amount at a fixed interval as a standing commitment', () => {
+    const fixed = base();
+    fixed.decisions = [1, 2, 3].map((i) => ({
+      ...(DECISIONS[0] as DecisionEvent), id: `sub${i}`, week: i,
+      category: 'subscriptions' as const, amountCents: 1099,
+    }));
+    const b = rhythm(fixed, 'subscriptions');
+    if (b?.dimension !== 'rhythm') throw new Error('wrong dimension');
+    // A commitment leaves the anomaly set, which is what stops the Reality check flagging a
+    // subscription renewal every single month.
+    expect(b.isCommitment).toBe(true);
+    expect(b.medianCents).toBe(1099);
+  });
+
+  it('needs three cycles before it will call anything a rhythm', () => {
+    const two = base();
+    two.decisions = two.decisions.filter((d: DecisionEvent) => d.category === 'fastfood').slice(0, 2);
+    expect(rhythm(two, 'fastfood')).toBeNull();
   });
 });
