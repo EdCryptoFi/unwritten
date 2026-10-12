@@ -41,7 +41,7 @@ function RealityInner() {
   return (
     <Page
       title="Reality check"
-      lede="The agreement, measured against what actually moved onchain. Read through Tatum's Data API."
+      lede="Money moves whether or not anyone agreed to it. This is the difference, and it is the only thing here neither the chain nor the memory could tell you alone."
     >
       {/* The chain half. Neither source answers this alone: the chain knows money left and nothing
           about agreement, the memory knows what was agreed and nothing about whether it happened.
@@ -65,8 +65,8 @@ function RealityInner() {
                   <Meta>
                     {r.date} ·{' '}
                     {r.approvalId
-                      ? `matched to ${r.approvalId}`
-                      : 'nobody agreed to this — it exists in neither source alone'}
+                      ? `agreed to, in ${r.approvalId}`
+                      : 'this one left the wallet without anybody saying yes'}
                   </Meta>
                   <a href={txUrl(r.digest)} target="_blank" rel="noreferrer"
                     className="text-text-brand-primary font-mono text-[10.5px] break-all underline decoration-dotted underline-offset-2">
@@ -97,9 +97,12 @@ function RealityInner() {
         <Card>
           <div className="flex items-start justify-between gap-3.5">
             <div>
-              <Rule>{unknown.length} charge{unknown.length === 1 ? '' : 's'} we cannot classify yet</Rule>
+              <Rule>
+                {unknown.length} charge{unknown.length === 1 ? '' : 's'} nobody has named yet
+              </Rule>
               <Meta>
-                Unclassified never counts as a standing commitment, so these stay in the anomaly set.
+                Tell us what they are once and we stop asking. Until then they stay flagged — we
+                would rather bother you than quietly wave something through.
               </Meta>
             </div>
             <Badge tone="error">unclassified</Badge>
@@ -114,7 +117,10 @@ function RealityInner() {
               <Rule>
                 {recipientSay(x.recipientRef)} went from {money(x.expectedCents ?? 0)} to {money(x.amountCents)}
               </Rule>
-              <Meta>{x.date} · nobody approved it · nobody noticed</Meta>
+              <Meta>
+                {x.date}. Nobody approved it because nobody is ever asked — which is exactly how a
+                price goes up for a year without anyone noticing.
+              </Meta>
             </div>
             <Badge tone="warning">repriced</Badge>
           </div>
@@ -127,7 +133,8 @@ function RealityInner() {
             <div>
               <Rule>{money(x.amountCents)} · {x.category} · {x.offRhythm}</Rule>
               <Meta>
-                under the {money(HOUSE.policy.bothFloorCents)} floor — only cadence catches this
+                Under your {money(HOUSE.policy.bothFloorCents)} floor, so no rule about amounts
+                would ever have seen it. Only the fact that it happened on the wrong day.
               </Meta>
             </div>
             <Badge tone="warning">off-rhythm</Badge>
@@ -147,8 +154,9 @@ function RealityInner() {
                     {money(v.reduce((a, b) => a + b.amountCents, 0))}
                   </Rule>
                   <Meta>
-                    each one under the {money(HOUSE.policy.bothFloorCents)} floor, the total over it
-                    — a purchase split to stay inside a cap
+                    Each part sits under your {money(HOUSE.policy.bothFloorCents)} floor and the
+                    total does not. Worth a conversation rather than an accusation — splitting a
+                    shop across two taps is also just what people do.
                   </Meta>
                 </div>
                 <Badge tone="warning">split</Badge>
@@ -179,9 +187,9 @@ function RealityInner() {
 
       <Card tone="note">
         <Meta>
-          This screen shows information the app could not have had without reading the chain. That
-          is what makes the integration load-bearing rather than decorative — and it is why the
-          screen is mandatory in the demo.
+          Everything above came from comparing two things that disagree. The chain knows money
+          left and nothing about whether anyone agreed; the memory knows what was agreed and
+          nothing about whether it happened.
         </Meta>
       </Card>
     </Page>

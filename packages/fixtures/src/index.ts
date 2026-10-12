@@ -454,6 +454,39 @@ export const say = (b: Belief): string => {
   }
 };
 
+/**
+ * The consequence of a rule, in the second person.
+ *
+ * `say()` states a fact and stops, which is how the Agreement read like a report: seven true
+ * sentences and nothing telling the reader what any of them meant for them. A household does not
+ * want to be described, it wants to know what to do — so every rule carries the thing a person
+ * would say next.
+ *
+ * Deliberately not an LLM. These have to be identical on camera and in the product, they have to
+ * survive a test, and a generated line that is almost right is worse than a written one that is.
+ */
+export function soWhat(b: Belief): string {
+  const who = b.scope.actor === '*' ? 'the house' : nameOf(b.scope.actor);
+  switch (b.dimension) {
+    case 'value_band':
+      return `${b.streak[0]} times you agreed without discussing it. That is already a rule — it just was not written down.`;
+    case 'silence':
+      return `So ${money(b.thresholdCents)} is already your real number, whatever the setting says.`;
+    case 'authority':
+      return `Nobody decided this. Worth knowing before the next disagreement.`;
+    case 'friction':
+      return `${b.rejections} rejection in ${b.windowWeeks} weeks, and everything else went through — which makes this the one worth talking about.`;
+    case 'drift':
+      return `Either make it real or drop it. Pretending costs someone a tap every single time.`;
+    case 'member_pattern':
+      return `${who}'s limit was a guess somebody made on day one. There is finally enough here to revise it.`;
+    case 'rhythm':
+      return b.isCommitment
+        ? `Nobody decides this each month, which is why nobody notices when the price moves.`
+        : `Reliable enough to plan around, and small enough that nobody ever asked.`;
+  }
+}
+
 /** Cap decides IF approval is needed. Band decides HOW MANY signatures. */
 export const capFor = (ref: Ref, week: number) => {
   const b = visibleBeliefs(week).find(

@@ -52,15 +52,15 @@ export default function Digest() {
   return (
     <Page
       title={`Week ${week} digest`}
-      lede="Batched on purpose — only a pending approval or an anomaly is allowed to interrupt."
+      lede="Once a week, everything that is not urgent. Nothing here chased you during the week, and that was on purpose."
     >
       {nothing && (
         <Empty>
           Nothing to decide this week.
           <br />
           <span className="font-mono text-[11.5px]">
-            The agreement matches behaviour. An empty digest still ships, so silence comes to mean
-            agreement rather than absence.
+            What you agreed and what you did are the same thing right now. This arrives empty on
+            purpose, so that silence means agreement rather than neglect.
           </span>
         </Empty>
       )}

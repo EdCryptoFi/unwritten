@@ -20,7 +20,7 @@ function AllowanceInner() {
   return (
     <Page
       title="Allowance"
-      lede="Max has a wallet with an onchain limit and no delegate key — he is a subject, not an operator. That omission is the privacy mechanism."
+      lede="Max cannot open this app, and that is deliberate — he has a wallet and a limit, not an account. What you see here, he does not."
     >
       <Kpi items={[
         ['Weekly limit', money(max?.walletLimitCents ?? 0)],
@@ -35,18 +35,19 @@ function AllowanceInner() {
             <Rule>{say(belief)}</Rule>
             <StateBadge state={belief.state} />
           </div>
-          <Meta>
-            source: Tatum Data API · dependent wallet transaction history · {belief.evidenceCount} transactions
-          </Meta>
+          <p className="text-text-tertiary mb-2 text-[13.5px]">
+            You set that limit before you knew any of this. Now you know.
+          </p>
+          <Meta>read from his wallet through Tatum · {belief.evidenceCount} weeks of allowance</Meta>
           <Progress value={belief.confidence} />
         </Card>
       ) : (
         <Empty>
-          Limit set at {money(max?.walletLimitCents ?? 0)} — <strong>provisional</strong>, will be
-          revised in three weeks.
+          {money(max?.walletLimitCents ?? 0)} a week, which is a guess — you had nothing to go on
+          when you set it.
           <br />
           <span className="font-mono text-[11.5px]">
-            The agent says so out loud instead of pretending it knows.
+            Give it three weeks of his actual spending and it will tell you whether you were right.
           </span>
         </Empty>
       )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { type Belief, HOUSE, money, say, WEEK_NOTE } from '@unwritten/fixtures';
+import { type Belief, HOUSE, money, say, soWhat, WEEK_NOTE } from '@unwritten/fixtures';
 import { Card, Empty, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
 
@@ -27,7 +27,7 @@ export default function Agreement() {
       title="The Agreement"
       lede={
         beliefs.length
-          ? `Rules nobody wrote. Discovered from ${decisionsUpTo.length} decisions over ${week} week${week > 1 ? 's' : ''}.`
+          ? `Nobody wrote these. They came out of ${decisionsUpTo.length} decisions over ${week} week${week > 1 ? 's' : ''} — this is what your house already does.`
           : `No rules yet — ${WEEK_NOTE[week]}.`
       }
     >
@@ -47,11 +47,11 @@ export default function Agreement() {
         /* An empty state is a first-class screen: the product is useless for roughly two weeks
            by construction, so it says what is missing instead of showing nothing. */
         <Empty>
-          The agreement is still forming.
+          Too early to say anything true about this house.
           <br />
           <span className="font-mono text-[11.5px]">
-            A rule needs {minEvidence} events and {Math.round(confidenceFloor * 100)}% confidence
-            before it appears.
+            A rule needs {minEvidence} decisions and {Math.round(confidenceFloor * 100)}% confidence
+            before it will claim anything. Keep going — week five is where it gets interesting.
           </span>
         </Empty>
       ) : (
@@ -63,6 +63,9 @@ export default function Agreement() {
                 <Rule>{say(b)}</Rule>
                 <StateBadge state={b.state} />
               </div>
+              {/* The fact, then what it means for the person reading it. Without the second line
+                  the screen is a report: seven true sentences and nothing to do about any of them. */}
+              <p className="text-text-tertiary mb-2 text-[13.5px]">{soWhat(b)}</p>
               <Meta>
                 {b.dimension} · {b.evidenceCount} event{b.evidenceCount === 1 ? '' : 's'} · confidence{' '}
                 {(b.confidence * 100).toFixed(0)}%{b.ratifiedTx ? ' · onchain' : ''}
