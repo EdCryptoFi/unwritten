@@ -108,6 +108,17 @@ Never cut the screens.
   wrong one returns a 401 that reads as a bad key; `new Headers()` rather than spreading, because
   spreading a Headers instance yields `{}` and silently drops them; read env per call, never at
   import; derive the gateway host from the API base; no `@tatumio/tatum` SDK.
+- **Everything is on Mainnet, and that was not a choice.** The spike found `sui-testnet` and
+  `sui-devnet` both return 404 on this key — only `sui-mainnet` is reachable — and the Walrus
+  credentials are mainnet-only too, since staging returns 401 for an account that does not exist
+  on that network. Developing against staging would need a second Walrus account. Namespaces keep
+  development writes away from the seeded house instead.
+- Tatum rate limit is **3 requests/second** (measured: 4 of 8 consecutive calls blocked). The
+  reconciliation pass is scheduled rather than reactive for this reason as well as the Walrus one.
+- The keys belong to `api.tatum.io`; `api.tatum.dev` returns 401 for both, exactly as the
+  reference client warns — a 401 that reads as a bad key.
+- An RPC call that returns 200 with no `result` is a failure, not a pass. Treating it as success
+  is how the first health check reported four passes against a host rejecting every key.
 - The proof must be runnable, not just readable: `/proof` page plus a `pnpm verify` script that
   anyone can execute against the live relayer and chain.
 - Ratification is a two-phase commit: **chain first, memory second, always.** Walrus has no delete,

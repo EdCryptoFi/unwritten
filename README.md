@@ -44,14 +44,16 @@ this out loud because an undisclosed seed is the kind of thing a reader is right
 | **Move policy package** (Sui testnet) | the ratified agreement and approval records |
 | `packages/policy` | the learning — seven dimensions, **pure functions, no LLM** |
 
-### Two networks, on purpose
+### One network
 
-Memory is on **Mainnet**, as the hackathon requires and because it is the durable asset. The
-treasury and policy contract run on **testnet**: this is a simulated family and we do not move
-real funds for a demo. One environment variable switches it; there is no branching logic.
+Everything runs on **Mainnet**, which turned out not to be a choice. A spike before the build
+window found that `sui-testnet` and `sui-devnet` both return 404 on our Tatum key — only
+`sui-mainnet` is reachable — and that the Walrus Memory credentials are mainnet-only, since
+staging rejects an account that does not exist on that network.
 
-The memory is about *human decisions*, not about money. It does not need to live on the same
-network as the payment rail, because the rail is swappable.
+So the two-network design we had planned was not available, and the result is simpler than what
+we set out to build. Development writes are kept away from the seeded house by **namespace**
+rather than by network.
 
 ### Three protocol facts that shaped everything
 
