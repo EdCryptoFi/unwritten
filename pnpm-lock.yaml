@@ -14,6 +14,12 @@ importers:
       '@unwritten/chain':
         specifier: workspace:^
         version: link:packages/chain
+      '@unwritten/fixtures':
+        specifier: workspace:^
+        version: link:packages/fixtures
+      '@unwritten/memory':
+        specifier: workspace:*
+        version: link:packages/memory
     devDependencies:
       '@biomejs/biome':
         specifier: ^1.9.4
@@ -76,6 +82,22 @@ importers:
 
   packages/fixtures:
     devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/memory:
+    dependencies:
+      '@mysten-incubation/memwal':
+        specifier: ^0.1.8
+        version: 0.1.8(@mysten/seal@1.4.19(@mysten/sui@2.35.0(typescript@5.9.3)))(@mysten/sui@2.35.0(typescript@5.9.3))
+      '@unwritten/fixtures':
+        specifier: workspace:*
+        version: link:../fixtures
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.5
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

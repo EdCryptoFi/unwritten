@@ -64,7 +64,8 @@ functions must produce.
    /schema. Visual review and adjustment pending.
    The first version of page 1 was generated on ai.tatum.io — see EdCryptoFi/unwritten-ai-builder.
 5. `packages/policy` — the seven dimensions as pure functions, asserted against the fixtures
-6. `packages/memory` — wrapper against the **staging** relayer. Two jobs:
+6. `packages/memory` — DONE (wrapper, encode/decode, key pool, namespaces; roundtrip proven
+   byte-identical on Mainnet). Remaining:
    a. the Wilson house reads **real memories from Mainnet** instead of fixtures. Same screens,
       same components, different source. This is what separates a working demo from a showcase.
    b. "Try it yourself" — a sandbox namespace where a visitor's taps write real memories and a
@@ -119,8 +120,13 @@ Never cut the screens.
   reference client warns — a 401 that reads as a bad key.
 - An RPC call that returns 200 with no `result` is a failure, not a pass. Treating it as success
   is how the first health check reported four passes against a host rejecting every key.
-- The proof must be runnable, not just readable: `/proof` page plus a `pnpm verify` script that
-  anyone can execute against the live relayer and chain.
+- The proof must be runnable, not just readable: `/proof` page plus `pnpm verify`, which is
+  written and works — it prints the relayer health, a live Sui checkpoint, and the memory count
+  per namespace.
+- A memory is **one sentence plus its payload**. The relayer embeds the text, so storing bare JSON
+  would make semantic recall useless: the embedding of a brace-heavy string carries no meaning.
+  The sentence drives retrieval and names amounts, categories and roles — never people. The JSON
+  drives reconstruction.
 - Ratification is a two-phase commit: **chain first, memory second, always.** Walrus has no delete,
   so a memory write before tx confirmation can leave an immortal belief marked `ratified` with no
   tx. The reverse order is recoverable: retry the write, keyed by belief id.

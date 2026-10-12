@@ -8,7 +8,9 @@
     "lint": "biome check .",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "verify": "tsx scripts/verify.mts",
+    "spike": "tsx scripts/spike.mts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -18,6 +20,8 @@
   },
   "dependencies": {
     "@mysten-incubation/memwal": "^0.1.8",
-    "@unwritten/chain": "workspace:^"
+    "@unwritten/chain": "workspace:^",
+    "@unwritten/fixtures": "workspace:^",
+    "@unwritten/memory": "workspace:*"
   }
 }
