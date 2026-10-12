@@ -24,6 +24,7 @@ changes a convention.
 | `docs/specs/policy-learning.md` | DONE |
 | `docs/specs/tatum-reads.md` | TODO |
 | `docs/specs/observer-digest.md` | TODO |
+| `docs/specs/try-it-yourself.md` | DONE |
 | `docs/specs/seeding.md` | TODO — must include: every rule needs a fixture that fires it and one that does not |
 
 | `README.md` | DONE — try-it, verify-it, seed disclosure, three protocol facts, honest limitations |
@@ -63,7 +64,14 @@ functions must produce.
    /schema. Visual review and adjustment pending.
    The first version of page 1 was generated on ai.tatum.io — see EdCryptoFi/unwritten-ai-builder.
 5. `packages/policy` — the seven dimensions as pure functions, asserted against the fixtures
-6. `packages/memory` — wrapper against the **staging** relayer
+6. `packages/memory` — wrapper against the **staging** relayer. Two jobs:
+   a. the Wilson house reads **real memories from Mainnet** instead of fixtures. Same screens,
+      same components, different source. This is what separates a working demo from a showcase.
+   b. "Try it yourself" — a sandbox namespace where a visitor's taps write real memories and a
+      rule is derived from their own decisions. See `try-it-yourself.md`.
+   Self-serve house creation is explicitly OUT: it needs Postgres, sessions, invites and the whole
+   onboarding, costs days, and moves none of the four criteria. The README says it is the
+   production path.
 7. testnet: mock coin, one wallet per actor, deterministic 6-week seeder
 8. `packages/chain` — the four Tatum reads + Smart Wallets as gas station
 9. Move: policy package + approval records (testnet)
