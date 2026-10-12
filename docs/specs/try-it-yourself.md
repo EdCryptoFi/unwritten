@@ -15,7 +15,13 @@ so the sandbox has to produce a rule.
 
 ## The loop (under a minute)
 
-1. The visitor is shown three grocery requests, each already in the ambiguous band.
+It follows the product's six-week arc, compressed. Skipping the first step was the mistake in the
+first implementation: "you approve up to $41" only means something next to "you said $18".
+
+0. **The visitor sets the one number** — the same question onboarding asks, and the same framing:
+   you are meant to get it wrong, because the product is the app coming back to correct you.
+1. Three grocery requests arrive **above that number**, so approving them is a decision rather
+   than a button.
 2. Each tap writes a real `DecisionEvent` to Mainnet, into `sandbox-<sessionId>`.
 3. After the third, the derive pass runs and writes a `Belief` — the same pure function that runs
    in production, with a lower `minEvidence`.
@@ -23,7 +29,11 @@ so the sandbox has to produce a rule.
 
    > *You approve alone up to $41 on groceries · 3 of 3*
 
-5. The blob ids appear with a link to verify, and the same data is reachable from `/proof`.
+5. **The payoff, stated plainly:** *You said $18.00. It is actually $41.00.* This is the week-five
+   moment of the demo script, happening to the visitor.
+6. The blob ids appear with a link to `/proof`.
+7. **An ending.** Without one the page simply stops. It hands off: *"That took three decisions.
+   The Wilson house has twenty-six"* → the Agreement, or the Reality check.
 
 Four real memories, one loop, and the uncanny moment happens to the visitor rather than to a
 fictional family.
@@ -71,9 +81,21 @@ already derived and says the write is queued — it must not show a stack trace 
 **When** the derive pass runs
 **Then** no rule is written and the screen states how many more are needed
 
+**Given** a visitor who has not chosen a number
+**When** they open the page
+**Then** they are asked for one before any request is shown
+
 **Given** a third decision
 **When** the derive pass runs
 **Then** a `value_band` belief is written to Mainnet, scoped to the visitor, and its blob id is shown
+
+**Given** a derived rule
+**When** it is displayed
+**Then** it is shown against the number the visitor chose, not on its own
+
+**Given** a completed session
+**When** the visitor reaches the end
+**Then** they are handed off to the Wilson house rather than left on a dead page
 
 **Given** a session that has written five memories
 **When** the visitor taps again
@@ -86,3 +108,10 @@ already derived and says the write is queued — it must not show a stack trace 
 **Given** any sandbox session
 **When** the Wilson house is opened
 **Then** its data is unchanged
+
+## Known gaps, pending the pipeline
+
+- Writes are local state until `packages/memory` (step 6) swaps the target to Mainnet.
+- The derivation is inline until `packages/policy` (step 5) exists; it must then call the same
+  pure function as production, with only `minEvidence` differing.
+- Rate-limit degradation cannot be implemented or tested until there is a relayer to be limited by.
