@@ -123,8 +123,10 @@ export default function Try() {
           </Meta>
           <Btn onClick={approve}>Approve {money(next.cents)}</Btn>
           <div className="text-text-quaternary mt-3 font-mono text-[11.5px]">
-            {taken.length} of {MIN_EVIDENCE} · nothing is derived until there is enough evidence
+            request {taken.length + 1} of {MIN_EVIDENCE} · nothing is derived until there is
+            enough evidence
           </div>
+          {taken.length > 0 && <Approved taken={taken} />}
         </Card>
       )}
 
@@ -141,6 +143,7 @@ export default function Try() {
               Every one went through without discussion. In the Wilson house this arrives in week
               five, and the app proposes making it a rule — a band nobody ever configured.
             </Meta>
+            <Approved taken={taken} />
           </Card>
           <Card>
             <div className="flex items-start justify-between gap-3.5">
@@ -201,6 +204,13 @@ export default function Try() {
             to tap all day. Everything else is the production path — same function, same schema,
             same network.
           </Meta>
+          <button
+            type="button"
+            onClick={() => { setStage('number'); setTaken([]); setCap(0); setQueue([]); }}
+            className="text-text-brand-primary mt-3 font-mono text-[11.5px]"
+          >
+            Start over with a different number →
+          </button>
         </>
       )}
     </Page>
@@ -213,7 +223,7 @@ const LEDE: Record<Stage, (cap: number) => string> = {
   deciding: (c) => `You said ${money(c)}. Now approve what comes in and see whether that was true.`,
   payoff: () => 'Nobody wrote this rule. It came out of what you just did.',
   quorum: () => 'One thing a single signature cannot do.',
-  receipts: () => 'Four real memories, yours, on Mainnet.',
+  receipts: () => 'Everything you just did, on Mainnet, and yours.',
 };
 
 function Steps({ stage }: { stage: Stage }) {
@@ -259,6 +269,24 @@ function QuorumStep({ cents, onDone }: { cents: number; onDone: () => void }) {
       </Card>
       <Btn onClick={onDone}>See what you wrote →</Btn>
     </>
+  );
+}
+
+/* The claim "every one went through" has to be checkable at a glance, so the amounts stay
+   visible while they accumulate and again under the payoff. Blob ids belong to the receipts
+   stage; three numbers are evidence, not clutter. */
+function Approved({ taken }: { taken: Decision[] }) {
+  return (
+    <div className="border-border-secondary mt-3 flex flex-wrap gap-x-3 gap-y-1 border-t pt-2.5">
+      {taken.map((d) => (
+        <span key={d.blobId} className="text-text-tertiary font-mono text-[11.5px]">
+          {money(d.cents)}
+          <span className="text-text-quaternary">
+            {' '}· {d.from === 'routine' ? 'routine' : d.from} · approved
+          </span>
+        </span>
+      ))}
+    </div>
   );
 }
 
