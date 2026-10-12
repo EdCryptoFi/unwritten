@@ -3,13 +3,14 @@
 import { activeApprovers, HOUSE, money, nameOf, type Ref } from '@unwritten/fixtures';
 import { useState } from 'react';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
+import { Gate, ROLES } from '@/components/gate';
 
 type State = 'pending' | 'escalated' | 'approved' | 'rejected' | 'expired';
 const TONE: Record<State, 'brand' | 'warning' | 'success' | 'error'> = {
   pending: 'brand', escalated: 'warning', approved: 'success', rejected: 'error', expired: 'error',
 };
 
-export default function Pending() {
+function PendingInner() {
   const [state, setState] = useState<State>('pending');
   const [by, setBy] = useState<Array<{ ref: Ref; verdict: string }>>([]);
   const [hours, setHours] = useState(0);
@@ -138,5 +139,15 @@ function B({ children, onClick, ghost }: { children: React.ReactNode; onClick: (
     >
       {children}
     </button>
+  );
+}
+
+export default function Pending() {
+  // Approving is what an approver is. A spender reaching this screen would be reaching the one
+  // action the whole product exists to control.
+  return (
+    <Gate allow={[...ROLES.householdAdults]}>
+      <PendingInner />
+    </Gate>
   );
 }
