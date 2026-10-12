@@ -18,21 +18,31 @@ so the sandbox has to produce a rule.
 It follows the product's six-week arc, compressed. Skipping the first step was the mistake in the
 first implementation: "you approve up to $41" only means something next to "you said $18".
 
-0. **The visitor sets the one number** — the same question onboarding asks, and the same framing:
+0. **The visitor adds a household.** One tap adds Carol, who spends, and Sam, who approves. An
+   agreement is between people, so the sandbox needs at least two of them present — without this
+   the visitor approves three things alone and never feels that this is a household product.
+1. **The visitor sets the one number** — the same question onboarding asks, and the same framing:
    you are meant to get it wrong, because the product is the app coming back to correct you.
-1. Three grocery requests arrive **above that number**, so approving them is a decision rather
-   than a button.
-2. Each tap writes a real `DecisionEvent` to Mainnet, into `sandbox-<sessionId>`.
-3. After the third, the derive pass runs and writes a `Belief` — the same pure function that runs
+2. Three grocery requests arrive **from Carol and Sam**, above that number, so approving them is
+   a decision rather than a button.
+3. Each tap writes a real `DecisionEvent` to Mainnet, into `sandbox-<sessionId>`.
+4. After the third, the derive pass runs and writes a `Belief` — the same pure function that runs
    in production, with a lower `minEvidence`.
-4. The screen says, about them:
+5. The screen says, about them:
 
    > *You approve alone up to $41 on groceries · 3 of 3*
 
-5. **The payoff, stated plainly:** *You said $18.00. It is actually $41.00.* This is the week-five
+6. **The payoff, stated plainly:** *You said $18.00. It is actually $41.00.* This is the week-five
    moment of the demo script, happening to the visitor.
-6. The blob ids appear with a link to `/proof`.
-7. **An ending.** Without one the page simply stops. It hands off: *"That took three decisions.
+7. The blob ids appear with a link to `/proof`.
+8. **Quorum, taught by its limit.** A fourth request arrives in the both-signature band. The
+   visitor taps approve and is told: *this needs Sam too, and Sam is not here.* The request is
+   held, not refused, and nothing is bought.
+
+   Rejected alternatives: making the visitor role-play all three members costs nine taps and
+   leaves them confused; auto-approving as Sam a few seconds later is magic. Showing the product
+   **refuse** is honest and costs one tap.
+9. **An ending.** Without one the page simply stops. It hands off: *"That took three decisions.
    The Wilson house has twenty-six"* → the Agreement, or the Reality check.
 
 Four real memories, one loop, and the uncanny moment happens to the visitor rather than to a
@@ -56,6 +66,16 @@ screen says so:
 
 This is not a shortcut hidden from the reader — it also demonstrates that the learning knobs are
 configuration rather than hardcoded constants.
+
+## What is deliberately not in the sandbox
+
+- **Treasury funding / claiming an amount.** Already decided: top-ups are a seeding script, not a
+  product feature, and the only user-facing touch is the low-balance nudge. In a sandbox that
+  lives on being short, it is a step that teaches nothing about the thesis.
+- **Escalation and notification.** Described in words on the blocked card rather than played out.
+  A visitor cannot wait four hours for a deadline.
+- **Member invitation.** The two members appear in one tap. Invite links, sessions and roster
+  states belong to the real onboarding, not to a sixty-second loop.
 
 ## Rate limits
 
@@ -81,9 +101,17 @@ already derived and says the write is queued — it must not show a stack trace 
 **When** the derive pass runs
 **Then** no rule is written and the screen states how many more are needed
 
-**Given** a visitor who has not chosen a number
+**Given** a first-time visitor
 **When** they open the page
+**Then** they are asked to add a household before anything else
+
+**Given** a visitor who has not chosen a number
+**When** the household exists
 **Then** they are asked for one before any request is shown
+
+**Given** a derived rule and a request in the both-signature band
+**When** the visitor approves it
+**Then** it is held with an explanation naming the missing approver, and nothing is bought
 
 **Given** a third decision
 **When** the derive pass runs

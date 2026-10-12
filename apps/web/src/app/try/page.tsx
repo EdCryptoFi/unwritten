@@ -5,42 +5,65 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Badge, Card, Kpi, Meta, Page, Progress, Rule } from '@/components/primitives';
 
-/* The sandbox is the product's six-week arc compressed into a minute, and it follows the same
-   sequence: you set one number, requests arrive above it, a rule forms, and the rule disagrees
-   with the number you set. Without the first step the ending has nothing to contrast against —
-   "you approve up to $41" only lands next to "you said $18".
-   One knob differs from production: a rule forms after three decisions instead of eight, because
-   nobody will tap eight times. The screen says so, which also shows the thresholds are
-   configuration rather than constants. */
+/* The sandbox is the product's six-week arc compressed into a minute, and it keeps the same
+   sequence: a house, one number, requests above it, a rule, and the rule disagreeing with the
+   number you set.
+ *
+ * A household needs other people in it, but making the visitor role-play three members costs nine
+ * taps and leaves them confused, while auto-approving on their behalf is magic. So the other two
+ * members are present as REQUESTERS, and quorum is taught by hitting its limit rather than by
+ * simulating someone: the last request needs a second signature and that person is not here.
+ *
+ * One knob differs from production — a rule forms after three decisions instead of eight. The
+ * screen says so, which also shows the thresholds are configuration rather than constants. */
 const MIN_EVIDENCE = 3;
 const MAX_WRITES = 5;
 const CHOICES = [1000, 1800, 2500] as const;
-const REQUESTS = [3200, 2800, 4100, 3600] as const;
+const QUEUE = [
+  { from: 'Carol', cents: 3200 },
+  { from: 'Sam', cents: 2800 },
+  { from: 'Carol', cents: 4100 },
+] as const;
+const BOTH_SIGNATURE = { from: 'Carol', cents: 13900 };
 
-interface Decision { cents: number; blobId: string }
+interface Decision { from: string; cents: number; blobId: string }
 
 export default function Try() {
+  const [house, setHouse] = useState(false);
   const [cap, setCap] = useState<number | null>(null);
   const [taken, setTaken] = useState<Decision[]>([]);
+  const [blocked, setBlocked] = useState(false);
   const [session] = useState(() => Math.random().toString(36).slice(2, 8));
 
   const writes = taken.length + (taken.length >= MIN_EVIDENCE ? 1 : 0);
   const capped = writes >= MAX_WRITES;
   const derived = taken.length >= MIN_EVIDENCE;
   const threshold = taken.length ? Math.max(...taken.map((d) => d.cents)) : 0;
+  const next = QUEUE[taken.length];
 
-  const approve = (cents: number) => {
-    if (capped) return;
-    setTaken((t) => [...t, { cents, blobId: `0x${Math.random().toString(16).slice(2, 10)}…sand` }]);
-  };
-
-  /* ── step 1 · the one number ─────────────────────────────────────────── */
-  if (cap === null) {
+  /* ── step 1 · a household ────────────────────────────────────────────── */
+  if (!house) {
     return (
       <Page
         title="Try it yourself"
-        lede={`One number, three taps, and a rule about you — written to Walrus Mainnet in sandbox-${session}, never into the Wilson house.`}
+        lede={`A house, one number, and a rule about you — written to Walrus Mainnet in sandbox-${session}, never into the Wilson house.`}
       >
+        <Card>
+          <Rule>Who lives with you?</Rule>
+          <Meta>
+            An agreement is between people, so the sandbox needs at least two of them. Carol spends
+            and Sam approves — the same shape as a real household.
+          </Meta>
+          <Btn onClick={() => setHouse(true)}>Add Carol and Sam</Btn>
+        </Card>
+      </Page>
+    );
+  }
+
+  /* ── step 2 · the one number ─────────────────────────────────────────── */
+  if (cap === null) {
+    return (
+      <Page title="Try it yourself" lede="Two people in, one question to go.">
         <Card>
           <Rule>How much can one person spend without asking?</Rule>
           <Meta>
@@ -49,12 +72,7 @@ export default function Try() {
           </Meta>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             {CHOICES.map((c) => (
-              <button
-                key={c} type="button" onClick={() => setCap(c)}
-                className="bg-bg-brand-solid hover:bg-bg-brand-solid-hover text-text-primary-on-brand w-full rounded-lg px-3.5 py-3 text-[14px] font-semibold sm:w-auto sm:py-2 sm:text-[13px]"
-              >
-                {money(c)}
-              </button>
+              <Btn key={c} onClick={() => setCap(c)}>{money(c)}</Btn>
             ))}
           </div>
         </Card>
@@ -69,34 +87,32 @@ export default function Try() {
     >
       <Kpi items={[
         ['Your number', money(cap)],
+        ['House', '3 people'],
         ['Decisions', String(taken.length)],
-        ['Needed for a rule', String(MIN_EVIDENCE)],
         ['Memories written', String(writes)],
       ]} />
 
-      {!derived ? (
+      {!derived && next && (
         <Card>
-          <Rule>
-            {taken.length === 0
-              ? `Three requests came in above your ${money(cap)}.`
-              : `${MIN_EVIDENCE - taken.length} more and a rule forms.`}
-          </Rule>
+          <Rule>{next.from} is asking for {money(next.cents)} · groceries</Rule>
           <Meta>
-            Each tap writes a real DecisionEvent. Nothing is derived until there is enough
-            evidence — the empty state says what is missing rather than showing you nothing.
+            Above your {money(cap)}, so you are asked.{' '}
+            {taken.length === 0
+              ? 'Nothing is derived until there is enough evidence.'
+              : `${MIN_EVIDENCE - taken.length} more and a rule forms.`}
           </Meta>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            {REQUESTS.slice(taken.length, taken.length + 2).map((c) => (
-              <button
-                key={c} type="button" onClick={() => approve(c)} disabled={capped}
-                className="bg-bg-brand-solid hover:bg-bg-brand-solid-hover text-text-primary-on-brand w-full rounded-lg px-3.5 py-3 text-[14px] font-semibold disabled:opacity-40 sm:w-auto sm:py-2 sm:text-[13px]"
-              >
-                Approve {money(c)} groceries
-              </button>
-            ))}
-          </div>
+          <Btn
+            onClick={() => !capped && setTaken((t) => [...t, {
+              from: next.from, cents: next.cents,
+              blobId: `0x${Math.random().toString(16).slice(2, 10)}…sand`,
+            }])}
+          >
+            Approve {money(next.cents)}
+          </Btn>
         </Card>
-      ) : (
+      )}
+
+      {derived && (
         <>
           {/* the payoff: the rule only means something next to the number they chose */}
           <Card tone="note">
@@ -104,22 +120,39 @@ export default function Try() {
               You said {money(cap)}. It is actually {money(threshold)}.
             </p>
             <Meta>
-              Every one of those went through without discussion. In the Wilson house this moment
-              arrives in week five, and the app proposes making it a rule — which is a band nobody
-              ever configured.
+              Every one went through without discussion. In the Wilson house this arrives in week
+              five, and the app proposes making it a rule — a band nobody ever configured.
             </Meta>
           </Card>
 
           <Card>
             <div className="flex items-start justify-between gap-3.5">
-              <Rule>
-                You approve alone up to {money(threshold)} on groceries · {taken.length} of {taken.length}
-              </Rule>
+              <Rule>You approve alone up to {money(threshold)} on groceries · {taken.length} of {taken.length}</Rule>
               <Badge tone="brand">observed</Badge>
             </div>
             <Meta>value_band · {taken.length} events · derived by the same function that runs in production</Meta>
             <Progress value={0.78} />
           </Card>
+
+          {/* quorum, taught by hitting its limit rather than by simulating a second person */}
+          {!blocked ? (
+            <Card>
+              <Rule>{BOTH_SIGNATURE.from} is asking for {money(BOTH_SIGNATURE.cents)} · household</Rule>
+              <Meta>This one is in a different band. Try it.</Meta>
+              <Btn onClick={() => setBlocked(true)}>Approve {money(BOTH_SIGNATURE.cents)}</Btn>
+            </Card>
+          ) : (
+            <Card tone="alert">
+              <Rule>This needs Sam too, and Sam is not here.</Rule>
+              <Meta>
+                Above a certain amount one signature is not enough. The request is held, not
+                refused, and nothing is bought — &ldquo;nothing is ever purchased without
+                approval&rdquo; is an invariant rather than a setting. In a real house Sam gets a
+                notification, and if he goes quiet the request escalates to one person who can
+                close it alone.
+              </Meta>
+            </Card>
+          )}
         </>
       )}
 
@@ -128,7 +161,7 @@ export default function Try() {
           <H>Written to Mainnet · {writes}</H>
           {taken.map((d, i) => (
             <Card key={d.blobId}>
-              <Meta>decision {i + 1} · {money(d.cents)} · groceries · approved</Meta>
+              <Meta>decision {i + 1} · {money(d.cents)} · from {d.from} · approved by you</Meta>
               <div className="text-text-brand-primary font-mono text-[10.5px] break-all">{d.blobId}</div>
             </Card>
           ))}
@@ -145,8 +178,7 @@ export default function Try() {
         </>
       )}
 
-      {/* an ending. Without one the page just stops. */}
-      {derived && (
+      {blocked && (
         <Card tone="note">
           <Rule>That took three decisions. The Wilson house has twenty-six.</Rule>
           <Meta>
@@ -165,22 +197,12 @@ export default function Try() {
         </Card>
       )}
 
-      {capped && (
-        <Card tone="alert">
-          <Meta>
-            This session has written {MAX_WRITES} memories and is done. The relayer allows 500
-            points an hour per account and a remember costs 5, so the cap keeps the demo alive for
-            the next visitor rather than being a limit of the product.
-          </Meta>
-        </Card>
-      )}
-
       <Card>
         <Meta>
           The sandbox forms a rule after {MIN_EVIDENCE} decisions instead of 8, so you do not have
-          to tap all day. Everything else is the production path — same function, same schema, same
-          network. Saying it out loud also shows the learning thresholds are configuration rather
-          than constants baked into the code.
+          to tap all day, and it caps at {MAX_WRITES} writes so one visitor cannot exhaust the
+          account&apos;s hourly budget. Everything else is the production path — same function,
+          same schema, same network.
         </Meta>
       </Card>
     </Page>
@@ -190,3 +212,14 @@ export default function Try() {
 const H = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-text-quaternary mt-[26px] mb-[9px] text-[12px] font-semibold tracking-[0.8px] uppercase">{children}</h2>
 );
+
+function Btn({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button" onClick={onClick}
+      className="bg-bg-brand-solid hover:bg-bg-brand-solid-hover text-text-primary-on-brand mt-3 w-full rounded-lg px-3.5 py-3 text-[14px] font-semibold sm:mt-3 sm:w-auto sm:py-2 sm:text-[13px]"
+    >
+      {children}
+    </button>
+  );
+}
