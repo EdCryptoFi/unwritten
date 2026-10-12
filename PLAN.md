@@ -73,7 +73,7 @@ functions must produce.
    Self-serve house creation is explicitly OUT: it needs Postgres, sessions, invites and the whole
    onboarding, costs days, and moves none of the four criteria. The README says it is the
    production path.
-7. testnet: mock coin, one wallet per actor, deterministic 6-week seeder
+7. the seeder — DONE. `pnpm seed --commit` wrote 48 memories to Mainnet as `wilson-v2`, with all seven beliefs derived by packages/policy rather than copied (7/7 agree with the screens)
 8. `packages/chain` — the four Tatum reads + Smart Wallets as gas station
 9. Move: policy package + approval records (testnet)
 10. `onboarding.md`, `tatum-reads.md`, `seeding.md` — written during the build, they block nothing
@@ -120,6 +120,14 @@ Never cut the screens.
   reference client warns — a 401 that reads as a bad key.
 - An RPC call that returns 200 with no `result` is a failure, not a pass. Treating it as success
   is how the first health check reported four passes against a host rejecting every key.
+- **Counting memories is `listNamespaces`, never `recall`.** Recall is a semantic search with a
+  limit and a relevance threshold: it answers "what is like this", never "how many are there".
+  Using it to count is how a verify script reports 7 of 11 and calls it proof.
+- A seed is **versioned, never repaired.** Memory has no delete, so a half-written namespace is
+  abandoned and the version bumped. `wilson-v1` died that way — a backgrounded run was killed with
+  its parent process. Run the seed in the foreground; it takes about four minutes.
+- The relayer **indexes asynchronously**: counts lag the last writes by roughly a minute. A verify
+  run immediately after a seed under-reports, and that is not a failure.
 - The proof must be runnable, not just readable: `/proof` page plus `pnpm verify`, which is
   written and works — it prints the relayer health, a live Sui checkpoint, and the memory count
   per namespace.
