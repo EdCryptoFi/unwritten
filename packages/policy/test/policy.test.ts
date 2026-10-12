@@ -2,8 +2,8 @@ import { BELIEFS, DECISIONS, type DecisionEvent, HOUSE, MAXSPEND, TOPUPS, upTo }
 import { describe, expect, it } from 'vitest';
 import type { Input } from '../src/index.js';
 import {
-  authority, confidenceOf, drift, friction, memberPattern, rhythm, roundCap, silence,
-  structuring, valueBand,
+  authority, confidenceOf, drift, friction, memberPattern, reconcile, rhythm, roundCap, silence,
+  structuring, unapproved, valueBand,
 } from '../src/index.js';
 
 const base = (week = 6): Input => ({
@@ -211,5 +211,63 @@ describe('rhythm', () => {
     const two = base();
     two.decisions = two.decisions.filter((d: DecisionEvent) => d.category === 'fastfood').slice(0, 2);
     expect(rhythm(two, 'fastfood')).toBeNull();
+  });
+});
+
+describe('reconcile', () => {
+  const day = (n: number) => Date.UTC(2026, 8, n);
+  const grocer = '0xgrocer';
+  const cats = { [grocer]: 'groceries' as const };
+
+  it('matches a transfer to the decision that agreed to it', () => {
+    const rows = reconcile(
+      [{ digest: 'd1', timestampMs: day(1), mist: 1_000_000, to: grocer }],
+      upTo(DECISIONS, 6),
+      cats,
+    );
+    expect(rows[0]?.approvalId).toBe('d01');
+  });
+
+  it('reports money that moved with nobody agreeing to it', () => {
+    const rows = reconcile(
+      [{ digest: 'ghost', timestampMs: Date.UTC(2030, 0, 1), mist: 9_000_000, to: grocer }],
+      upTo(DECISIONS, 6),
+      cats,
+    );
+    expect(unapproved(rows)).toHaveLength(1);
+    expect(unapproved(rows)[0]?.digest).toBe('ghost');
+  });
+
+  it('does not let one decision cover two transfers', () => {
+    const two = [
+      { digest: 'a', timestampMs: day(1), mist: 1_000_000, to: grocer },
+      { digest: 'b', timestampMs: day(1), mist: 1_000_000, to: grocer },
+    ];
+    const rows = reconcile(two, upTo(DECISIONS, 6), cats);
+    // The house took one grocery decision that day, so the second transfer answers to nothing —
+    // which is exactly how a purchase split in two to stay inside a cap surfaces.
+    expect(rows.filter((r) => r.approvalId !== null)).toHaveLength(1);
+    expect(unapproved(rows)).toHaveLength(1);
+  });
+
+  it('tolerates an amount that differs, because gas is not a disagreement', () => {
+    const rows = reconcile(
+      [{ digest: 'x', timestampMs: day(1), mist: 999_999_999, to: grocer }],
+      upTo(DECISIONS, 6),
+      cats,
+    );
+    // Matching on the amount would report every honest purchase as an anomaly.
+    expect(rows[0]?.approvalId).toBe('d01');
+  });
+
+  it('refuses a rejected decision as cover for a transfer', () => {
+    const rejected = DECISIONS.filter((d) => d.outcome === 'rejected');
+    expect(rejected.length).toBeGreaterThan(0);
+    const rows = reconcile(
+      [{ digest: 'y', timestampMs: Date.parse(rejected[0]!.date), mist: 1_000, to: '0xgames' }],
+      rejected,
+      { '0xgames': 'games' },
+    );
+    expect(rows[0]?.approvalId).toBeNull();
   });
 });

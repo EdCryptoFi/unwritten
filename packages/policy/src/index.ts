@@ -375,3 +375,67 @@ export function rhythm(input: Input, category: Category, weekdayName?: string): 
     blobId: blobStub(key, version),
   };
 }
+
+// ── reconciliation ──────────────────────────────────────────────────────────
+
+export interface Transfer {
+  digest: string;
+  timestampMs: number;
+  mist: number;
+  to: string | null;
+}
+
+export interface Reconciled {
+  digest: string;
+  date: string;
+  mist: number;
+  to: string | null;
+  /** The approval this transfer answers to, if the house ever took one. */
+  approvalId: string | null;
+}
+
+/**
+ * Money that moved, measured against decisions that were taken.
+ *
+ * This is the only place in the product where neither side can answer alone. The chain knows what
+ * left the wallet and nothing about whether anybody agreed to it; the memory knows what was agreed
+ * and nothing about whether it happened. An unmatched transfer exists in neither — it is produced
+ * by the comparison, which is what makes reading the chain load-bearing rather than decorative.
+ *
+ * Matching is by day and recipient rather than by amount: a decision records what the house agreed
+ * to, and what actually leaves the wallet includes gas and rounding. Insisting on equal amounts
+ * would report every honest purchase as an anomaly.
+ */
+export function reconcile(
+  transfers: Transfer[],
+  decisions: DecisionEvent[],
+  recipientCategory: Record<string, Category>,
+): Reconciled[] {
+  const used = new Set<string>();
+
+  return transfers.map((t) => {
+    const date = new Date(t.timestampMs).toISOString().slice(0, 10);
+    const category = t.to ? recipientCategory[t.to] : undefined;
+
+    const match = decisions.find(
+      (d) =>
+        !used.has(d.id) &&
+        d.date === date &&
+        (category === undefined || d.category === category) &&
+        d.outcome !== 'rejected' &&
+        d.outcome !== 'expired',
+    );
+    if (match) used.add(match.id);
+
+    return {
+      digest: t.digest,
+      date,
+      mist: t.mist,
+      to: t.to,
+      approvalId: match?.id ?? null,
+    };
+  });
+}
+
+/** What the Reality check asks for: money that moved with nobody agreeing to it. */
+export const unapproved = (rows: Reconciled[]) => rows.filter((r) => r.approvalId === null);

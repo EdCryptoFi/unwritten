@@ -133,6 +133,19 @@ Never cut the screens.
   are checked at runtime rather than cast, the account's hourly budget is counted across every
   `sandbox-*` namespace before a write, and validation runs before the budget call so junk costs
   nothing. A per-session cap bounds nothing on its own — a new id makes a new namespace.
+- **Public Sui fullnodes deprecated JSON-RPC in July 2026** and answer "migrate to gRPC or
+  GraphQL". Tatum's gateway still serves it, so the gateway is not a convenience — it is the path
+  that exists, for reads and for signing both.
+- **Tatum's Data API does not cover Sui.** `/v4/data/...` replies with the chains it accepts and
+  Sui is not among them. Wallet history comes from `suix_queryTransactionBlocks` over RPC.
+- Building one transfer costs several RPC calls, and the plan allows three a second. The SDK 429s
+  before it can sign unless the transport is queued.
+- Reconciliation matches by **day and recipient, never by amount**: a decision records what was
+  agreed and what leaves the wallet includes gas, so matching on amounts would report every honest
+  purchase as an anomaly.
+- The daily spend script leaves roughly one transfer in five with no decision behind it. A
+  household where everything reconciles gives the Reality check nothing to find, and one where
+  nothing does is not a household.
 - The proof must be runnable, not just readable: `/proof` page plus `pnpm verify`, which is
   written and works — it prints the relayer health, a live Sui checkpoint, and the memory count
   per namespace.

@@ -99,21 +99,51 @@ export async function health(): Promise<{
 export const readObject = (id: string) =>
   tatumRpc('sui', 'sui_getObject', [id, { showContent: true, showOwner: true }]);
 
+export interface OutgoingTransfer {
+  digest: string;
+  /** Milliseconds since epoch, as the chain recorded it — not a date we chose. */
+  timestampMs: number;
+  /** Positive MIST that left the wallet, gas included. */
+  mist: number;
+  to: string | null;
+}
+
 /**
- * Data API · a wallet's transaction history → spend with no matching approval.
+ * The wallet's outgoing transfers — the reconciliation's only source of truth about money.
  *
- * The plan allows 3 requests a second, so anything that polls this has to be throttled; the
+ * Read over JSON-RPC rather than the Data API, which does not cover Sui: `/v4/data/...` answers
+ * with the list of chains it accepts and Sui is not among them. And JSON-RPC itself is only
+ * reachable here because Tatum's gateway still serves it — public Sui fullnodes deprecated it in
+ * July 2026 and answer "please migrate to gRPC or GraphQL". The gateway is the path that exists,
+ * not a convenience.
+ *
+ * The plan allows three requests a second, so anything polling this must be throttled. The
  * reconciliation pass is scheduled rather than reactive for that reason as well as the Walrus one.
  */
-export async function walletTransactions(address: string, pageSize = 50) {
-  const chain = `sui-${process.env.SUI_NETWORK || 'mainnet'}`;
-  const res = await tatumFetch(
-    `/v4/data/transaction/history?chain=${chain}&addresses=${address}&pageSize=${pageSize}`,
-  );
-  if (!res.ok) {
-    throw new Error(`walletTransactions: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
-  }
-  return res.json();
+export async function outgoingTransfers(address: string, limit = 50): Promise<OutgoingTransfer[]> {
+  const res = await tatumRpc<{
+    data?: Array<{
+      digest: string;
+      timestampMs?: string;
+      balanceChanges?: Array<{ owner: { AddressOwner?: string } | string; amount: string }>;
+    }>;
+  }>('sui', 'suix_queryTransactionBlocks', [
+    { filter: { FromAddress: address }, options: { showBalanceChanges: true } },
+    null, limit, true,
+  ]);
+
+  return (res.data ?? []).flatMap((t) => {
+    const spent = t.balanceChanges?.find((b) => b.amount.startsWith('-'));
+    if (!spent) return [];
+    const received = t.balanceChanges?.find((b) => !b.amount.startsWith('-'));
+    const owner = received?.owner;
+    return [{
+      digest: t.digest,
+      timestampMs: Number(t.timestampMs ?? 0),
+      mist: Math.abs(Number(spent.amount)),
+      to: typeof owner === 'object' && owner?.AddressOwner ? owner.AddressOwner : null,
+    }];
+  });
 }
 
 /** Sui RPC · balances, used for the low-treasury nudge. */

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@mysten-incubation/memwal": "^0.1.8",
+    "@mysten/sui": "^2",
     "@unwritten/chain": "workspace:^",
     "@unwritten/fixtures": "workspace:^",
     "@unwritten/memory": "workspace:*",
