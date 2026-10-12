@@ -3,12 +3,13 @@
 import { activeApprovers, HOUSE, money } from '@unwritten/fixtures';
 import { useState } from 'react';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
+import { Gate, ROLES } from '@/components/gate';
 
 const STATE_TONE = {
   active: 'success', declared: 'brand', invited: 'warning', subject: 'gray', revoked: 'error',
 } as const;
 
-export default function Onboarding() {
+function OnboardingInner() {
   const [funded, setFunded] = useState(false);
   const declared = HOUSE.members.filter((m) => m.approver && m.state !== 'active').length;
   const active = activeApprovers().length;
@@ -91,3 +92,11 @@ export default function Onboarding() {
 const H = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-text-quaternary mt-[26px] mb-[9px] text-[12px] font-semibold uppercase tracking-[0.8px]">{children}</h2>
 );
+
+export default function Onboarding() {
+  return (
+    <Gate allow={[...ROLES.ownerOnly]}>
+      <OnboardingInner />
+    </Gate>
+  );
+}

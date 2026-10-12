@@ -118,7 +118,19 @@ export async function writeMany(
 
 // ── reads ───────────────────────────────────────────────────────────────────
 
-export interface Recalled<T> { text: string; distance: number; payload: T | null }
+export interface Recalled<T> {
+  text: string;
+  distance: number;
+  payload: T | null;
+  /** The real Walrus blob id, resolvable on any public aggregator. */
+  blobId: string;
+  /** Write time as the relayer recorded it, not an event time parsed out of the text. */
+  writtenAt?: string | undefined;
+}
+
+/** Any public aggregator serves it. The bytes are Seal-encrypted; that they EXIST is the proof. */
+export const AGGREGATOR = 'https://aggregator.walrus-mainnet.walrus.space';
+export const blobUrl = (blobId: string) => `${AGGREGATOR}/v1/blobs/${blobId}`;
 
 /**
  * Recall weighted toward recent behaviour. Rule derivation has to weigh what the house does now
@@ -140,6 +152,8 @@ export async function recall<T>(
     text: r.text,
     distance: r.distance,
     payload: decode<T>(r.text),
+    blobId: r.blob_id,
+    writtenAt: r.created_at,
   }));
 }
 

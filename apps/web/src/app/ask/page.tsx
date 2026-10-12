@@ -4,8 +4,9 @@ import { activeApprovers, capFor, HOUSE, money } from '@unwritten/fixtures';
 import { useState } from 'react';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
 import { useApp } from '@/lib/state';
+import { Gate, ROLES } from '@/components/gate';
 
-export default function Ask({ }: Record<string, never>) {
+function AskInner({ }: Record<string, never>) {
   const { viewer, week } = useApp();
   const [log, setLog] = useState<string[]>([]);
   const cap = viewer === 'judge' ? { cents: 0, source: 'house number' } : capFor(viewer, week);
@@ -68,5 +69,13 @@ export default function Ask({ }: Record<string, never>) {
         </Meta>
       </Card>
     </Page>
+  );
+}
+
+export default function Ask() {
+  return (
+    <Gate allow={[...ROLES.spenderOnly]}>
+      <AskInner />
+    </Gate>
   );
 }

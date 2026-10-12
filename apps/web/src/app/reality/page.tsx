@@ -3,10 +3,11 @@
 import { type DecisionEvent, HOUSE, money, RECIPIENTS, recipientSay } from '@unwritten/fixtures';
 import { Badge, Card, Empty, Kpi, Meta, Page, Rule } from '@/components/primitives';
 import { useHouse } from '@/lib/state';
+import { Gate, ROLES } from '@/components/gate';
 
 const TREASURY = { balanceCents: 41200, lastTopUpWeek: 5, lowThresholdCents: 5000 };
 
-export default function Reality() {
+function RealityInner() {
   const { spendUpTo, decisionsUpTo } = useHouse();
   const all = spendUpTo.filter((x) => !x.hasApproval);
 
@@ -146,3 +147,11 @@ const H = ({ children }: { children: React.ReactNode }) => (
     {children}
   </h2>
 );
+
+export default function Reality() {
+  return (
+    <Gate allow={[...ROLES.householdAdults]}>
+      <RealityInner />
+    </Gate>
+  );
+}

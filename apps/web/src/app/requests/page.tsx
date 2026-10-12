@@ -3,13 +3,14 @@
 import { capFor, money } from '@unwritten/fixtures';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
 import { useApp } from '@/lib/state';
+import { Gate, ROLES } from '@/components/gate';
 
 const MINE = [
   { id: 'q1', amountCents: 4270, category: 'groceries', state: 'pending' as const, signatures: 2 },
   { id: 'q2', amountCents: 1200, category: 'groceries', state: 'auto' as const, signatures: 0 },
 ];
 
-export default function Requests() {
+function RequestsInner() {
   const { viewer, week } = useApp();
   const cap = viewer === 'judge' ? { cents: 0 } : capFor(viewer, week);
   const tone = { auto: 'success', pending: 'brand', approved: 'success', rejected: 'error' } as const;
@@ -33,5 +34,13 @@ export default function Requests() {
         </Card>
       ))}
     </Page>
+  );
+}
+
+export default function Requests() {
+  return (
+    <Gate allow={[...ROLES.spenderOnly]}>
+      <RequestsInner />
+    </Gate>
   );
 }

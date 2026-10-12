@@ -32,15 +32,18 @@ export const NAV: Record<string, Array<[label: string, href: string]>> = {
   ],
 };
 
+/** Anything recalled carries the real Walrus blob id and the relayer's write time. */
+export type OnChain<T> = T & { blobId?: string | undefined; writtenAt?: string | undefined };
+
 export interface HouseData {
   source: 'mainnet' | 'fixtures';
   seed?: string | undefined;
   /** Real counts from listNamespaces — what `pnpm verify` prints, shown on /proof. */
   counts?: Record<string, number> | undefined;
-  decisions: DecisionEvent[];
-  spend: SpendEvent[];
-  topups: TopUpEvent[];
-  beliefs: Belief[];
+  decisions: Array<OnChain<DecisionEvent>>;
+  spend: Array<OnChain<SpendEvent>>;
+  topups: Array<OnChain<TopUpEvent>>;
+  beliefs: Array<OnChain<Belief>>;
 }
 
 /* The fixtures are the fallback, not the source. If the relayer is unreachable the product still

@@ -30,9 +30,13 @@ interface House {
 
 let cache: { at: number; value: House } | null = null;
 
-async function readAll<T>(kind: string, query: string): Promise<T[]> {
+/** The stored payload carries a placeholder blob id; the REAL one comes back with the recall. A
+    proof page showing the placeholder is a proof page showing a string that resolves to nothing. */
+async function readAll<T>(kind: string, query: string): Promise<Array<T & { blobId: string; writtenAt?: string | undefined }>> {
   const rows = await recall<T>(`${SEED}-${kind}` as never, query, 100).catch(() => []);
-  return rows.map((r) => r.payload).filter((p): p is T => p !== null);
+  return rows
+    .filter((r) => r.payload !== null)
+    .map((r) => ({ ...(r.payload as T), blobId: r.blobId, writtenAt: r.writtenAt }));
 }
 
 export async function GET() {

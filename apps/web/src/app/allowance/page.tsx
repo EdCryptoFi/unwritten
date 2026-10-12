@@ -3,8 +3,9 @@
 import { HOUSE, MAXSPEND, money, say } from '@unwritten/fixtures';
 import { Card, Empty, Kpi, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
+import { Gate, ROLES } from '@/components/gate';
 
-export default function Allowance() {
+function AllowanceInner() {
   const { week } = useApp();
   const { topupsUpTo, beliefsUpTo } = useHouse();
   const max = HOUSE.members.find((m) => m.ref === 'm4');
@@ -75,5 +76,13 @@ export default function Allowance() {
         </Meta>
       </Card>
     </Page>
+  );
+}
+
+export default function Allowance() {
+  return (
+    <Gate allow={[...ROLES.householdAdults]}>
+      <AllowanceInner />
+    </Gate>
   );
 }

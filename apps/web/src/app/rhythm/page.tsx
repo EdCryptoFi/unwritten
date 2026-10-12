@@ -3,10 +3,11 @@
 import { dayISO, money, say } from '@unwritten/fixtures';
 import { Badge, Card, Empty, Meta, Page, Progress, Rule } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
+import { Gate, ROLES } from '@/components/gate';
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-export default function Rhythm() {
+function RhythmInner() {
   const { week } = useApp();
   const { decisions, beliefsUpTo } = useHouse();
   const cells = [];
@@ -72,5 +73,13 @@ export default function Rhythm() {
         </Meta>
       </Card>
     </Page>
+  );
+}
+
+export default function Rhythm() {
+  return (
+    <Gate allow={[...ROLES.householdAdults]}>
+      <RhythmInner />
+    </Gate>
   );
 }

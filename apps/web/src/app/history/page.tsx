@@ -3,8 +3,9 @@
 import { money, nameOf } from '@unwritten/fixtures';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
 import { useHouse } from '@/lib/state';
+import { Gate, ROLES } from '@/components/gate';
 
-export default function History() {
+function HistoryInner() {
   const { decisionsUpTo } = useHouse();
   const events = [...decisionsUpTo].reverse();
 
@@ -33,5 +34,13 @@ export default function History() {
         </Card>
       ))}
     </Page>
+  );
+}
+
+export default function History() {
+  return (
+    <Gate allow={[...ROLES.householdAdults]}>
+      <HistoryInner />
+    </Gate>
   );
 }

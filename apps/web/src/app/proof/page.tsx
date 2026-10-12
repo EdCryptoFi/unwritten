@@ -28,6 +28,10 @@ export default function Proof() {
       <Card tone="note">
         <Rule>Verify it yourself</Rule>
         <Meta>
+          Every blob id below is a link. It resolves on a public Walrus aggregator and returns
+          Seal-encrypted bytes — unreadable by design, and present, which is the whole claim.
+          <br />
+          <br />
           <code className="text-text-brand-primary">pnpm verify</code> queries the live relayer and
           chain and prints the memory count per namespace, every blob id, the two-account Observer
           comparison, and the onchain policy state. A page of hashes is something you have to
@@ -48,8 +52,11 @@ export default function Proof() {
       <H>decisions · {decisions.length} blobs</H>
       {decisions.slice(0, 4).map((e) => (
         <Card key={e.id}>
-          <Meta>{e.date} · {money(e.amountCents)} · {e.category} · {e.outcome}</Meta>
-          <div className="text-text-brand-primary font-mono text-[10.5px] break-all">{e.blobId}</div>
+          <Meta>
+            {e.date} · {money(e.amountCents)} · {e.category} · {e.outcome}
+            {e.writtenAt ? ` · written ${e.writtenAt.slice(0, 19).replace('T', ' ')}Z` : ''}
+          </Meta>
+          <Blob id={e.blobId} />
         </Card>
       ))}
 
@@ -61,7 +68,7 @@ export default function Proof() {
             {b.supersedes ? ` supersedes ${b.supersedes}` : ''}
             {b.ratifiedTx ? ` · tx ${b.ratifiedTx}` : ''}
           </Meta>
-          <div className="text-text-brand-primary font-mono text-[10.5px] break-all">{b.blobId}</div>
+          <Blob id={b.blobId} />
         </Card>
       ))}
 
@@ -82,6 +89,27 @@ export default function Proof() {
         </Meta>
       </Card>
     </Page>
+  );
+}
+
+/**
+ * A clickable blob id, served by a public Walrus aggregator. The bytes come back Seal-encrypted
+ * and unreadable — that is the point: anyone can confirm they EXIST on the network without being
+ * able to read a family's decisions. A hash you cannot resolve is a hash you have to take on
+ * faith, which is the opposite of what this page is for.
+ */
+function Blob({ id }: { id?: string | undefined }) {
+  if (!id || id.startsWith('0x')) {
+    return <div className="text-text-quaternary font-mono text-[10.5px]">not recalled from Mainnet</div>;
+  }
+  return (
+    <a
+      href={`https://aggregator.walrus-mainnet.walrus.space/v1/blobs/${id}`}
+      target="_blank" rel="noreferrer"
+      className="text-text-brand-primary font-mono text-[10.5px] break-all underline decoration-dotted underline-offset-2"
+    >
+      {id} ↗
+    </a>
   );
 }
 
