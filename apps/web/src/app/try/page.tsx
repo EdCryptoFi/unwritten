@@ -5,7 +5,8 @@ import {
 } from '@unwritten/fixtures';
 import { valueBand } from '@unwritten/policy';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Badge, Card, Meta, Page, Progress, Rule } from '@/components/primitives';
 
 /* The sandbox is the product's six-week arc compressed into a minute. It is a STAGE MACHINE, not
@@ -78,12 +79,16 @@ const STEPS: Array<[Stage, string]> = [
   ['payoff', 'The rule'], ['quorum', 'The limit'], ['receipts', 'Proof'],
 ];
 
-export default function Try() {
+function TryInner() {
   const [stage, setStage] = useState<Stage>('cast');
   const [cap, setCap] = useState(0);
   const [queue, setQueue] = useState<Request[]>([]);
   const [taken, setTaken] = useState<Decision[]>([]);
-  const [session] = useState(() => Math.random().toString(36).slice(2, 8));
+  const params = useSearchParams();
+  /* A returning visitor brings their session in the URL. Memory surviving the tab is the thing
+     Walrus actually claims, so it is demonstrated rather than asserted. */
+  const [session] = useState(() => params.get('s') ?? Math.random().toString(36).slice(2, 8));
+  const [returning, setReturning] = useState<{ decisions: number; rule: string | null } | null>(null);
   const [names, setNames] = useState<Record<string, string>>(
     Object.fromEntries(CAST_DEFAULT.map((c) => [c.key, c.name])),
   );
@@ -98,6 +103,18 @@ export default function Try() {
 
   /* Anchors the session against a chain height a reader can verify. Honest about its weight:
      Tatum carries real load on /reality, where it reads wallet history. Here it timestamps. */
+  useEffect(() => {
+    if (!params.get('s')) return;
+    fetch(`/api/sandbox?s=${params.get('s')}`)
+      .then((r) => r.json())
+      .then((d: { decisions?: unknown[]; beliefs?: Array<{ thresholdCents?: number }> }) => {
+        if (!d.decisions?.length) return;
+        const t = d.beliefs?.[0]?.thresholdCents;
+        setReturning({ decisions: d.decisions.length, rule: t ? money(t) : null });
+      })
+      .catch(() => null);
+  }, [params]);
+
   useEffect(() => {
     fetch('/api/checkpoint').then((r) => r.json())
       .then((d) => setCheckpoint(d.checkpoint ?? null)).catch(() => null);
@@ -159,6 +176,20 @@ export default function Try() {
   return (
     <Page title="Try it yourself" lede={LEDE[stage](cap)}>
       <Steps stage={stage} />
+
+      {/* Not a key — the writes live under our account with our delegate, and pretending otherwise
+          would be theatre. A link is honest, and it still proves the memory outlived the tab. */}
+      {returning && stage === 'cast' && (
+        <Card tone="note">
+          <Rule>You have been here before.</Rule>
+          <Meta>
+            {returning.decisions} decision{returning.decisions === 1 ? '' : 's'} of yours are still
+            on Walrus Mainnet
+            {returning.rule ? `, and the rule they produced: you approve alone up to ${returning.rule}.` : '.'}
+            {' '}Recalled from the network, not from this tab.
+          </Meta>
+        </Card>
+      )}
 
       {stage === 'cast' && (
         <Card>
@@ -424,5 +455,15 @@ function Btn({ children, onClick, inline }: { children: React.ReactNode; onClick
     >
       {children}
     </button>
+  );
+}
+
+/* useSearchParams needs a boundary to prerender: a returning visitor's session lives in the URL,
+   and the URL is not known until the request. */
+export default function Try() {
+  return (
+    <Suspense fallback={<Page title="Try it yourself" lede="One moment."><div /></Page>}>
+      <TryInner />
+    </Suspense>
   );
 }

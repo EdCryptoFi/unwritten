@@ -2,6 +2,7 @@
 
 import { money } from '@unwritten/fixtures';
 import { Card, Kpi, Meta, Page, Rule } from '@/components/primitives';
+import { addrUrl, sui, txUrl, useChain } from '@/lib/chain';
 import { useHouse } from '@/lib/state';
 
 /* For reviewers. THE APP NEVER LINKS HERE — it is referenced from the README, the write-up and
@@ -9,6 +10,7 @@ import { useHouse } from '@/lib/state';
    findable. This is the only surface in the app where a hash appears. */
 export default function Proof() {
   const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, beliefsUpTo, counts, seed, source } = useHouse();
+  const { chain } = useChain();
   const total = Object.values(counts ?? {}).reduce<number>((a, b) => a + b, 0)
     || decisions.length + spendUpTo.length + topupsUpTo.length + beliefsUpTo.length;
 
@@ -36,6 +38,20 @@ export default function Proof() {
           chain and prints the memory count per namespace, every blob id, the two-account Observer
           comparison, and the onchain policy state. A page of hashes is something you have to
           believe; a script is something you can run.
+        </Meta>
+      </Card>
+
+      <H>Where everything else is</H>
+      <Card>
+        <Meta>
+          <a href="https://github.com/EdCryptoFi/unwritten" target="_blank" rel="noreferrer"
+            className="text-text-brand-primary">The repository ↗</a>
+          {' — specs, the clickable prototype the schema was derived from, and '}
+          <code>pnpm verify</code>.
+          <br />
+          <a href="https://github.com/EdCryptoFi/unwritten-ai-builder" target="_blank" rel="noreferrer"
+            className="text-text-brand-primary">The first version ↗</a>
+          {' — the main screen as Tatum AI Builder generated it, kept separate so the lineage is verifiable.'}
         </Meta>
       </Card>
 
@@ -72,20 +88,49 @@ export default function Proof() {
         </Card>
       ))}
 
+      {/* The page proved Walrus and said nothing about Sui, which is half a proof. */}
+      <H>the Sui side</H>
+      <Card>
+        <Meta>The house wallet, and everything that has ever left it.</Meta>
+        {chain?.wallet && (
+          <a href={addrUrl(chain.wallet)} target="_blank" rel="noreferrer"
+            className="text-text-brand-primary font-mono text-[10.5px] break-all underline decoration-dotted underline-offset-2">
+            {chain.wallet} ↗
+          </a>
+        )}
+      </Card>
+      {(chain?.reconciled ?? []).slice(0, 4).map((r) => (
+        <Card key={r.digest}>
+          <Meta>
+            {r.date} · {sui(r.mist)} · {r.category} ·{' '}
+            {r.approvalId ? `matched to ${r.approvalId}` : 'no approval in memory'}
+          </Meta>
+          <a href={txUrl(r.digest)} target="_blank" rel="noreferrer"
+            className="text-text-brand-primary font-mono text-[10.5px] break-all underline decoration-dotted underline-offset-2">
+            {r.digest} ↗
+          </a>
+        </Card>
+      ))}
+
       <H>the four Tatum reads</H>
       <Card>
         <Meta>
-          Data API · house wallet transaction history → spend with no approval
+          <strong>suix_queryTransactionBlocks</strong> · the house wallet&apos;s outgoing
+          transfers, which is the reconciliation&apos;s only source of truth about money
           <br />
-          Data API · dependent wallet transaction history → the member_pattern denominator
+          <strong>suix_getBalance</strong> · the treasury, for the low-balance nudge
           <br />
-          Notifications · real-time spend detection
+          <strong>sui_getLatestCheckpointSequenceNumber</strong> · anchors a sandbox session
+          against a chain height
           <br />
-          Sui RPC · the ratified policy state and approval records
+          <strong>signAndExecuteTransaction</strong> · the transfers themselves are signed through
+          the gateway
           <br />
           <br />
-          endpoint: sui-testnet.gateway.tatum.io · one environment variable switches to mainnet,
-          with no branching logic
+          endpoint: <code>sui-mainnet.gateway.tatum.io</code>. Not a convenience — public Sui
+          fullnodes deprecated JSON-RPC in July 2026 and answer &ldquo;migrate to gRPC or
+          GraphQL&rdquo;. The gateway is the path that exists. And Tatum&apos;s Data API does not
+          cover Sui at all, so wallet history comes over RPC rather than from <code>/v4/data</code>.
         </Meta>
       </Card>
     </Page>

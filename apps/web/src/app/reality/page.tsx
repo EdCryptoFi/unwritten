@@ -2,6 +2,7 @@
 
 import { type DecisionEvent, HOUSE, money, RECIPIENTS, recipientSay } from '@unwritten/fixtures';
 import { Badge, Card, Empty, Kpi, Meta, Page, Rule } from '@/components/primitives';
+import { type Reconciled, sui, txUrl, useChain } from '@/lib/chain';
 import { useHouse } from '@/lib/state';
 import { Gate, ROLES } from '@/components/gate';
 
@@ -9,6 +10,8 @@ const TREASURY = { balanceCents: 41200, lastTopUpWeek: 5, lowThresholdCents: 500
 
 function RealityInner() {
   const { spendUpTo, decisionsUpTo } = useHouse();
+  const { chain, loading: chainLoading } = useChain();
+  const orphans: Reconciled[] = (chain?.reconciled ?? []).filter((r) => !r.approvalId);
   const all = spendUpTo.filter((x) => !x.hasApproval);
 
   // Fail safe: a recipient we have not classified is never treated as a commitment, so it stays
@@ -40,6 +43,49 @@ function RealityInner() {
       title="Reality check"
       lede="The agreement, measured against what actually moved onchain. Read through Tatum's Data API."
     >
+      {/* The chain half. Neither source answers this alone: the chain knows money left and nothing
+          about agreement, the memory knows what was agreed and nothing about whether it happened.
+          Every row below was produced by comparing them. */}
+      <H>What actually moved · read from Sui through Tatum</H>
+      {chainLoading && <Meta>reading the house wallet…</Meta>}
+      {chain?.error && <Card><Meta>The chain is quiet right now: {chain.error}</Meta></Card>}
+      {chain && !chain.error && (
+        <>
+          <Kpi items={[
+            ['Transfers onchain', String(chain.transfers)],
+            ['Decisions in memory', String(chain.decisions)],
+            ['With no approval', String(orphans.length),
+              orphans.length ? 'text-text-error-primary' : undefined],
+          ]} />
+          {chain.reconciled.map((r) => (
+            <Card key={r.digest}>
+              <div className="flex items-start justify-between gap-3.5">
+                <div>
+                  <Rule>{sui(r.mist)} · {r.category}</Rule>
+                  <Meta>
+                    {r.date} ·{' '}
+                    {r.approvalId
+                      ? `matched to ${r.approvalId}`
+                      : 'nobody agreed to this — it exists in neither source alone'}
+                  </Meta>
+                  <a href={txUrl(r.digest)} target="_blank" rel="noreferrer"
+                    className="text-text-brand-primary font-mono text-[10.5px] break-all underline decoration-dotted underline-offset-2">
+                    {r.digest} ↗
+                  </a>
+                </div>
+                <Badge tone={r.approvalId ? 'success' : 'error'}>
+                  {r.approvalId ? 'reconciled' : 'unapproved'}
+                </Badge>
+              </div>
+            </Card>
+          ))}
+          {chain.transfers === 0 && (
+            <Empty>Nothing has left the house wallet yet.</Empty>
+          )}
+        </>
+      )}
+
+      <H>What the memory knows</H>
       <Kpi items={[
         ['House balance', money(TREASURY.balanceCents)],
         ['Last top-up', `wk ${TREASURY.lastTopUpWeek}`],

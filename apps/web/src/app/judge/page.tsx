@@ -7,7 +7,7 @@ import { Card, Meta, Page } from '@/components/primitives';
    Sending them straight to a page of hashes means they score the evidence and skip the product. */
 const PATH: Array<[string, string, string]> = [
   ['/agreement', 'The Agreement', 'Rules nobody wrote. Drag the week scrubber at the bottom from 1 to 6 — the agreement forms, and in week 5 one rule is superseded by a new version rather than edited.'],
-  ['/reality', 'Reality check', 'The agreement measured against what actually moved onchain: a subscription that quietly repriced, a Tuesday pizza under every threshold, a purchase split in two to stay inside a cap. None of it exists unless you read the chain.'],
+  ['/reality', 'Reality check', 'Two halves. The top reads the house wallet through Tatum and matches every transfer against the decisions in memory — the unapproved rows exist in neither source alone. The bottom is what memory knows on its own: a subscription that quietly repriced, a Tuesday pizza under every threshold, a purchase split in two to stay inside a cap.'],
   ['/digest', 'Weekly digest', 'Accept a proposal as Sam and it waits — only the owner key can sign it onchain. Switch to Alex at the top left and sign. There is a button to simulate the transaction failing.'],
   ['/keys', 'Keys', 'As Alex: revoke the delegate, then press remember(). The application loses access to the house’s own memory and cannot stop it.'],
   ['/try', 'Try it yourself', 'Three taps and the same engine derives a rule about you, written to Walrus Mainnet in a sandbox namespace.'],
@@ -33,6 +33,18 @@ export default function Judge() {
           </div>
         </Card>
       ))}
+
+      <Card>
+        <Meta>
+          <a href="https://github.com/EdCryptoFi/unwritten" target="_blank" rel="noreferrer"
+            className="text-text-brand-primary">Repository ↗</a>
+          {' · '}
+          <a href="https://github.com/EdCryptoFi/unwritten-ai-builder" target="_blank" rel="noreferrer"
+            className="text-text-brand-primary">AI Builder first version ↗</a>
+          {' · '}
+          <Link href="/proof" className="text-text-brand-primary">Proof</Link>
+        </Meta>
+      </Card>
 
       <Card tone="note">
         <Meta>
