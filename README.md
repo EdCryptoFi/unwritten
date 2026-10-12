@@ -35,6 +35,16 @@ household decisions and writes them to Walrus Mainnet. Nothing is faked downstre
 and every rule in the demo was derived by the same pure functions that run in production. We say
 this out loud because an undisclosed seed is the kind of thing a reader is right to distrust.
 
+### The screens read Mainnet
+
+The Wilson house is not rendered from a local file. Every rule you see was recalled from Walrus
+Mainnet and derived there by `packages/policy` — the belief ids on screen (`vb-m1-groceries-v1`,
+`drift-household-v1`) are the ones the seeder wrote, and `pnpm verify` counts the same memories.
+
+The sidebar says which it is. If the relayer is unreachable the app falls back to local fixtures
+**and tells you so**, because a screen that quietly shows local data while claiming to read
+Mainnet is exactly the kind of lie this project exists to avoid.
+
 ## How it works
 
 | Layer | What it does |

@@ -1,16 +1,14 @@
 'use client';
 
-import {
-  DECISIONS, HOUSE, money, RECIPIENTS, recipientSay, SPEND, upTo,
-} from '@unwritten/fixtures';
+import { type DecisionEvent, HOUSE, money, RECIPIENTS, recipientSay } from '@unwritten/fixtures';
 import { Badge, Card, Empty, Kpi, Meta, Page, Rule } from '@/components/primitives';
-import { useApp } from '@/lib/state';
+import { useHouse } from '@/lib/state';
 
 const TREASURY = { balanceCents: 41200, lastTopUpWeek: 5, lowThresholdCents: 5000 };
 
 export default function Reality() {
-  const { week } = useApp();
-  const all = upTo(SPEND, week).filter((x) => !x.hasApproval);
+  const { spendUpTo, decisionsUpTo } = useHouse();
+  const all = spendUpTo.filter((x) => !x.hasApproval);
 
   // Fail safe: a recipient we have not classified is never treated as a commitment, so it stays
   // in the anomaly set. Failing to "I don't know, so I told you" beats failing to "let it through".
@@ -24,8 +22,8 @@ export default function Reality() {
 
   // Splitting a purchase to stay inside a cap: same day, same category, each part under the
   // floor, the total over it. No value-based rule can see this.
-  const groups = new Map<string, typeof DECISIONS>();
-  for (const d of upTo(DECISIONS, week)) {
+  const groups = new Map<string, DecisionEvent[]>();
+  for (const d of decisionsUpTo) {
     const k = `${d.date}|${d.category}`;
     groups.set(k, [...(groups.get(k) ?? []), d]);
   }
@@ -44,7 +42,7 @@ export default function Reality() {
       <Kpi items={[
         ['House balance', money(TREASURY.balanceCents)],
         ['Last top-up', `wk ${TREASURY.lastTopUpWeek}`],
-        ['Decisions recorded', String(upTo(DECISIONS, week).length)],
+        ['Decisions recorded', String(decisionsUpTo.length)],
         ['Unaccounted', money(unaccounted), unaccounted ? 'text-text-error-primary' : undefined],
       ]} />
 

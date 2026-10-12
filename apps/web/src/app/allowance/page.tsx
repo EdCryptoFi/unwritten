@@ -1,19 +1,20 @@
 'use client';
 
-import { HOUSE, MAXSPEND, money, say, TOPUPS, upTo, visibleBeliefs } from '@unwritten/fixtures';
+import { HOUSE, MAXSPEND, money, say } from '@unwritten/fixtures';
 import { Card, Empty, Kpi, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
-import { useApp } from '@/lib/state';
+import { useApp, useHouse } from '@/lib/state';
 
 export default function Allowance() {
   const { week } = useApp();
+  const { topupsUpTo, beliefsUpTo } = useHouse();
   const max = HOUSE.members.find((m) => m.ref === 'm4');
   const weeks = MAXSPEND.slice(0, week);
   const games = weeks.reduce((a, b) => a + b.games, 0);
   const spent = weeks.reduce((a, b) => a + b.games + b.food + b.other, 0);
   // The denominator is the TOP-UPS, not the spend: "78% of his allowance" needs inbound events,
   // and without them you cannot tell spending from saving.
-  const given = upTo(TOPUPS, week).reduce((a, t) => a + t.amountCents, 0);
-  const belief = visibleBeliefs(week).find((b) => b.dimension === 'member_pattern');
+  const given = topupsUpTo.reduce((a, t) => a + t.amountCents, 0);
+  const belief = beliefsUpTo.find((b) => b.dimension === 'member_pattern');
 
   return (
     <Page

@@ -1,12 +1,25 @@
 'use client';
 
-import { chainOf, DECISIONS, HOUSE, money, say, upTo, visibleBeliefs, WEEK_NOTE } from '@unwritten/fixtures';
+import { type Belief, HOUSE, money, say, WEEK_NOTE } from '@unwritten/fixtures';
 import { Card, Empty, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
-import { useApp } from '@/lib/state';
+import { useApp, useHouse } from '@/lib/state';
 
 export default function Agreement() {
   const { week, me, role } = useApp();
-  const beliefs = visibleBeliefs(week);
+  const { beliefsUpTo: beliefs, decisionsUpTo, beliefs: allBeliefs } = useHouse();
+
+  /* The chain walks the versions that are actually on Mainnet, not a local list. */
+  const chainOf = (b: Belief): Belief[] => {
+    const out = [b];
+    let cur: Belief | undefined = b;
+    while (cur?.supersedes) {
+      const prev: Belief | undefined = allBeliefs.find((x) => x.id === cur?.supersedes);
+      if (!prev) break;
+      out.unshift(prev);
+      cur = prev;
+    }
+    return out;
+  };
   const { minEvidence, confidenceFloor } = HOUSE.learning;
 
   return (
@@ -14,7 +27,7 @@ export default function Agreement() {
       title="The Agreement"
       lede={
         beliefs.length
-          ? `Rules nobody wrote. Discovered from ${upTo(DECISIONS, week).length} decisions over ${week} week${week > 1 ? 's' : ''}.`
+          ? `Rules nobody wrote. Discovered from ${decisionsUpTo.length} decisions over ${week} week${week > 1 ? 's' : ''}.`
           : `No rules yet — ${WEEK_NOTE[week]}.`
       }
     >

@@ -1,25 +1,25 @@
 'use client';
 
-import { DECISIONS, money, SPEND, TOPUPS, upTo, visibleBeliefs } from '@unwritten/fixtures';
+import { money } from '@unwritten/fixtures';
 import { Card, Kpi, Meta, Page, Rule } from '@/components/primitives';
-import { useApp } from '@/lib/state';
+import { useHouse } from '@/lib/state';
 
 /* For reviewers. THE APP NEVER LINKS HERE — it is referenced from the README, the write-up and
    the architecture beat of the demo, so the product stays abstracted and the evidence stays
    findable. This is the only surface in the app where a hash appears. */
 export default function Proof() {
-  const { week } = useApp();
-  const decisions = upTo(DECISIONS, week);
-  const total = decisions.length + upTo(SPEND, week).length + upTo(TOPUPS, week).length
-    + visibleBeliefs(week).length;
+  const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, beliefsUpTo, counts, seed, source } = useHouse();
+  const total = Object.values(counts ?? {}).reduce<number>((a, b) => a + b, 0)
+    || decisions.length + spendUpTo.length + topupsUpTo.length + beliefsUpTo.length;
 
   return (
     <Page
       title="Proof"
-      lede="For reviewers. The app never links here — it is referenced from the README, the write-up and the demo, so the product stays abstracted while the evidence stays findable."
+      lede={`${source === 'mainnet' ? 'Read live from Walrus Mainnet. ' : ''}For reviewers — the app never links here. It is referenced from the README, the write-up and the demo, so the product stays abstracted while the evidence stays findable.`}
     >
       <Kpi items={[
         ['Memories on Mainnet', String(total)],
+        ['Seed', seed ?? '—'],
         ['Requirement', '10+'],
         ['Namespaces', '4'],
         ['Walrus epochs', '50 ≈ 2y'],
@@ -54,7 +54,7 @@ export default function Proof() {
       ))}
 
       <H>beliefs · supersession chain</H>
-      {visibleBeliefs(week).slice(0, 3).map((b) => (
+      {beliefsUpTo.slice(0, 3).map((b) => (
         <Card key={b.id}>
           <Meta>
             {b.id} · v{b.version}

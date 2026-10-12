@@ -1,14 +1,15 @@
 'use client';
 
-import { BELIEFS, money, PROPOSALS, say, upTo, visibleBeliefs } from '@unwritten/fixtures';
+import { PROPOSALS, say, upTo } from '@unwritten/fixtures';
 import { useState } from 'react';
 import { Badge, Card, Empty, Meta, Page, Rule } from '@/components/primitives';
-import { useApp } from '@/lib/state';
+import { useApp, useHouse } from '@/lib/state';
 
 type TxState = 'idle' | 'awaiting' | 'signing' | 'confirmed' | 'failed';
 
 export default function Digest() {
   const { week, role } = useApp();
+  const { beliefsUpTo, beliefs: BELIEFS } = useHouse();
   const [tx, setTx] = useState<Record<string, TxState>>({});
   const [log, setLog] = useState<string[]>([]);
   const add = (s: string) => setLog((l) => [s, ...l].slice(0, 8));
@@ -18,8 +19,8 @@ export default function Digest() {
   // Drift is the rationale inside a proposal, never a card of its own. It stands alone only when
   // the evidence does not say which direction to propose — a section that never clears teaches
   // the admin to skip the digest.
-  const orphanDrift = visibleBeliefs(week).filter((b) => b.state === 'drifting' && !proposed.has(b.id));
-  const fresh = visibleBeliefs(week).filter((b) => b.fromWeek === week);
+  const orphanDrift = beliefsUpTo.filter((b) => b.state === 'drifting' && !proposed.has(b.id));
+  const fresh = beliefsUpTo.filter((b) => b.fromWeek === week);
 
   /* An approver can ACCEPT. Only the owner key can sign it onchain, which makes the owner a
      single point of failure for every policy change. Modelled rather than hidden. */

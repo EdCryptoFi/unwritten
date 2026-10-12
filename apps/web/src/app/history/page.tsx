@@ -1,12 +1,12 @@
 'use client';
 
-import { DECISIONS, money, nameOf, upTo } from '@unwritten/fixtures';
+import { money, nameOf } from '@unwritten/fixtures';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
-import { useApp } from '@/lib/state';
+import { useHouse } from '@/lib/state';
 
 export default function History() {
-  const { week } = useApp();
-  const events = [...upTo(DECISIONS, week)].reverse();
+  const { decisionsUpTo } = useHouse();
+  const events = [...decisionsUpTo].reverse();
 
   return (
     <Page

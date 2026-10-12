@@ -1,24 +1,25 @@
 'use client';
 
-import { DECISIONS, dayISO, money, say, upTo, visibleBeliefs } from '@unwritten/fixtures';
+import { dayISO, money, say } from '@unwritten/fixtures';
 import { Badge, Card, Empty, Meta, Page, Progress, Rule } from '@/components/primitives';
-import { useApp } from '@/lib/state';
+import { useApp, useHouse } from '@/lib/state';
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function Rhythm() {
   const { week } = useApp();
+  const { decisions, beliefsUpTo } = useHouse();
   const cells = [];
   for (let w = 1; w <= week; w++) {
     for (let d = 0; d < 7; d++) {
       const day = (w - 1) * 7 + d + 1;
-      const hit = DECISIONS.filter((x) => x.date === dayISO(day))
+      const hit = decisions.filter((x) => x.date === dayISO(day))
         .reduce((a, b) => a + b.amountCents, 0);
       cells.push({ key: `${w}-${d}`, w, hit });
     }
   }
   const max = Math.max(1, ...cells.map((c) => c.hit));
-  const beliefs = visibleBeliefs(week).filter((b) => b.dimension === 'rhythm');
+  const beliefs = beliefsUpTo.filter((b) => b.dimension === 'rhythm');
 
   return (
     <Page

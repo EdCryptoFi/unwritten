@@ -66,8 +66,9 @@ functions must produce.
 5. `packages/policy` — the seven dimensions as pure functions, asserted against the fixtures
 6. `packages/memory` — DONE (wrapper, encode/decode, key pool, namespaces; roundtrip proven
    byte-identical on Mainnet). Remaining:
-   a. the Wilson house reads **real memories from Mainnet** instead of fixtures. Same screens,
-      same components, different source. This is what separates a working demo from a showcase.
+   a. DONE — the Wilson house reads real memories from Mainnet. All seven screens go through
+      `useHouse()`, so the source is swapped in one place, and the sidebar shows which it is.
+      Fixtures remain as a labelled fallback, never a silent one.
    b. "Try it yourself" — a sandbox namespace where a visitor's taps write real memories and a
       rule is derived from their own decisions. See `try-it-yourself.md`.
    Self-serve house creation is explicitly OUT: it needs Postgres, sessions, invites and the whole
@@ -128,6 +129,10 @@ Never cut the screens.
   its parent process. Run the seed in the foreground; it takes about four minutes.
 - The relayer **indexes asynchronously**: counts lag the last writes by roughly a minute. A verify
   run immediately after a seed under-reports, and that is not a failure.
+- Anything that reaches Mainnet is permanent, so the write path is validated as hostile: fields
+  are checked at runtime rather than cast, the account's hourly budget is counted across every
+  `sandbox-*` namespace before a write, and validation runs before the budget call so junk costs
+  nothing. A per-session cap bounds nothing on its own — a new id makes a new namespace.
 - The proof must be runnable, not just readable: `/proof` page plus `pnpm verify`, which is
   written and works — it prints the relayer health, a live Sui checkpoint, and the memory count
   per namespace.

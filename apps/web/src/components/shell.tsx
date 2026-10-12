@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useApp } from '@/lib/state';
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const { nav, viewer, setViewer, role } = useApp();
+  const { nav, viewer, setViewer, role, house, loading } = useApp();
   const path = usePathname();
   const active = HOUSE.members.filter((m) => m.state === 'active');
 
@@ -16,6 +16,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Link href="/" className="text-text-tertiary hover:text-text-primary block px-5 pb-3 text-[13px] font-semibold">
           ← Unwritten
         </Link>
+
+        {/* Shown, not claimed: a reviewer should be able to see whether the screens are reading
+            Mainnet or falling back to local fixtures. */}
+        <div className="mx-5 mb-3 flex items-center gap-1.5">
+          <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+            loading ? 'bg-text-quaternary'
+            : house.source === 'mainnet' ? 'bg-utility-success-700' : 'bg-utility-warning-700'}`} />
+          <span className="text-text-quaternary font-mono text-[10.5px]">
+            {loading ? 'reading…' : house.source === 'mainnet'
+              ? `live · walrus mainnet` : 'fixtures · relayer unreachable'}
+          </span>
+        </div>
 
         <Group>Viewing as</Group>
         {active.map((m) => (

@@ -1,7 +1,10 @@
 'use client';
 
-import { HOUSE, type Member, type Ref } from '@unwritten/fixtures';
-import { createContext, useContext, useMemo, useState } from 'react';
+import {
+  BELIEFS, DECISIONS, HOUSE, type Belief, type DecisionEvent, type Member, type Ref,
+  type SpendEvent, SPEND, type TopUpEvent, TOPUPS,
+} from '@unwritten/fixtures';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 export type Viewer = Ref | 'judge';
 
@@ -29,6 +32,24 @@ export const NAV: Record<string, Array<[label: string, href: string]>> = {
   ],
 };
 
+export interface HouseData {
+  source: 'mainnet' | 'fixtures';
+  seed?: string | undefined;
+  /** Real counts from listNamespaces — what `pnpm verify` prints, shown on /proof. */
+  counts?: Record<string, number> | undefined;
+  decisions: DecisionEvent[];
+  spend: SpendEvent[];
+  topups: TopUpEvent[];
+  beliefs: Belief[];
+}
+
+/* The fixtures are the fallback, not the source. If the relayer is unreachable the product still
+   renders — and says so, because a screen that silently shows local data while claiming to read
+   Mainnet is the kind of lie this whole project is built to avoid. */
+const FALLBACK: HouseData = {
+  source: 'fixtures', decisions: DECISIONS, spend: SPEND, topups: TOPUPS, beliefs: BELIEFS,
+};
+
 interface Ctx {
   week: number;
   setWeek: (w: number) => void;
@@ -37,6 +58,8 @@ interface Ctx {
   role: string;
   me: Member | undefined;
   nav: Array<[string, string]>;
+  house: HouseData;
+  loading: boolean;
 }
 
 const C = createContext<Ctx | null>(null);
@@ -44,12 +67,22 @@ const C = createContext<Ctx | null>(null);
 export function StateProvider({ children }: { children: React.ReactNode }) {
   const [week, setWeek] = useState(6);
   const [viewer, setViewer] = useState<Viewer>('m1');
+  const [house, setHouse] = useState<HouseData>(FALLBACK);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/house')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: HouseData) => { if (d.decisions?.length) setHouse(d); })
+      .catch(() => null)
+      .finally(() => setLoading(false));
+  }, []);
 
   const value = useMemo<Ctx>(() => {
     const me = viewer === 'judge' ? undefined : HOUSE.members.find((m) => m.ref === viewer);
     const role = viewer === 'judge' ? 'judge' : (me?.role ?? 'owner');
-    return { week, setWeek, viewer, setViewer, role, me, nav: NAV[role] ?? NAV.owner! };
-  }, [week, viewer]);
+    return { week, setWeek, viewer, setViewer, role, me, nav: NAV[role] ?? NAV.owner!, house, loading };
+  }, [week, viewer, house, loading]);
 
   return <C.Provider value={value}>{children}</C.Provider>;
 }
@@ -58,4 +91,21 @@ export function useApp() {
   const v = useContext(C);
   if (!v) throw new Error('useApp must be used inside StateProvider');
   return v;
+}
+
+/** Everything the screens read goes through here, so the source is swapped in one place. */
+export function useHouse() {
+  const { house, week } = useApp();
+  const upto = <T extends { week?: number; fromWeek?: number }>(xs: T[]) =>
+    xs.filter((x) => (x.week ?? x.fromWeek ?? 0) <= week);
+  const live = house.beliefs.filter(
+    (b) => !new Set(house.beliefs.map((x) => x.supersedes).filter(Boolean)).has(b.id),
+  );
+  return {
+    ...house,
+    decisionsUpTo: upto(house.decisions),
+    spendUpTo: upto(house.spend),
+    topupsUpTo: upto(house.topups),
+    beliefsUpTo: upto(live),
+  };
 }
