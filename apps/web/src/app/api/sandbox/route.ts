@@ -1,5 +1,8 @@
-import { type Belief, type Category, type DecisionEvent, HOUSE } from '@unwritten/fixtures';
-import { listNamespaces, recall, writeBelief, writeDecision } from '@unwritten/memory';
+import { type Belief, type DecisionEvent, HOUSE } from '@unwritten/fixtures';
+import { recall, writeBelief, writeDecision } from '@unwritten/memory';
+import {
+  MAX_PER_SESSION, MAX_SANDBOX_TOTAL_PER_HOUR, callerIp, ipAllowed, parseBody, sandboxBudget,
+} from '@/lib/guard';
 import { valueBand } from '@unwritten/policy';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -14,31 +17,15 @@ import { type NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 const MIN_EVIDENCE = 3;
-const MAX_WRITES = 5;
 const VISITOR = 'you';
 
 const ns = (session: string) => `sandbox-${session.replace(/[^a-z0-9]/gi, '').slice(0, 12)}`;
 
-interface Tap { cents: number; category: Category; from: string }
-
-/**
- * Counting is `listNamespaces`, never `recall`. Recall is a semantic search with a limit and a
- * relevance threshold, and it also lags indexing — so a route cannot read back what it just
- * wrote. Using it to count is how the first version of this handler reported "write 1, write 1,
- * write 2" and never reached the three decisions a rule needs.
- */
-async function countWritten(session: string): Promise<number> {
-  try {
-    const all = (await listNamespaces()) as { namespaces: Array<{ name: string; memory_count: number }> };
-    return all.namespaces.find((n) => n.name === ns(session))?.memory_count ?? 0;
-  } catch {
-    return 0;
-  }
-}
 
 export async function GET(req: NextRequest) {
-  const session = req.nextUrl.searchParams.get('s');
-  if (!session) return NextResponse.json({ error: 'no session' }, { status: 400 });
+  const raw = req.nextUrl.searchParams.get('s') ?? '';
+  const session = raw.replace(/[^a-z0-9]/gi, '').slice(0, 12);
+  if (session.length < 4) return NextResponse.json({ error: 'no session' }, { status: 400 });
 
   // Coming back to a session is the point: Walrus Memory's headline claim is that memory survives
   // the session, and this is that claim demonstrated rather than asserted.
@@ -52,21 +39,36 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  /* The client sends every tap it has taken, not just the newest one. The server cannot read back
-     what it wrote a moment ago — the relayer indexes asynchronously — so the session's state lives
-     with the client and the server writes exactly one memory per request regardless of what it is
-     told. A dishonest client therefore gains nothing: the cap is enforced against the real memory
-     count, and the write volume is one per call either way. */
-  const { session, taps, cap } = (await req.json()) as
-    { session: string; taps: Tap[]; cap: number };
-  if (!session || !taps?.length) return NextResponse.json({ error: 'bad request' }, { status: 400 });
+  /* Everything below reaches Walrus Mainnet, which has no delete. The body is validated rather
+     than cast, the account's hourly budget is checked before anything is written, and the caller
+     is rate limited — a per-session cap resets with a new id, so it protects nothing on its own. */
+  /* Order matters: validation is free, the budget check is a network call, and the rate limiter
+     holds state. Rejecting malformed input first means a flood of junk costs nothing — and a
+     caller who sends nonsense gets told what is wrong rather than being counted against a quota
+     they never reached. */
+  const parsed = parseBody(await req.json().catch(() => null));
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+  const { session, taps, cap } = parsed;
 
-  const already = await countWritten(session);
-  if (already >= MAX_WRITES) {
-    return NextResponse.json({ error: 'session cap reached', already }, { status: 429 });
+  const ip = callerIp(req.headers);
+  if (!ipAllowed(ip)) {
+    return NextResponse.json({ error: 'too many sessions from here' }, { status: 429 });
   }
 
-  const tap = taps[taps.length - 1] as Tap;
+  const budget = await sandboxBudget(session);
+  if (budget.thisSession >= MAX_PER_SESSION) {
+    return NextResponse.json({ error: 'session cap reached', ...budget }, { status: 429 });
+  }
+  if (budget.lastHour >= MAX_SANDBOX_TOTAL_PER_HOUR) {
+    // Degrade rather than fail: the rule still forms, the write waits. A reviewer must not meet a
+    // dead demo because somebody scripted the sandbox an hour earlier.
+    return NextResponse.json(
+      { queued: false, reason: 'the hour\'s sandbox budget is spent — try again shortly', ...budget },
+      { status: 200 },
+    );
+  }
+
+  const tap = taps[taps.length - 1] as (typeof taps)[number];
   const n = taps.length;
   const event: DecisionEvent = {
     id: `${session}-${n}`,

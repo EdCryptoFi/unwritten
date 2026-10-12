@@ -11,7 +11,16 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/* Cached: every call spends part of a 3-requests-a-second quota shared with the product's own
+   reads, and a page that polls it would starve /reality of the budget it actually needs. */
+let cached: { at: number; value: unknown } | null = null;
+const TTL_MS = 15_000;
+
 export async function GET() {
-  const h = await health();
-  return NextResponse.json(h);
+  if (cached && Date.now() - cached.at < TTL_MS) {
+    return NextResponse.json(cached.value, { headers: { 'x-cache': 'hit' } });
+  }
+  const value = await health();
+  cached = { at: Date.now(), value };
+  return NextResponse.json(value, { headers: { 'x-cache': 'miss' } });
 }
