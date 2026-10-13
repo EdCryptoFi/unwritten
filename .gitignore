@@ -9,3 +9,4 @@ dist/
 .daily.log
 .daily-last-success
 .daily.lock/
+.vercel

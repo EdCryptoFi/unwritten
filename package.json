@@ -28,5 +28,10 @@
     "@unwritten/fixtures": "workspace:^",
     "@unwritten/memory": "workspace:*",
     "@unwritten/policy": "workspace:*"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": ">=8.5.18"
+    }
   }
 }
