@@ -62,12 +62,61 @@ const MERCHANTS = [
   { name: 'fastfood', to: process.env.SUI_FASTFOOD_ADDRESS!, category: 'fastfood', mist: [6_000_000, 11_000_000] },
 ] as const;
 
-/** Same day, same transfers. A second run on one date adds nothing. */
+/**
+ * Same day, same transfers. A second run on one date adds nothing.
+ *
+ * The first version hashed with `h * 31 + char` and fed an LCG directly. Consecutive dates differ
+ * by one character, so `h` was near-consecutive and the LCG's FIRST output — the one that decides
+ * whether groceries happen — came out correlated across neighbouring days. Projecting it showed a
+ * run of seven days with no groceries followed by three weeks with groceries almost daily, which
+ * reads as a script someone switched on rather than as a household.
+ *
+ * xmur3 to avalanche the string, then mulberry32. Consecutive dates now decorrelate.
+ *
+ * Measured over 730 dates, on the first draw — the one that gates groceries. The old generator
+ * passed every aggregate check and was broken in the only way that mattered:
+ *
+ *            mean   fires (want 75%)   longest run   lag-1 agreement (want 62.5%)
+ *   old      0.499        74.2%            195              97.8%
+ *   new      0.506        75.6%             14              62.4%
+ *
+ * A correct mean and a correct marginal rate hid a 98% chance of repeating yesterday's decision.
+ * If this is ever touched, re-measure the last two columns, not the first two.
+ */
 function seeded(date: string) {
-  let h = 0;
-  for (const c of date) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return () => ((h = (h * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+  let h = 1779033703 ^ date.length;
+  for (let i = 0; i < date.length; i++) {
+    h = Math.imul(h ^ date.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  let a = (h ^ (h >>> 16)) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
+
+/**
+ * The subscription has to actually recur, and inside the window.
+ *
+ * It used to fire on day-of-month 12, which meant that after 12 October it never fired again
+ * before submission — so `rhythm` with `isCommitment: true`, and the price-creep detection built
+ * on it, would have had no onchain evidence at all. The Spotify story is one of the product's
+ * sharpest claims and the chain would not have backed it.
+ *
+ * Every 14 days from an anchor instead, so it recurs at least twice, and the second billing is
+ * dearer than the first. That repricing is the thing to notice, and now it is a real pair of
+ * transactions a reviewer can open.
+ */
+const SUBS_ANCHOR = Date.UTC(2026, 9, 16); // 16 Oct 2026
+const SUBS_PERIOD_DAYS = 14;
+const subsCycle = (date: string) => {
+  const days = Math.round((new Date(date).getTime() - SUBS_ANCHOR) / 86_400_000);
+  return days >= 0 && days % SUBS_PERIOD_DAYS === 0 ? days / SUBS_PERIOD_DAYS : null;
+};
 
 const today = new Date().toISOString().slice(0, 10);
 const rand = seeded(today);
@@ -77,13 +126,18 @@ const weekday = new Date(today).getUTCDay();
    subscription once a month — which is what gives the rhythm dimension something to find. */
 const plan: Array<{ to: string; mist: number; label: string; category: Category; approved: boolean }> = [];
 for (const m of MERCHANTS) {
+  const cycle = m.name === 'subs' ? subsCycle(today) : null;
   const fires =
     m.name === 'grocer' ? rand() < 0.75
     : m.name === 'fastfood' ? weekday === 5 || rand() < 0.15
-    : new Date(today).getUTCDate() === 12;
+    : cycle !== null;
   if (!fires) continue;
   const [lo, hi] = m.mist;
-  const amount = Math.round(lo + rand() * (hi - lo));
+  /* A commitment is a fixed amount by definition, so it does not get the random band — it gets
+     its list price, and 12% more from the second billing on. That step IS the price creep. */
+  const amount = m.name === 'subs'
+    ? Math.round(lo * (cycle && cycle > 0 ? 1.12 : 1))
+    : Math.round(lo + rand() * (hi - lo));
   /* Most spending is agreed to; some is not. A household where everything reconciles has nothing
      for the Reality check to find, and one where nothing does is not a household. Roughly one in
      five goes through without a decision — which is what the product exists to notice. */
