@@ -204,6 +204,11 @@ Never cut the screens.
 - A page wrapped in the shared `Shell` inherits its styling for free through `Card`/`Page`/`Badge`
   from `primitives.tsx` — upgrade the primitive once rather than each page. The home page is the
   one screen that doesn't use them, which is why it was the one that needed a real rewrite.
+- A guided path is tested by walking it the way a visitor arrives. The judge door set the role to
+  "judge" and stop two of the judge's own path was gated to household adults — no page was broken
+  on its own, only the sequence was. Each tour stop now names the role it needs (`lib/tours.ts`).
+- A simulation is disclosed on the screen that runs it. `/keys` rehearses revocation locally, for a
+  good reason, and said nothing about it until the judge copy was checked against the code.
 - Screenshot mobile, don't reason about it. The sidebar's full nav list pushed all home-page
   content below the fold on a phone — invisible in a desktop-only review, obvious in one shot.
  The balance was claimed, exported, and
