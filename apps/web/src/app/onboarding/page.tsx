@@ -6,7 +6,7 @@ import { HOUSE, activeApprovers, money } from '@unwritten/fixtures';
 import { useState } from 'react';
 
 const STATE_TONE = {
-  active: 'success', declared: 'brand', invited: 'warning', subject: 'gray', revoked: 'error',
+  active: 'success', declared: 'brand', invited: 'warning', subject: 'neutral', revoked: 'error',
 } as const;
 
 function OnboardingInner() {

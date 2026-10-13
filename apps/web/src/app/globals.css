@@ -1,222 +1,399 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Design tokens from Tatum's own system, extracted from the AI Builder output
-   (EdCryptoFi/unwritten-ai-builder, generated 11 Oct 2026). Adopted because the
-   semantic scale is better considered than a hand-rolled one and because it
-   reads as native to the platform.
-
-   Token NAMES are permanent. Token VALUES are disposable — components reference
-   tokens and never raw values, so re-skinning the product is editing this file.
+   Tactile Domesticity — Design System for Unwritten
+   Light-mode claymorphism: soft volume, compound shadows, pillowed surfaces.
+   Source: templates/tactile_domesticity/DESIGN.md
    ────────────────────────────────────────────────────────────────────────── */
+
 @theme {
-  --color-text-primary: #181d27; /** Titles, key values, primary reading text. */
-  --color-text-secondary: #414651; /** Body copy, labels, secondary headings. */
-  --color-text-tertiary: #535862; /** Helper copy, metadata, descriptions. */
-  --color-text-quaternary: #717680; /** Lowest-emphasis text. */
-  --color-text-primary-on-brand: #ffffff; /** Text and labels on solid brand fills. */
-  --color-text-placeholder: #717680; /** Input placeholder text. */
-  --color-text-disabled: #717680; /** Text in disabled controls. */
-  --color-text-brand-primary: #4f37fd; /** Links, selected text, brand emphasis. */
-  --color-text-error-primary: #d92d20; /** Error text and destructive emphasis. */
-  --color-text-warning-primary: #dc6803; /** Warning text. */
-  --color-text-success-primary: #079455; /** Success text. */
-  --color-fg-primary: #181d27; /** Strongest icon color. */
-  --color-fg-secondary: #414651; /** Icons paired with secondary text. */
-  --color-fg-tertiary: #535862; /** Supporting icons. */
-  --color-fg-quaternary: #717680; /** Default utility-icon color. */
-  --color-fg-quaternary-hover: #535862; /** Utility icon on hover. */
-  --color-fg-brand-primary: #4f37fd; /** Brand-emphasised icons. */
-  --color-fg-error-primary: #d92d20; /** Error status icons. */
-  --color-fg-warning-primary: #dc6803; /** Warning status icons. */
-  --color-fg-success-primary: #079455; /** Success status icons. */
-  --color-fg-disabled: #a4a7ae; /** Icons in disabled controls. */
-  --color-fg-white: #ffffff; /** Icons on solid brand/status fills. */
-  --color-bg-primary: #ffffff; /** Page/canvas and default card surface. */
-  --color-bg-primary-hover: #fafafa; /** Hovered canvas/control surface. */
-  --color-bg-primary-solid: #0a0d12; /** Inverted solid surface — tooltips, dark chips. */
-  --color-bg-secondary: #fafafa; /** Grouped/quiet regions; table headers. */
-  --color-bg-secondary-hover: #f5f5f5; /** Hovered grouped surface; table row hover. */
-  --color-bg-tertiary: #f5f5f5; /** Nested/subtle raised surfaces. */
-  --color-bg-overlay: #0a0d12; /** Modal/drawer backdrop scrim (pair with opacity). */
-  --color-bg-brand-solid: #4832e7; /** Primary action fill; brand-owned solid surface. */
-  --color-bg-brand-solid-hover: #402dce; /** Primary action hover fill. */
-  --color-bg-error-primary: #fef3f2; /** Pale error tint in light, solid in dark — pair per theme. */
-  --color-bg-warning-primary: #fffaeb; /** Pale warning tint in light, solid in dark — pair per theme. */
-  --color-bg-success-primary: #ecfdf3; /** Pale success tint in light, solid in dark — pair per theme. */
-  --color-bg-error-secondary: #fee4e2; /** Error tint in light, solid in dark — pair per theme. */
-  --color-bg-warning-secondary: #fef0c7; /** Warning tint in light, solid in dark — pair per theme. */
-  --color-bg-success-secondary: #dcfae6; /** Success tint in light, solid in dark — pair per theme. */
-  --color-bg-disabled-subtle: #fafafa; /** Disabled control surface. */
-  --color-border-primary: #d5d7da; /** Inputs, cards, strong dividers. */
-  --color-border-secondary: #e9eaeb; /** Row dividers, soft separators. */
-  --color-border-brand: #4f37fd; /** Brand-emphasised or selected outlines. */
-  --color-border-error-subtle: #fda29b; /** Error outline on invalid inputs and callouts. */
-  --color-ring-focus-ring: #4f37fd; /** Keyboard focus ring. */
-  --color-ring-focus-ring-error: #f04438; /** Focus ring on invalid controls. */
-  --color-utility-gray-50: #fafafa; /** Theme-aware gray tinted surface (badges, alerts). */
-  --color-utility-gray-200: #e9eaeb; /** Theme-aware gray tinted border (badges). */
-  --color-utility-gray-600: #535862; /** Theme-aware gray accent text on the 50 tint (alerts). */
-  --color-utility-gray-700: #414651; /** Theme-aware gray accent text on the 50 tint (badges). */
-  --color-utility-brand-50: #ebeaff; /** Theme-aware brand tinted surface (badges, alerts). */
-  --color-utility-brand-200: #bdb8fe; /** Theme-aware brand tinted border (badges). */
-  --color-utility-brand-600: #4832e7; /** Theme-aware brand accent text on the 50 tint (alerts). */
-  --color-utility-brand-700: #402dce; /** Theme-aware brand accent text on the 50 tint (badges). */
-  --color-utility-success-50: #ecfdf3; /** Theme-aware success tinted surface (badges, alerts). */
-  --color-utility-success-200: #abefc6; /** Theme-aware success tinted border (badges). */
-  --color-utility-success-600: #079455; /** Theme-aware success accent text on the 50 tint (alerts). */
-  --color-utility-success-700: #067647; /** Theme-aware success accent text on the 50 tint (badges). */
-  --color-utility-warning-50: #fffaeb; /** Theme-aware warning tinted surface (badges, alerts). */
-  --color-utility-warning-200: #fedf89; /** Theme-aware warning tinted border (badges). */
-  --color-utility-warning-600: #dc6803; /** Theme-aware warning accent text on the 50 tint (alerts). */
-  --color-utility-warning-700: #b54708; /** Theme-aware warning accent text on the 50 tint (badges). */
-  --color-utility-error-50: #fef3f2; /** Theme-aware error tinted surface (badges, alerts). */
-  --color-utility-error-200: #fecdca; /** Theme-aware error tinted border (badges). */
-  --color-utility-error-600: #d92d20; /** Theme-aware error accent text on the 50 tint (alerts). */
-  --color-utility-error-700: #b42318; /** Theme-aware error accent text on the 50 tint (badges). */
-  --space-none: 0rem; /** Zero gap — flush/adjacent elements. */
-  --space-xxs: 0.125rem; /** Hairline gap between tightly-coupled marks (icon + label). */
-  --space-xs: 0.25rem; /** Tightest control padding; icon insets. */
-  --space-sm: 0.375rem; /** Compact control padding; dense chip/badge insets. */
-  --space-md: 0.5rem; /** Default gap inside compact controls. */
-  --space-md-lg: 0.625rem; /** Between compact and comfortable control padding. */
-  --space-lg: 0.75rem; /** Comfortable control padding; small stack gaps. */
-  --space-lg-xl: 0.875rem; /** Between control and container padding. */
-  --space-xl: 1rem; /** Default card/container padding; primary stack gap. */
-  --space-2xl: 1.25rem; /** Roomy card padding. */
-  --space-3xl: 1.5rem; /** Section padding; gap between major regions. */
-  --space-4xl: 2rem; /** Generous section padding on desktop. */
-  --space-5xl: 2.5rem; /** Page-level vertical rhythm. */
-  --space-6xl: 3rem; /** Large landing/section rhythm. */
-  --space-7xl: 4rem; /** Marketing section spacing. */
-  --space-8xl: 5rem; /** Hero vertical spacing. */
-  --space-9xl: 6rem; /** Large hero spacing. */
-  --space-10xl: 8rem; /** Oversized editorial spacing. */
-  --space-11xl: 10rem; /** Maximum layout spacing. */
-  --radius-none: 0rem; /** Square corners. */
-  --radius-xxs: 0.125rem; /** Barely-rounded marks. */
-  --radius-xs: 0.25rem; /** Small chips, tags, tiny controls. */
-  --radius-sm: 0.375rem; /** Compact controls. */
-  --radius-md: 0.5rem; /** Inputs, badges, tooltips, menu items, compact controls. */
-  --radius-lg: 0.625rem; /** Buttons, dialogs, floating menus. */
-  --radius-xl: 0.75rem; /** Cards, tables, panels, alerts, drawers. */
-  --radius-2xl: 1rem; /** Occasional oversized/rounded surfaces. */
-  --radius-3xl: 1.25rem; /** Extra-large surfaces. */
-  --radius-4xl: 1.5rem; /** Feature/marketing surfaces. */
-  --radius-full: 9999px; /** Pills, avatars, circular controls. */
-  --font-size-xs: 0.75rem; /** Captions, table sublabels, dense metadata. */
-  --font-size-sm: 0.875rem; /** Controls, table cells, dense body. */
-  --font-size-md: 1rem; /** Default readable body. */
-  --font-size-lg: 1.125rem; /** Larger descriptions, modal body. */
-  --font-size-xl: 1.25rem; /** Dense page headings when a heading size is too large. */
-  --font-size-heading-xs: 1.5rem; /** Default dashboard page title; card hero value. */
-  --font-size-heading-sm: 1.875rem; /** Section heading in docs/marketing. */
-  --font-size-heading-md: 2.25rem; /** Large section heading; rare in product UI. */
-  --font-size-heading-lg: 3rem; /** Marketing/editorial heading. */
-  --font-size-heading-xl: 3.75rem; /** Hero heading. */
-  --font-size-heading-2xl: 4.5rem; /** Largest display heading. */
-  --line-height-xs: 1.125rem;
-  --line-height-sm: 1.25rem;
-  --line-height-md: 1.5rem;
-  --line-height-lg: 1.75rem;
-  --line-height-xl: 1.875rem;
-  --line-height-heading-xs: 2rem;
-  --line-height-heading-sm: 2.375rem;
-  --line-height-heading-md: 2.75rem;
-  --line-height-heading-lg: 3.75rem;
-  --line-height-heading-xl: 4.5rem;
-  --line-height-heading-2xl: 5.625rem;
-  --font-weight-regular: 400; /** Body copy. */
-  --font-weight-medium: 500; /** Control text; table emphasis. */
-  --font-weight-semibold: 600; /** Headings, card labels, important values. */
-  --font-weight-bold: 700; /** Strong emphasis; use sparingly in product UI. */
-  --shadow-xs: 0 0.0625rem 0.125rem 0 rgba(10, 13, 18, 0.05); /** Subtle lift for resting cards/buttons. */
-  --shadow-sm: 0 0.0625rem 0.125rem 0 rgba(0, 0, 0, 0.05); /** Slightly raised controls. */
-  --shadow-md: 0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1), 0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06); /** Raised interactive surfaces. */
-  --shadow-lg: 0 0.625rem 0.9375rem -0.1875rem rgba(0, 0, 0, 0.1), 0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.05); /** Menus, popovers, dropdowns. */
-  --shadow-xl: 0 1.25rem 1.5625rem -0.3125rem rgba(0, 0, 0, 0.1), 0 0.625rem 0.625rem -0.3125rem rgba(0, 0, 0, 0.04); /** Drawers and large overlays. */
-  --shadow-2xl: 0 1.5625rem 3.125rem -0.75rem rgba(0, 0, 0, 0.25); /** Modals and prominent overlays. */
-  --shadow-3xl: 0rem 2rem 4rem -0.75rem rgba(10, 13, 18, 0.14), 0rem 0.3125rem 0.3125rem -0.15625rem rgba(10, 13, 18, 0.04); /** Highest-elevation overlays. */
-  --shadow-inner: inset 0 0.125rem 0.25rem 0 rgba(0, 0, 0, 0.06); /** Inset/pressed treatment. */
-  --font-family-sans: Poppins, sans-serif; /** The brand typeface — Poppins. */
+  /* ── Colors ── */
+  --color-surface: #f8f9ff;
+  --color-surface-dim: #cbdbf5;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #464554;
+  --color-outline: #767586;
+  --color-outline-variant: #c7c4d7;
+  --color-surface-tint: #494bd6;
 
-  /* product additions */
+  --color-primary: #4648d4;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #6063ee;
+  --color-on-primary-container: #fffbff;
+  --color-primary-fixed: #e1e0ff;
+  --color-primary-fixed-dim: #c0c1ff;
+  --color-on-primary-fixed: #07006c;
+  --color-on-primary-fixed-variant: #2f2ebe;
+
+  --color-secondary: #006c49;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #6cf8bb;
+  --color-on-secondary-container: #00714d;
+  --color-secondary-fixed: #6ffbbe;
+  --color-secondary-fixed-dim: #4edea3;
+  --color-on-secondary-fixed: #002113;
+  --color-on-secondary-fixed-variant: #005236;
+
+  --color-tertiary: #b90538;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #dc2c4f;
+  --color-on-tertiary-container: #fffbff;
+  --color-tertiary-fixed: #ffdadb;
+  --color-tertiary-fixed-dim: #ffb2b7;
+  --color-on-tertiary-fixed: #40000d;
+  --color-on-tertiary-fixed-variant: #92002a;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-background: #f8f9ff;
+  --color-on-background: #0b1c30;
+  --color-surface-variant: #d3e4fe;
+
+  /* Semantic aliases for components */
+  --color-bg-primary: var(--color-surface-container-lowest);
+  --color-bg-primary-hover: var(--color-surface-container-low);
+  --color-bg-secondary: var(--color-surface-container-low);
+  --color-bg-secondary-hover: var(--color-surface-container);
+  --color-bg-tertiary: var(--color-surface-container);
+  --color-bg-brand-solid: var(--color-primary);
+  --color-bg-brand-solid-hover: var(--color-primary-container);
+  --color-text-primary: var(--color-on-surface);
+  --color-text-secondary: var(--color-on-surface-variant);
+  --color-text-tertiary: var(--color-outline-variant);
+  --color-text-quaternary: var(--color-outline);
+  --color-text-primary-on-brand: var(--color-on-primary);
+  --color-text-brand-primary: var(--color-primary);
+  --color-text-error-primary: var(--color-error);
+  --color-text-warning-primary: #f59e0b;
+  --color-text-success-primary: var(--color-secondary);
+  --color-border-primary: var(--color-outline-variant);
+  --color-border-secondary: var(--color-surface-dim);
+  --color-border-brand: var(--color-primary);
+  --color-ring-focus-ring: var(--color-primary);
+  --color-ring-focus-ring-error: var(--color-error);
+
+  /* Utility tints for badges/alerts */
+  --color-utility-brand-50: var(--color-primary-fixed);
+  --color-utility-brand-200: var(--color-primary-fixed-dim);
+  --color-utility-brand-600: var(--color-primary);
+  --color-utility-brand-700: var(--color-on-primary-fixed-variant);
+
+  --color-utility-success-50: var(--color-secondary-fixed);
+  --color-utility-success-200: var(--color-secondary-fixed-dim);
+  --color-utility-success-600: var(--color-secondary);
+  --color-utility-success-700: var(--color-on-secondary-fixed-variant);
+
+  --color-utility-warning-50: #fef3c7;
+  --color-utility-warning-200: #fde68a;
+  --color-utility-warning-600: #f59e0b;
+  --color-utility-warning-700: #b45309;
+
+  --color-utility-error-50: var(--color-error-container);
+  --color-utility-error-200: #fecaca;
+  --color-utility-error-600: var(--color-error);
+  --color-utility-error-700: var(--color-on-error-container);
+
+  --color-utility-gray-50: var(--color-surface-container-low);
+  --color-utility-gray-200: var(--color-surface-dim);
+  --color-utility-gray-600: var(--color-on-surface-variant);
+  --color-utility-gray-700: var(--color-on-surface);
+
+  /* ── Spacing ── */
+  --space-xs: 0.375rem;    /* 6px  */
+  --space-sm: 0.75rem;     /* 12px */
+  --space-md: 1.25rem;     /* 20px */
+  --space-lg: 2rem;        /* 32px */
+  --space-xl: 3rem;        /* 48px */
+  --space-gutter: 1.5rem;  /* 24px */
+  --space-gutter-mobile: 1rem; /* 16px */
+  --space-margin: 2.5rem;  /* 40px */
+  --space-margin-mobile: 1rem; /* 16px */
+
+  /* ── Border Radius ── */
+  --radius-sm: 0.5rem;     /* 8px  */
+  --radius-md: 1rem;       /* 16px */
+  --radius-lg: 2rem;       /* 32px */
+  --radius-xl: 3rem;       /* 48px */
+  --radius-full: 9999px;   /* pill */
+
+  /* ── Typography ── */
+  --font-family-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-md: 1rem;         /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+  --font-size-3xl: 2rem;        /* 32px */
+  --font-size-4xl: 2.5rem;      /* 40px */
+  --font-size-5xl: 3rem;        /* 48px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  /* Display / Headline / Title / Body scales */
+  --text-display-hero: var(--font-size-5xl);
+  --text-display-hero-mobile: var(--font-size-4xl);
+  --text-headline-lg: var(--font-size-4xl);
+  --text-headline-md: var(--font-size-3xl);
+  --text-headline-sm: var(--font-size-2xl);
+  --text-title-md: var(--font-size-xl);
+  --text-title-sm: var(--font-size-lg);
+  --text-body-lg: var(--font-size-md);
+  --text-body-md: var(--font-size-sm);
+  --text-body-sm: var(--font-size-xs);
+  --text-label-caps: var(--font-size-xs);
+  --text-label-badge: var(--font-size-xs);
+  --text-stat-numeric-lg: var(--font-size-4xl);
+  --text-stat-numeric-md: var(--font-size-2xl);
+
+  /* ── Shadows — Clay Elevation Model ── */
+  /* Level 1: Resting Clay Card */
+  --shadow-clay-rest: 0 14px 34px -4px rgba(112, 128, 160, 0.12),
+                      0 4px 12px -2px rgba(112, 128, 160, 0.06),
+                      inset 0 2px 4px rgba(255, 255, 255, 0.95),
+                      inset 0 -2px 4px rgba(100, 116, 139, 0.04);
+
+  /* Level 2: Floating / Active Card */
+  --shadow-clay-float: 0 24px 48px -6px rgba(99, 102, 241, 0.14),
+                       0 8px 20px -4px rgba(112, 128, 160, 0.1),
+                       inset 0 3px 6px rgba(255, 255, 255, 1),
+                       inset 0 -3px 6px rgba(100, 116, 139, 0.06);
+
+  /* Level 3: Recessed Wells / Inputs */
+  --shadow-clay-recessed: inset 0 3px 6px rgba(100, 116, 139, 0.08),
+                          inset 0 1px 2px rgba(100, 116, 139, 0.06);
+
+  /* Level 4: Tactile Pill Buttons — Resting */
+  --shadow-pill-rest: 0 8px 18px -2px rgba(99, 102, 241, 0.28),
+                      inset 0 2px 2px rgba(255, 255, 255, 0.4),
+                      inset 0 -2px 4px rgba(0, 0, 0, 0.12);
+
+  /* Level 4: Tactile Pill Buttons — Pressed / Squish */
+  --shadow-pill-squish: 0 2px 6px -1px rgba(99, 102, 241, 0.2),
+                        inset 0 2px 4px rgba(0, 0, 0, 0.18);
+
+  /* Specular top highlight for cards */
+  --shadow-specular-top: inset 0 2px 4px rgba(255, 255, 255, 0.9);
+
+  /* Bottom bevel for cards */
+  --shadow-bevel-bottom: inset 0 -2px 4px rgba(100, 116, 139, 0.04);
+
+  /* Card border */
+  --border-clay: 1px solid rgba(255, 255, 255, 0.8);
 }
 
-/* Dark is the product's default. Light exists and is complete, but Unwritten ships dark. */
-:root, [data-theme="dark"], .dark {
-  --color-text-primary: #f7f7f7; /** Titles, key values, primary reading text. */
-  --color-text-secondary: #cecfd2; /** Body copy, labels, secondary headings. */
-  --color-text-tertiary: #94979c; /** Helper copy, metadata, descriptions. */
-  --color-text-quaternary: #94979c; /** Lowest-emphasis text. */
-  --color-text-primary-on-brand: #f7f7f7; /** Text and labels on solid brand fills. */
-  --color-text-placeholder: #85888e; /** Input placeholder text. */
-  --color-text-disabled: #85888e; /** Text in disabled controls. */
-  --color-text-brand-primary: #f7f7f7; /** Links, selected text, brand emphasis. */
-  --color-text-error-primary: #f97066; /** Error text and destructive emphasis. */
-  --color-text-warning-primary: #fdb022; /** Warning text. */
-  --color-text-success-primary: #47cd89; /** Success text. */
-  --color-fg-primary: #ffffff; /** Strongest icon color. */
-  --color-fg-secondary: #cecfd2; /** Icons paired with secondary text. */
-  --color-fg-tertiary: #94979c; /** Supporting icons. */
-  --color-fg-quaternary: #94979c; /** Default utility-icon color. */
-  --color-fg-quaternary-hover: #cecfd2; /** Utility icon on hover. */
-  --color-fg-brand-primary: #4f37fd; /** Brand-emphasised icons. */
-  --color-fg-error-primary: #f04438; /** Error status icons. */
-  --color-fg-warning-primary: #f79009; /** Warning status icons. */
-  --color-fg-success-primary: #17b26a; /** Success status icons. */
-  --color-fg-disabled: #85888e; /** Icons in disabled controls. */
-  --color-fg-white: #ffffff; /** Icons on solid brand/status fills. */
-  --color-bg-primary: #0c0e12; /** Page/canvas and default card surface. */
-  --color-bg-primary-hover: #212124; /** Hovered canvas/control surface. */
-  --color-bg-primary-solid: #13161b; /** Inverted solid surface — tooltips, dark chips. */
-  --color-bg-secondary: #13161b; /** Grouped/quiet regions; table headers. */
-  --color-bg-secondary-hover: #212124; /** Hovered grouped surface; table row hover. */
-  --color-bg-tertiary: #212124; /** Nested/subtle raised surfaces. */
-  --color-bg-overlay: #212124; /** Modal/drawer backdrop scrim (pair with opacity). */
-  --color-bg-brand-solid: #4832e7; /** Primary action fill; brand-owned solid surface. */
-  --color-bg-brand-solid-hover: #4f37fd; /** Primary action hover fill. */
-  --color-bg-error-primary: #f04438; /** Pale error tint in light, solid in dark — pair per theme. */
-  --color-bg-warning-primary: #f79009; /** Pale warning tint in light, solid in dark — pair per theme. */
-  --color-bg-success-primary: #17b26a; /** Pale success tint in light, solid in dark — pair per theme. */
-  --color-bg-error-secondary: #d92d20; /** Error tint in light, solid in dark — pair per theme. */
-  --color-bg-warning-secondary: #dc6803; /** Warning tint in light, solid in dark — pair per theme. */
-  --color-bg-success-secondary: #079455; /** Success tint in light, solid in dark — pair per theme. */
-  --color-bg-disabled-subtle: #13161b; /** Disabled control surface. */
-  --color-border-primary: #373a41; /** Inputs, cards, strong dividers. */
-  --color-border-secondary: #212124; /** Row dividers, soft separators. */
-  --color-border-brand: #7e73fd; /** Brand-emphasised or selected outlines. */
-  --color-border-error-subtle: #f97066; /** Error outline on invalid inputs and callouts. */
-  --color-ring-focus-ring: #4f37fd; /** Keyboard focus ring. */
-  --color-ring-focus-ring-error: #f04438; /** Focus ring on invalid controls. */
-  --color-utility-gray-50: #13161b; /** Theme-aware gray tinted surface (badges, alerts). */
-  --color-utility-gray-200: #373a41; /** Theme-aware gray tinted border (badges). */
-  --color-utility-gray-600: #94979c; /** Theme-aware gray accent text on the 50 tint (alerts). */
-  --color-utility-gray-700: #cecfd2; /** Theme-aware gray accent text on the 50 tint (badges). */
-  --color-utility-brand-50: #201667; /** Theme-aware brand tinted surface (badges, alerts). */
-  --color-utility-brand-200: #3827b3; /** Theme-aware brand tinted border (badges). */
-  --color-utility-brand-600: #7e73fd; /** Theme-aware brand accent text on the 50 tint (alerts). */
-  --color-utility-brand-700: #a19afe; /** Theme-aware brand accent text on the 50 tint (badges). */
-  --color-utility-success-50: #053321; /** Theme-aware success tinted surface (badges, alerts). */
-  --color-utility-success-200: #085d3a; /** Theme-aware success tinted border (badges). */
-  --color-utility-success-600: #47cd89; /** Theme-aware success accent text on the 50 tint (alerts). */
-  --color-utility-success-700: #75e0a7; /** Theme-aware success accent text on the 50 tint (badges). */
-  --color-utility-warning-50: #4e1d09; /** Theme-aware warning tinted surface (badges, alerts). */
-  --color-utility-warning-200: #93370d; /** Theme-aware warning tinted border (badges). */
-  --color-utility-warning-600: #fdb022; /** Theme-aware warning accent text on the 50 tint (alerts). */
-  --color-utility-warning-700: #fec84b; /** Theme-aware warning accent text on the 50 tint (badges). */
-  --color-utility-error-50: #55160c; /** Theme-aware error tinted surface (badges, alerts). */
-  --color-utility-error-200: #912018; /** Theme-aware error tinted border (badges). */
-  --color-utility-error-600: #f97066; /** Theme-aware error accent text on the 50 tint (alerts). */
-  --color-utility-error-700: #fda29b; /** Theme-aware error accent text on the 50 tint (badges). */
-}
-
-html, body { background: var(--color-bg-primary); color: var(--color-text-primary); }
-body {
-  font-family: var(--font-family-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+/* The icon font: loaded in layout.tsx, this makes the ligature text actually render as a glyph
+   instead of literal words like "gavel" or "home_work". */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
 
-/* the scrubber thumb — the most important control in the product */
-input[type="range"] { accent-color: var(--color-bg-brand-solid); }
+/* Light mode only — claymorphism needs light canvas */
+html, body {
+  background: var(--color-background);
+  color: var(--color-on-background);
+  font-family: var(--font-family-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular nums for all monetary/metric readouts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* The scrubber thumb — primary brand color */
+input[type="range"] {
+  accent-color: var(--color-primary);
+}
+
+/* Hide scrollbar but keep scroll */
+::-webkit-scrollbar { display: none; }
+* { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-ring-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Clay card base utility */
+.clay-card {
+  background: var(--color-surface-container-lowest);
+  border: var(--border-clay);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-clay-rest);
+}
+
+.clay-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.clay-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-clay-float);
+}
+
+/* Clay pill button base */
+.clay-pill {
+  border-radius: var(--radius-full);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.clay-pill-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-pill-rest);
+}
+.clay-pill-primary:hover {
+  transform: translateY(-1px);
+}
+.clay-pill-primary:active {
+  transform: translateY(2px) scale(0.985);
+  box-shadow: var(--shadow-pill-squish);
+}
+.clay-pill-secondary {
+  background: var(--color-surface-container-lowest);
+  color: var(--color-on-surface);
+  box-shadow: 0 6px 16px -2px rgba(112, 128, 160, 0.12),
+              inset 0 2px 4px rgba(255, 255, 255, 0.95),
+              inset 0 -2px 4px rgba(100, 116, 139, 0.04);
+  border: var(--border-clay);
+}
+.clay-pill-secondary:hover {
+  transform: translateY(-1px);
+}
+.clay-pill-secondary:active {
+  transform: translateY(2px) scale(0.985);
+}
+
+.clay-pill-tertiary {
+  background: var(--color-tertiary);
+  color: var(--color-on-tertiary);
+  box-shadow: 0 8px 18px -2px rgba(185, 5, 56, 0.28),
+              inset 0 2px 2px rgba(255, 255, 255, 0.4),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.12);
+}
+.clay-pill-tertiary:hover {
+  transform: translateY(-1px);
+}
+.clay-pill-tertiary:active {
+  transform: translateY(2px) scale(0.985);
+}
+
+/* Recessed well for inputs, progress tracks */
+.clay-well {
+  background: var(--color-surface-container-high);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-clay-recessed);
+  border: 1px solid transparent;
+}
+.clay-well:focus-within {
+  background: var(--color-surface-container-lowest);
+  box-shadow: var(--shadow-clay-recessed), 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+/* Badge / chip pill */
+.clay-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9);
+}
+.clay-badge-brand { background: var(--color-primary-fixed); color: var(--color-on-primary-fixed-variant); }
+.clay-badge-success { background: var(--color-secondary-fixed); color: var(--color-on-secondary-fixed-variant); }
+.clay-badge-warning { background: var(--color-utility-warning-50); color: var(--color-utility-warning-700); }
+.clay-badge-error { background: var(--color-utility-error-50); color: var(--color-utility-error-700); }
+.clay-badge-neutral { background: var(--color-surface-container-low); color: var(--color-on-surface-variant); }
+
+/* Progress gauge — clay sausage */
+.clay-gauge {
+  background: var(--color-surface-container-high);
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.clay-gauge-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-secondary);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  transition: width 0.3s ease;
+}
+.clay-gauge-fill.creep { background: #f59e0b; }
+.clay-gauge-fill.friction { background: var(--color-tertiary); }
+
+/* Gate card — the home page's three entry points get a tinted outer glow matching their accent,
+   on top of the same clay-card elevation every other card uses. */
+.clay-card-glow-primary {
+  box-shadow: 0 16px 38px -4px rgba(99, 102, 241, 0.16), 0 4px 12px -2px rgba(112, 128, 160, 0.08),
+    inset 0 2px 4px rgba(255, 255, 255, 0.95), inset 0 -2px 4px rgba(100, 116, 139, 0.04);
+}
+.clay-card-glow-secondary {
+  box-shadow: 0 16px 38px -4px rgba(16, 185, 129, 0.14), 0 4px 12px -2px rgba(112, 128, 160, 0.08),
+    inset 0 2px 4px rgba(255, 255, 255, 0.95), inset 0 -2px 4px rgba(100, 116, 139, 0.04);
+}
+.clay-card-glow-tertiary {
+  box-shadow: 0 16px 38px -4px rgba(220, 44, 79, 0.14), 0 4px 12px -2px rgba(112, 128, 160, 0.08),
+    inset 0 2px 4px rgba(255, 255, 255, 0.95), inset 0 -2px 4px rgba(100, 116, 139, 0.04);
+}
+
+/* Floating pill nav / hero frame container */
+.clay-nav-container {
+  box-shadow: 0 14px 34px -4px rgba(112, 128, 160, 0.12), 0 4px 12px -2px rgba(112, 128, 160, 0.06),
+    inset 0 2px 4px rgba(255, 255, 255, 0.95), inset 0 -2px 4px rgba(100, 116, 139, 0.04);
+}
+
+/* Avatar badge — clay disc */
+.clay-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  box-shadow: 0 4px 10px rgba(112, 128, 160, 0.12),
+              inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}

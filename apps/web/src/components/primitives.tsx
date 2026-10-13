@@ -1,18 +1,21 @@
+'use client';
+
 import type { BeliefState } from '@unwritten/fixtures';
 
 type Tone = 'plain' | 'note' | 'alert';
 
 export function Card({
-  children, tone = 'plain', onClick,
-}: { children: React.ReactNode; tone?: Tone; onClick?: () => void }) {
+  children,
+  tone = 'plain',
+  onClick,
+  className = '',
+}: { children: React.ReactNode; tone?: Tone; onClick?: () => void; className?: string }) {
   const tones: Record<Tone, string> = {
-    plain: 'bg-bg-secondary border-border-secondary',
-    note: 'bg-utility-brand-50 border-utility-brand-200',
-    alert: 'bg-utility-error-50 border-utility-error-200',
+    plain: 'bg-surface-container-lowest',
+    note: 'bg-primary-fixed/50',
+    alert: 'bg-error-container/50',
   };
-  const cls = `w-full rounded-[10px] border px-[18px] py-4 mb-3 text-left transition-colors ${tones[tone]} ${
-    onClick ? 'cursor-pointer hover:border-border-primary' : ''
-  }`;
+  const cls = `clay-card clay-card-hover rounded-xl p-5 ${tones[tone]} ${onClick ? 'cursor-pointer' : ''} ${className}`;
   return onClick ? (
     <button type="button" onClick={onClick} className={cls}>{children}</button>
   ) : (
@@ -20,26 +23,24 @@ export function Card({
   );
 }
 
-export type BadgeTone = 'brand' | 'success' | 'warning' | 'error' | 'gray';
+export type BadgeTone = 'brand' | 'success' | 'warning' | 'error' | 'neutral';
 
-const BADGE: Record<BadgeTone, string> = {
-  brand: 'bg-utility-brand-50 text-utility-brand-700 border-utility-brand-200',
-  success: 'bg-utility-success-50 text-utility-success-700 border-utility-success-200',
-  warning: 'bg-utility-warning-50 text-utility-warning-700 border-utility-warning-200',
-  error: 'bg-utility-error-50 text-utility-error-700 border-utility-error-200',
-  gray: 'bg-utility-gray-50 text-utility-gray-700 border-utility-gray-200',
+const BADGE_CLASS: Record<BadgeTone, string> = {
+  brand: 'clay-badge clay-badge-brand',
+  success: 'clay-badge clay-badge-success',
+  warning: 'clay-badge clay-badge-warning',
+  error: 'clay-badge clay-badge-error',
+  neutral: 'clay-badge clay-badge-neutral',
 };
 
-export function Badge({ tone = 'gray', children }: { tone?: BadgeTone; children: React.ReactNode }) {
-  return (
-    <span className={`${BADGE[tone]} shrink-0 rounded-full border px-2 py-[2px] text-[11px] font-medium whitespace-nowrap`}>
-      {children}
-    </span>
-  );
+export function Badge({ tone = 'neutral', children }: { tone?: BadgeTone; children: React.ReactNode }) {
+  return <span className={BADGE_CLASS[tone]}>{children}</span>;
 }
 
 const STATE_TONE: Record<BeliefState, BadgeTone> = {
-  observed: 'brand', ratified: 'success', drifting: 'warning',
+  observed: 'brand',
+  ratified: 'success',
+  drifting: 'warning',
 };
 
 export const StateBadge = ({ state }: { state: BeliefState }) => (
@@ -47,24 +48,24 @@ export const StateBadge = ({ state }: { state: BeliefState }) => (
 );
 
 export const Meta = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-text-quaternary font-mono text-[11.5px] leading-relaxed">{children}</div>
+  <div className="text-on-surface-variant font-mono text-xs leading-relaxed">{children}</div>
 );
 
 export const Rule = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-text-primary mb-[7px] text-[15.5px]">{children}</p>
+  <p className="text-on-surface font-semibold text-base mb-2">{children}</p>
 );
 
 export const Progress = ({ value }: { value: number }) => (
-  <div className="bg-bg-tertiary mt-[9px] h-[3px] overflow-hidden rounded-sm">
-    <div className="bg-utility-success-700 h-full" style={{ width: `${value * 100}%` }} />
+  <div className="clay-gauge h-2 mt-3" role="progressbar" tabIndex={0} aria-valuenow={Math.round(value * 100)} aria-valuemin={0} aria-valuemax={100}>
+    <div className="clay-gauge-fill h-full" style={{ width: `${value * 100}%` }} />
   </div>
 );
 
 export function Page({ title, lede, children }: { title: string; lede: string; children: React.ReactNode }) {
   return (
     <>
-      <h1 className="text-text-primary mb-1 text-[21px] font-semibold tracking-[-0.3px]">{title}</h1>
-      <p className="text-text-tertiary mb-6 text-[13.5px]">{lede}</p>
+      <h1 className="text-headline-md text-on-surface font-bold tracking-tight mb-1">{title}</h1>
+      <p className="text-body-md text-on-surface-variant mb-6">{lede}</p>
       {children}
     </>
   );
@@ -72,7 +73,7 @@ export function Page({ title, lede, children }: { title: string; lede: string; c
 
 export function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-border-secondary text-text-quaternary rounded-[10px] border border-dashed px-6 py-7 text-center text-[13.5px]">
+    <div className="clay-well rounded-xl p-6 text-center text-body-md text-on-surface-variant border border-outline-variant/50">
       {children}
     </div>
   );
@@ -80,13 +81,84 @@ export function Empty({ children }: { children: React.ReactNode }) {
 
 export function Kpi({ items }: { items: Array<[label: string, value: string, tone?: string | undefined]> }) {
   return (
-    <div className="mb-[18px] grid grid-cols-2 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(130px,1fr))]">
+    <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {items.map(([label, value, tone]) => (
-        <div key={label} className="bg-bg-secondary border-border-secondary rounded-[9px] border px-3.5 py-3">
-          <span className="text-text-quaternary block text-[11px] uppercase tracking-[0.6px]">{label}</span>
-          <b className={`font-mono text-[21px] font-medium ${tone ?? 'text-text-primary'}`}>{value}</b>
+        <div key={label} className="clay-card p-4">
+          <span className="text-label-caps text-on-surface-variant block mb-1">{label}</span>
+          <b className={`text-stat-numeric-md text-on-surface font-bold tabular-nums ${tone ?? ''}`}>{value}</b>
         </div>
       ))}
     </div>
+  );
+}
+
+/* Clay Pill Button — reusable primitive */
+export function ClayButton({
+  children,
+  variant = 'primary',
+  size = 'md',
+  onClick,
+  disabled,
+  className = '',
+  type = 'button',
+  ...props
+}: {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'tertiary';
+  size?: 'sm' | 'md' | 'lg';
+  onClick?: () => void;
+  disabled?: boolean;
+  className?: string;
+  type?: 'button' | 'submit';
+  [key: string]: unknown;
+}) {
+  const variantClass = {
+    primary: 'clay-pill clay-pill-primary',
+    secondary: 'clay-pill clay-pill-secondary',
+    tertiary: 'clay-pill clay-pill-tertiary',
+  }[variant];
+
+  const sizeClass = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-5 py-2.5 text-base',
+    lg: 'px-7 py-3.5 text-lg',
+  }[size];
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${variantClass} ${sizeClass} font-semibold inline-flex items-center justify-center gap-2 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* Clay Avatar — member badge */
+export function ClayAvatar({
+  label,
+  color = 'primary',
+  size = 'md',
+}: { label: string; color?: 'primary' | 'secondary' | 'tertiary' | 'neutral'; size?: 'sm' | 'md' | 'lg' }) {
+  const colorClass = {
+    primary: 'bg-primary-fixed text-on-primary-fixed-variant',
+    secondary: 'bg-secondary-fixed text-on-secondary-fixed-variant',
+    tertiary: 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
+    neutral: 'bg-surface-container-high text-on-surface-variant',
+  }[color];
+
+  const sizeClass = {
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-10 h-10 text-sm',
+    lg: 'w-12 h-12 text-base',
+  }[size];
+
+  return (
+    <span className={`clay-avatar ${colorClass} ${sizeClass} font-bold`}>
+      {label}
+    </span>
   );
 }

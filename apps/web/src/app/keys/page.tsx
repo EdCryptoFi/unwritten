@@ -102,7 +102,7 @@ export default function Keys() {
             <Rule>{frozen ? 'Account is frozen' : 'Emergency freeze'}</Rule>
             <Meta>Denies Seal decryption to everyone, the owner included. The kill switch.</Meta>
           </div>
-          <Badge tone={frozen ? 'error' : 'gray'}>{frozen ? 'frozen' : 'available'}</Badge>
+          <Badge tone={frozen ? 'error' : 'neutral'}>{frozen ? 'frozen' : 'available'}</Badge>
         </div>
         <div className="mt-3"><B danger={!frozen} onClick={() => setConfirm('freeze')}>{frozen ? 'Reactivate' : 'Freeze'}</B></div>
       </Card>

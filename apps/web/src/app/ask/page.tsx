@@ -37,7 +37,7 @@ function AskInner() {
                 : 'Your own cap, proposed by the agent and ratified by an approver.'}
             </Meta>
           </div>
-          <Badge tone={cap.source === 'house number' ? 'gray' : 'success'}>
+          <Badge tone={cap.source === 'house number' ? 'neutral' : 'success'}>
             {cap.source === 'house number' ? 'house default' : 'personal cap'}
           </Badge>
         </div>

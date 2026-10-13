@@ -41,7 +41,7 @@ export default function Notifications() {
               <Rule>{KIND[n.kind].text}</Rule>
               <Meta>{n.kind} · {n.atHour}h ago · to {n.to.map(nameOf).join(', ')}</Meta>
             </div>
-            <Badge tone={KIND[n.kind].interrupts ? 'error' : 'gray'}>
+            <Badge tone={KIND[n.kind].interrupts ? 'error' : 'neutral'}>
               {KIND[n.kind].interrupts ? 'interrupts' : 'digest'}
             </Badge>
           </div>

@@ -27,7 +27,7 @@ function HistoryInner() {
                 {e.latencySeconds !== null ? ` · ${e.latencySeconds}s` : ''}
               </Meta>
             </div>
-            <Badge tone={e.outcome === 'auto' ? 'gray' : e.outcome === 'approved' ? 'success' : 'error'}>
+            <Badge tone={e.outcome === 'auto' ? 'neutral' : e.outcome === 'approved' ? 'success' : 'error'}>
               {e.outcome}
             </Badge>
           </div>
