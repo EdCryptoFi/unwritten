@@ -11,7 +11,9 @@
     "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "verify": "tsx scripts/verify.mts",
     "spike": "tsx scripts/spike.mts",
-    "seed": "tsx scripts/seed.mts"
+    "seed": "tsx scripts/seed.mts",
+    "secrets": "bash scripts/set-secrets.sh",
+    "daily": "tsx scripts/spend.mts"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
