@@ -7,7 +7,7 @@
  * published yet', which is honest, rather than as a link that 404s in front of a reviewer.
  */
 export const LINKS = {
-  site: 'https://unwritten-phi.vercel.app',
+  site: 'https://unwritten-house.vercel.app',
   repo: 'https://github.com/EdCryptoFi/unwritten',
   aiBuilder: 'https://github.com/EdCryptoFi/unwritten-ai-builder',
   /** The checklist's 'published blog post'. Fill in on publish. */

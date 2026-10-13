@@ -2,7 +2,7 @@
 
 *The spending agreement your house already has.*
 
-**[unwritten-phi.vercel.app](https://unwritten-phi.vercel.app)** · Track 03, Consumer Finance
+**[unwritten-house.vercel.app](https://unwritten-house.vercel.app)** · Track 03, Consumer Finance
 
 Every household answers one question informally and never writes it down: **who can spend what,
 alone, up to how much.** Unwritten watches real decisions, derives the agreement, and tells you

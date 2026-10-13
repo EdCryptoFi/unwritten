@@ -8,8 +8,11 @@ changes a convention.
 > house money" is an idiom about spending recklessly — the inverse of this product. Earlier entries
 > in `AVALIACAO-unwritten.md` use the old name.
 >
-> `github.com/<user>/unwritten` · `unwritten.vercel.app` · npm package will be `revealed-policy`,
-> since the `unwritten` package name is taken and that name describes the mechanism better anyway.
+> `github.com/EdCryptoFi/unwritten` · deployed at `unwritten-house.vercel.app` — the exact
+> `unwritten.vercel.app` was already taken by another Vercel account, confirmed by three
+> independent checks (alias rejection, domain inspect, and the project-level allocation model)
+> rather than assumed from a 404. No npm package was published; `revealed-policy` was a
+> placeholder name from before the decision to keep policy as an internal workspace package.
 
 
 
