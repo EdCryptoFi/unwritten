@@ -1,9 +1,9 @@
 'use client';
 
-import { ClayButton } from '@/components/primitives';
+import { useGo } from '@/components/tour';
+import { LINKS } from '@/lib/links';
 import { useApp, useHouse } from '@/lib/state';
 import { WEEK_NOTE } from '@unwritten/fixtures';
-import { useRouter } from 'next/navigation';
 
 /* Three doors, deliberately not equal weight. The example teaches what a derived rule is in ten
    seconds; "try it yourself" only lands once you know that, so it is second. The judge door leads
@@ -14,23 +14,26 @@ import { useRouter } from 'next/navigation';
    pillowed surfaces, compound shadows. Every number on this page is real and sourced from the
    same engine the rest of the product reads from; nothing here is decorative marketing copy. */
 export default function Landing() {
-  const { setViewer, setWeek, loading, house } = useApp();
+  const { loading, house } = useApp();
   const { decisionsUpTo, beliefsUpTo } = useHouse();
-  const router = useRouter();
-
-  const go = (href: string, viewer: 'm1' | 'judge' = 'm1') => {
-    setViewer(viewer);
-    setWeek(6);
-    router.push(href);
-  };
+  const go = useGo();
 
   const totalMemories = Object.values(house.counts ?? {}).reduce<number>((a, b) => a + b, 0);
 
   return (
-    <div className="mx-auto max-w-[1040px] pt-2 pb-10">
-      {/* ── Eyebrow: live status, never a claim we cannot back ───────────── */}
-      <div className="mb-6 flex justify-center">
-        <div className="clay-card inline-flex items-center gap-2 rounded-full px-4 py-2">
+    <div className="mx-auto max-w-[1200px] px-4 pt-6 pb-16 md:px-8">
+      {/* ── Top bar: the sidebar's job on the landing, done in one line ───── */}
+      <header className="mb-6 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="bg-primary flex h-9 w-9 items-center justify-center rounded-full shadow-[0_4px_10px_rgba(70,72,212,0.3)]">
+            <span className="material-symbols-outlined text-on-primary text-[20px]">balance</span>
+          </span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-on-surface text-base font-bold">Unwritten</span>
+            <span className="text-label-caps text-primary font-bold tracking-wider whitespace-nowrap uppercase">Walrus Mainnet</span>
+          </span>
+        </div>
+        <div className="clay-card inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2">
           <span
             className={`h-2 w-2 rounded-full ${
               loading ? 'bg-on-surface-variant' : house.source === 'mainnet' ? 'animate-pulse bg-secondary' : 'bg-text-warning-primary'
@@ -40,153 +43,130 @@ export default function Landing() {
             {loading
               ? 'reading the house…'
               : house.source === 'mainnet'
-                ? `Walrus Mainnet · ${totalMemories || '50+'} memories written`
-                : 'Fixtures · relayer unreachable, same data shape'}
+                ? <>{totalMemories || '50+'} memories<span className="hidden sm:inline"> on Mainnet</span></>
+                : 'fixtures · relayer unreachable'}
           </span>
         </div>
-      </div>
+      </header>
 
-      {/* ── Hero headline ─────────────────────────────────────────────── */}
-      <div className="text-center">
-        <h1 className="font-display-hero text-headline-lg text-on-surface mx-auto max-w-3xl tracking-tight lg:text-[44px] lg:leading-[52px]">
-          The spending agreement your house <span className="text-primary italic">already has</span>.
-        </h1>
-        <p className="text-body-lg text-on-surface-variant mx-auto mt-5 max-w-2xl leading-relaxed">
-          Every household answers one question informally and never writes it down: who can spend
-          what, alone, up to how much. We watch real decisions, write it for you, and tell you when
-          the rule you think you have is not the rule you actually follow.
-        </p>
-      </div>
+      {/* ── Hero: title + illustration left, the three doors right ─────── */}
+      {/* Three grid children so the order can differ: on a phone the doors come straight after the
+          title — behind the illustration, nobody saw a choice without scrolling. On a wide screen
+          the doors span both rows of the right column, beside the title and the illustration. */}
+      <section className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-x-10 lg:gap-y-8">
+        <div className="lg:col-start-1 lg:row-start-1">
+          <span className="text-label-caps text-primary font-bold tracking-widest uppercase">
+            Unwritten · house budget
+          </span>
+          <h1 className="text-on-surface mt-3 text-[38px] leading-[44px] font-extrabold tracking-tight lg:text-[52px] lg:leading-[58px]">
+            The spending agreement your house <span className="text-primary italic">already has</span>.
+          </h1>
+          <p className="text-body-lg text-on-surface-variant mt-5 max-w-xl leading-relaxed">
+            Every household answers one question informally and never writes it down: who can spend
+            what, alone, up to how much. We watch real decisions, write it for you, and tell you when
+            the rule you think you have is not the rule you actually follow.
+          </p>
+        </div>
 
-      {/* ── Hero visual frame ────────────────────────────────────────── */}
-      <div className="clay-nav-container bg-surface-container-lowest group relative mx-auto mt-10 w-full max-w-4xl overflow-hidden rounded-xl p-3">
-        <div className="bg-surface-container-low relative flex aspect-[16/8] w-full items-center justify-center overflow-hidden rounded-lg">
-          {/* eslint-disable-next-line @next/next/no-img-element -- static asset, no next/image: keeps `sharp` out of the deploy's reachable surface */}
-          <img
-            src="/design/hero-house.webp"
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.01]"
-          />
-          <div className="bg-surface-container-lowest/90 absolute right-4 bottom-4 left-4 flex flex-col items-center justify-between gap-2 rounded-full px-5 py-3 shadow-[0_12px_28px_-4px_rgba(112,128,160,0.18),inset_0_2px_4px_rgba(255,255,255,0.9)] backdrop-blur-md sm:flex-row">
-            <div className="flex items-center gap-2.5">
-              <span className="bg-primary-fixed text-primary flex h-8 w-8 items-center justify-center rounded-full">
-                <span className="material-symbols-outlined text-[18px]">cottage</span>
-              </span>
-              <div className="text-left">
-                <p className="text-title-md text-on-surface leading-snug font-semibold">
-                  The Wilson House
-                </p>
-                <p className="text-body-sm text-on-surface-variant">
-                  Six weeks, seeded and read-only · {decisionsUpTo.length} decisions · {beliefsUpTo.length} rules
-                </p>
-              </div>
-            </div>
-            <span className="bg-secondary-container/40 text-on-secondary-container text-label-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1">
-              <span className="bg-secondary h-2 w-2 rounded-full" />
-              Disclosed seed, not a demo trick
-            </span>
+        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-6">
+          <span className="text-label-caps text-primary font-bold tracking-widest uppercase">Three ways in</span>
+          <h2 className="text-on-surface mt-1 mb-4 text-2xl font-bold tracking-tight">Choose how you want to see it</h2>
+          <div className="flex flex-col gap-3">
+            <GateCard
+              tone="primary"
+              icon="home_work"
+              badge="Start here · ~3 min"
+              title="See a house that already has one"
+              body="Six weeks of the Wilson family. A guided path: who asks, what gets approved, the rules that formed, and what the chain caught."
+              metricLabel="Live telemetry"
+              metricValue={`${decisionsUpTo.length} decisions`}
+              cta="Enter the Wilson house"
+              onClick={() => go('/house', 'm1', 'wilson')}
+            />
+            <GateCard
+              tone="secondary"
+              icon="magic_button"
+              badge="Your own house · ~1 min"
+              title="Make one about yourself"
+              body="Name your people, pick what your house spends on, set one number — the same engine derives a rule from your decisions, on Walrus Mainnet."
+              metricLabel="Time to a rule"
+              metricValue="Three taps"
+              cta="Try it yourself"
+              onClick={() => go('/try', 'm1', null)}
+            />
+            <GateCard
+              tone="tertiary"
+              icon="verified"
+              badge="Total Recall reviewers"
+              title="Reviewing this for Total Recall?"
+              body="Seven stops in order, each switching you to the role it needs, with the architecture map of how the browser, Tatum and Walrus meet."
+              metricLabel="Guided stops"
+              metricValue="7 · ~4 min"
+              cta="I'm a judge"
+              onClick={() => go('/judge', 'judge', 'judge')}
+            />
           </div>
         </div>
-      </div>
+        <div className="lg:col-start-1 lg:row-start-2">
+          <div className="clay-nav-container bg-surface-container-lowest group relative overflow-hidden rounded-xl p-3">
+            <div className="bg-surface-container-low relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+              {/* plain <img>, not next/image — next/image would invoke sharp */}
+              <img
+                src="/design/hero-house.webp"
+                alt=""
+                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+              />
+              <div className="bg-surface-container-lowest/90 absolute right-3 bottom-3 left-3 flex items-center gap-2.5 rounded-full px-4 py-2.5 shadow-[0_12px_28px_-4px_rgba(112,128,160,0.18),inset_0_2px_4px_rgba(255,255,255,0.9)] backdrop-blur-md">
+                <span className="bg-primary-fixed text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                  <span className="material-symbols-outlined text-[18px]">cottage</span>
+                </span>
+                <div className="min-w-0 text-left">
+                  <p className="text-on-surface text-sm leading-snug font-semibold">The Wilson House</p>
+                  <p className="text-body-sm text-on-surface-variant truncate">
+                    Six weeks, seeded and disclosed · {decisionsUpTo.length} decisions · {beliefsUpTo.length} rules
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      {/* ── THE THREE DOORS ──────────────────────────────────────────── */}
-      <div className="mt-14 text-center">
-        <span className="text-label-caps text-primary font-bold tracking-widest uppercase">
-          Three ways in
-        </span>
-        <h2 className="font-headline-lg text-headline-md text-on-surface mt-2 tracking-tight">
-          Choose how you want to see it
-        </h2>
-      </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Note title="Setup asks one number">On purpose — so there is something for week five to correct.</Note>
+            <Note title="No wallet, no gas">Two keys in the whole system, and members join with a link.</Note>
+          </div>
+        </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <GateCard
-          tone="primary"
-          icon="home_work"
-          badge="6-week case study · live"
-          title="See a house that already has one"
-          body="Six weeks of the Wilson family, seeded and read-only. Drag the weeks and watch the rules form, then watch one get rewritten. Start here — it takes ten seconds to understand."
-          metricLabel="Live telemetry"
-          metricValue={`${decisionsUpTo.length} decisions`}
-          cta="Enter the Wilson house"
-          onClick={() => go('/agreement')}
-        />
-        <GateCard
-          tone="secondary"
-          icon="magic_button"
-          badge="3-step derivation"
-          title="Make one about yourself"
-          body="Three taps and the same engine derives a rule from your decisions, written to Walrus Mainnet. Makes more sense once you have seen the house above."
-          metricLabel="Time to derivation"
-          metricValue="Three taps"
-          cta="Try it yourself"
-          onClick={() => go('/try')}
-        />
-        <GateCard
-          tone="tertiary"
-          icon="verified"
-          badge="Total Recall hackathon"
-          title="Reviewing this for Total Recall?"
-          body="A guided path through what is worth looking at, in order, and where the evidence lives. Four minutes, and Proof answers the checklist on its own if that is all you need."
-          metricLabel="Guided stops"
-          metricValue="6 · ~4 min"
-          cta="I'm a judge"
-          onClick={() => go('/judge', 'judge')}
-        />
-      </div>
+      </section>
 
       {/* ── WHAT THE HOUSE AGREED ON WITHOUT SAYING A WORD ───────────── */}
-      <div className="mt-16 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="mt-20 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <span className="text-label-caps text-primary font-bold tracking-widest uppercase">
             Tacit agreements, in clay
           </span>
-          <h2 className="font-headline-lg text-headline-md text-on-surface mt-2 tracking-tight">
+          <h2 className="text-on-surface mt-2 text-2xl font-bold tracking-tight lg:text-[28px]">
             What the house agreed on without saying a word
           </h2>
         </div>
         <p className="text-body-md text-on-surface-variant max-w-sm">
-          Four of the Wilson house&apos;s rules — every number here is live from <span className="text-on-surface font-semibold">/agreement</span>.
+          Four of the Wilson house&apos;s rules — every number here is live from{' '}
+          <span className="text-on-surface font-semibold">The Agreement</span>.
         </p>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <ThemeCard
-          icon="/design/icon-fastfood.webp"
-          badge="Observed"
-          badgeTone="secondary"
-          title="Friday Fast Food Ritual"
-          stat="$34.00 ± $4.08"
-          statTone="primary"
-          body="5 of 6 weeks. Small enough that nobody ever asked."
-        />
-        <ThemeCard
-          icon="/design/icon-games.webp"
-          badge="Friction point"
-          badgeTone="tertiary"
-          title="Max's Gaming Budget"
-          stat="72% of allowance"
-          statTone="tertiary"
-          body="One rejection in six weeks — the only contested category."
-        />
-        <ThemeCard
-          icon="/design/icon-groceries.webp"
-          badge="Ratified"
-          badgeTone="secondary"
-          title="Groceries Autonomous Ceiling"
-          stat="Up to $45.00 solo"
-          statTone="secondary"
-          body="11 of 11 times agreed without discussion."
-        />
-        <ThemeCard
-          icon="/design/icon-subscriptions.webp"
-          badge="Repriced"
-          badgeTone="primary"
-          title="Silent Price Creep"
-          stat="$10.99 → $12.99"
-          statTone="primary"
-          body="Nobody approved it, nobody noticed — until Reality check."
-        />
+        <ThemeCard icon="/design/icon-fastfood.webp" badge="Observed" badgeTone="secondary"
+          title="Friday Fast Food Ritual" stat="$34.00 ± $4.08" statTone="primary"
+          body="5 of 6 weeks. Small enough that nobody ever asked." />
+        <ThemeCard icon="/design/icon-games.webp" badge="Friction point" badgeTone="tertiary"
+          title="Max's Gaming Budget" stat="72% of allowance" statTone="tertiary"
+          body="One rejection in six weeks — the only contested category." />
+        <ThemeCard icon="/design/icon-groceries.webp" badge="Ratified" badgeTone="secondary"
+          title="Groceries Autonomous Ceiling" stat="Up to $45.00 solo" statTone="secondary"
+          body="11 of 11 times agreed without discussion." />
+        <ThemeCard icon="/design/icon-subscriptions.webp" badge="Repriced" badgeTone="primary"
+          title="Silent Price Creep" stat="$10.99 → $12.99" statTone="primary"
+          body="Nobody approved it, nobody noticed — until Reality check." />
       </div>
 
       {/* ── HOW IT WORKS ──────────────────────────────────────────────── */}
@@ -195,7 +175,7 @@ export default function Landing() {
           <span className="text-label-caps text-primary font-bold tracking-widest uppercase">
             No LLM, no network, no I/O
           </span>
-          <h2 className="font-headline-lg text-headline-md text-on-surface mt-2 tracking-tight">
+          <h2 className="text-on-surface mt-2 text-2xl font-bold tracking-tight lg:text-[28px]">
             How the house&apos;s rules get derived
           </h2>
           <p className="text-body-md text-on-surface-variant mt-2">
@@ -247,46 +227,21 @@ export default function Landing() {
           ))}
         </div>
         <p className="text-body-sm text-on-surface-variant mt-4 text-center">
-          Drag the week control at the bottom of the screen to watch it happen on{' '}
-          <button type="button" onClick={() => go('/agreement')} className="text-primary font-semibold underline decoration-dotted underline-offset-2">
-            The Agreement
-          </button>.
+          Inside the house, a week control at the bottom of every screen replays this —{' '}
+          <button type="button" onClick={() => go('/house', 'm1', 'wilson')} className="text-primary font-semibold underline decoration-dotted underline-offset-2">
+            start the Wilson tour
+          </button>{' '}
+          to see it.
         </p>
       </div>
 
-      {/* ── CLOSING CTA ───────────────────────────────────────────────── */}
-      <div className="from-surface-container-low via-surface-container-lowest to-surface-container mt-16 flex flex-col items-center rounded-xl bg-gradient-to-br p-8 text-center shadow-[0_20px_44px_-8px_rgba(70,72,212,0.12),inset_0_3px_5px_rgba(255,255,255,0.95),inset_0_-3px_5px_rgba(100,116,139,0.05)] lg:p-14">
-        <div className="bg-primary text-on-primary mb-6 flex h-14 w-14 items-center justify-center rounded-full shadow-[0_8px_20px_rgba(70,72,212,0.35),inset_0_2px_3px_rgba(255,255,255,0.4)]">
-          <span className="material-symbols-outlined text-[28px]">balance</span>
-        </div>
-        <h2 className="font-headline-lg text-headline-md text-on-surface max-w-2xl tracking-tight">
-          Ready to see what rules your house <span className="text-primary italic">actually</span> follows?
-        </h2>
-        <p className="text-body-lg text-on-surface-variant mt-4 mb-8 max-w-xl leading-relaxed">
-          No spreadsheets, no wallet, no gas. Start with the Wilson house or derive a rule about
-          yourself in three taps.
-        </p>
-        <div className="flex flex-col items-center gap-4 sm:flex-row">
-          <ClayButton variant="primary" size="lg" onClick={() => go('/agreement')}>
-            <span className="material-symbols-outlined text-[20px]">explore</span>
-            Explore the Wilson house
-          </ClayButton>
-          <ClayButton variant="secondary" size="lg" onClick={() => go('/try')}>
-            <span className="material-symbols-outlined text-[20px]">add_circle</span>
-            Try it yourself
-          </ClayButton>
-        </div>
-      </div>
-
-      {/* ── Two honest footnotes ─────────────────────────────────────── */}
-      <div className="mt-8 grid gap-3 sm:grid-cols-2">
-        <Note title="Setup asks one number">
-          On purpose — so there is something for week five to correct.
-        </Note>
-        <Note title="No wallet, no gas">
-          Two keys in the whole system, and members join with a link.
-        </Note>
-      </div>
+      <footer className="text-on-surface-variant mt-12 flex flex-col items-center justify-between gap-3 text-xs sm:flex-row">
+        <span>Built for Total Recall · Tatum × Walrus · Track 03, Consumer Finance</span>
+        <span className="flex gap-4">
+          <a href={LINKS.repo} target="_blank" rel="noreferrer" className="hover:text-primary">Repository ↗</a>
+          <button type="button" onClick={() => go('/proof', 'judge', null)} className="hover:text-primary">Proof</button>
+        </span>
+      </footer>
     </div>
   );
 }
@@ -310,39 +265,41 @@ function GateCard({
     tertiary: { badge: 'bg-tertiary-fixed text-on-tertiary-fixed-variant', dot: 'bg-tertiary', icon: 'text-tertiary', metric: 'text-tertiary' },
   }[tone];
 
+  /* Compact on purpose: the three sit beside the hero, and all three have to be visible without
+     scrolling — a reviewer who never sees the third door never finds their own path. */
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`clay-card clay-card-glow-${tone} flex flex-col justify-between rounded-xl p-6 text-left transition-all duration-300 hover:-translate-y-1 lg:p-7`}
+      className={`clay-card clay-card-glow-${tone} flex flex-col rounded-xl p-5 text-left transition-all duration-300 hover:-translate-y-1`}
     >
-      <div>
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <span className={`text-label-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] ${accent.badge}`}>
-            <span className={`h-2 w-2 rounded-full ${accent.dot}`} />
-            {badge}
-          </span>
-          <span className={`material-symbols-outlined text-[24px] ${accent.icon}`}>{icon}</span>
-        </div>
-        <h3 className="text-headline-sm text-on-surface mb-3 font-bold tracking-tight">{title}</h3>
-        <p className="text-body-md text-on-surface-variant mb-6 leading-relaxed">{body}</p>
-        <div className="bg-surface-container-low mb-6 flex items-center justify-between rounded-full px-4 py-3 shadow-[inset_0_2px_4px_rgba(100,116,139,0.06)]">
-          <span className="text-body-sm text-on-surface-variant">{metricLabel}</span>
-          <span className={`text-title-md font-bold tabular-nums ${accent.metric}`}>{metricValue}</span>
-        </div>
+      <div className="mb-2 flex w-full items-center justify-between gap-2">
+        <span className={`text-label-badge inline-flex items-center gap-1.5 rounded-full px-3 py-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] ${accent.badge}`}>
+          <span className={`h-2 w-2 rounded-full ${accent.dot}`} />
+          {badge}
+        </span>
+        <span className={`material-symbols-outlined text-[22px] ${accent.icon}`}>{icon}</span>
       </div>
-      <span
-        className={`clay-pill inline-flex w-full items-center justify-center gap-2 px-5 py-3.5 text-center font-semibold ${
-          tone === 'primary'
-            ? 'clay-pill-primary'
-            : tone === 'tertiary'
-              ? 'clay-pill-tertiary'
-              : 'bg-surface-container text-on-surface shadow-[0_6px_16px_-2px_rgba(112,128,160,0.12),inset_0_2px_4px_rgba(255,255,255,0.95)]'
-        }`}
-      >
-        {cta}
-        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-      </span>
+      <h3 className="text-on-surface mb-1 text-lg font-bold tracking-tight">{title}</h3>
+      <p className="text-on-surface-variant mb-4 text-sm leading-relaxed">{body}</p>
+      <div className="flex w-full items-center justify-between gap-3">
+        <span className="flex flex-col leading-tight">
+          <span className="text-on-surface-variant text-[11px]">{metricLabel}</span>
+          <span className={`text-base font-bold tabular-nums ${accent.metric}`}>{metricValue}</span>
+        </span>
+        <span
+          className={`clay-pill inline-flex shrink-0 items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold ${
+            tone === 'primary'
+              ? 'clay-pill-primary'
+              : tone === 'tertiary'
+                ? 'clay-pill-tertiary'
+                : 'bg-surface-container text-on-surface shadow-[0_6px_16px_-2px_rgba(112,128,160,0.12),inset_0_2px_4px_rgba(255,255,255,0.95)]'
+          }`}
+        >
+          {cta}
+          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </span>
+      </div>
     </button>
   );
 }
@@ -368,7 +325,7 @@ function ThemeCard({
   return (
     <div className="clay-card clay-card-hover flex flex-col rounded-xl p-4 lg:p-5">
       <div className="bg-surface-container-low mb-4 flex aspect-square w-full items-center justify-center overflow-hidden rounded-[1rem] p-3 shadow-[inset_0_2px_4px_rgba(100,116,139,0.08)]">
-        {/* eslint-disable-next-line @next/next/no-img-element -- static asset, no next/image */}
+        {/* plain <img>, not next/image — next/image would invoke sharp */}
         <img src={icon} alt="" className="h-full w-full object-contain" />
       </div>
       <span className={`text-label-caps mb-2 inline-flex w-fit items-center rounded-full px-2.5 py-0.5 font-bold ${badgeClass}`}>

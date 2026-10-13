@@ -15,7 +15,13 @@ export function Card({
     note: 'bg-primary-fixed/50',
     alert: 'bg-error-container/50',
   };
-  const cls = `clay-card clay-card-hover rounded-xl p-5 ${tones[tone]} ${onClick ? 'cursor-pointer' : ''} ${className}`;
+  /* `mb-3` and `w-full text-left` were lost in the clay port: every stacked card on every page
+     sat flush against the next, and a clickable card shrank to its content and centred its text.
+     The hover lift is for cards you can press — a static card that rises under the cursor
+     promises an action that is not there. */
+  const cls = `clay-card mb-3 block w-full rounded-xl p-5 text-left ${tones[tone]} ${
+    onClick ? 'clay-card-hover cursor-pointer' : ''
+  } ${className}`;
   return onClick ? (
     <button type="button" onClick={onClick} className={cls}>{children}</button>
   ) : (

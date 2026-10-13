@@ -66,6 +66,17 @@ export default function Keys() {
 
   return (
     <Page title="Keys" lede="Two keys in the whole system. Owner-only surface.">
+      {/* Disclosed rather than discovered: revoking the REAL delegate would lock the live demo out
+          of its own memory for every visitor, which is the property being shown — so the screen
+          plays the protocol's behaviour locally instead of performing it. */}
+      <Card tone="note">
+        <Meta>
+          A rehearsal, on purpose. Revoking this deployment&apos;s real delegate key would lock every
+          visitor out of the house&apos;s memory — which is exactly the property this screen shows.
+          The buttons play the Walrus Memory protocol&apos;s behaviour locally: revocation moves the
+          rotation counter, and a remember() after it fails.
+        </Meta>
+      </Card>
       <Kpi items={[
         ['Rotation counter', String(counter)],
         ['Delegate', delegate ? 'active' : 'revoked', delegate ? 'text-utility-success-700' : 'text-text-error-primary'],

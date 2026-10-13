@@ -1,6 +1,7 @@
 'use client';
 
 import { ClayAvatar } from '@/components/primitives';
+import { TourBar } from '@/components/tour';
 import { useApp } from '@/lib/state';
 import { HOUSE, WEEK_NOTE } from '@unwritten/fixtures';
 import Link from 'next/link';
@@ -10,6 +11,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { nav, viewer, setViewer, role, house, loading } = useApp();
   const path = usePathname();
   const active = HOUSE.members.filter((m) => m.state === 'active');
+
+  /* The home page is the door, not a room: no sidebar, no week control. Both only mean something
+     once you are inside the house, and on the landing they pushed the three choices off-screen. */
+  if (path === '/') {
+    return <div className="bg-background min-h-screen">{children}</div>;
+  }
 
   /* The full viewer-switcher + page nav, shared between two renders: open by default on desktop
      (a `<details>` with no `md:` affordance to collapse it), collapsed behind a tap on mobile. A
@@ -116,6 +123,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </nav>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 md:px-8 py-8 pb-32">
+        <TourBar />
         {children}
       </main>
 

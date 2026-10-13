@@ -13,9 +13,18 @@ Finance.
 
 ## Try it
 
-**[Enter the Wilson house →](https://unwritten.vercel.app)** — a seeded six-week household, read-only. Use the week scrubber
-at the bottom to watch rules form and get rewritten, and the role switcher to see what an
-approver, a spender and a judge each get.
+**[unwritten-house.vercel.app](https://unwritten-house.vercel.app)** opens on three doors:
+
+- **The Wilson house** — a guided five-stop tour of a seeded six-week household, starting from a
+  flowchart of how the house works: who asks, what gets classified, the gate, the decision, Walrus,
+  the derived rules, the Tatum check, the ratification.
+- **Try it yourself** — name your people, pick what your house spends on, set one number, and the
+  same engine derives a rule from your decisions, written to Walrus Mainnet.
+- **I'm a judge** — seven stops, each switching you to the role that screen needs, plus the
+  architecture diagrams below.
+
+Inside, the week control at the bottom replays the six weeks, and the role switcher shows what an
+owner, an approver and a spender each get.
 
 ## Verify it
 
@@ -52,6 +61,109 @@ Mainnet is exactly the kind of lie this project exists to avoid.
 | **Walrus Memory** (Sui Mainnet) | every decision and every derived rule, append-only and versioned |
 | **Tatum** Sui RPC (gateway) | reads the household wallet; catches spend with no approval. Not the Data API — it does not cover Sui |
 | `packages/policy` | the learning — seven dimensions, **pure functions, no LLM** |
+
+## Architecture
+
+The same diagrams render on [/judge](https://unwritten-house.vercel.app/judge), from
+`apps/web/src/lib/diagrams.ts` — this section is copied from that file, not redrawn. Every edge is
+a call the code makes. The owner key never reaches the server; only the delegate does.
+
+```mermaid
+flowchart TB
+  subgraph BR["Browser"]
+    UI["Screens<br/>Agreement · Reality · Try · Proof"]
+    DER["policy.deriveAll<br/>re-run live on /proof"]
+  end
+  subgraph VC["Vercel · Next.js API routes"]
+    H["/api/house"]
+    C["/api/chain"]
+    S["/api/sandbox"]
+    K["/api/checkpoint"]
+    REC["reconcile<br/>day + recipient, never amount"]
+  end
+  subgraph WM["Walrus Memory"]
+    RL["MemWal relayer<br/>delegate key · Seal-encrypted"]
+    WB[("Walrus Mainnet<br/>append-only blobs")]
+    AG["Public aggregator"]
+  end
+  subgraph TT["Tatum"]
+    GW["sui-mainnet.gateway.tatum.io"]
+  end
+  SUI[("Sui Mainnet<br/>house wallet")]
+  GH["GitHub Actions · daily<br/>scripts/spend.mts"]
+
+  UI --> H
+  UI --> C
+  UI --> S
+  UI --> K
+  H -->|"recall · listNamespaces"| RL
+  S -->|"validate → budget → remember"| RL
+  C -->|"recall decisions"| RL
+  C -->|"suix_queryTransactionBlocks · suix_getAllBalances"| GW
+  C --> REC
+  K -->|"sui_getLatestCheckpointSequenceNumber"| GW
+  RL --> WB
+  WB --> AG
+  UI -.->|"blob ids on /proof resolve here"| AG
+  GW --> SUI
+  GH -->|"signAndExecuteTransaction"| GW
+  GH -->|"writeDecision"| RL
+  DER -.-> UI
+```
+
+**Reality check** — one request, both networks. An unmatched row exists in neither source alone.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant B as Browser
+  participant A as Vercel /api/chain
+  participant T as Tatum gateway
+  participant S as Sui Mainnet
+  participant M as MemWal relayer
+  participant W as Walrus Mainnet
+  B->>A: open Reality check
+  A->>T: suix_queryTransactionBlocks · house wallet
+  T->>S: read
+  S-->>T: outgoing transfers
+  T-->>A: transfers · paginated, retried on 503
+  A->>T: suix_getAllBalances
+  T-->>A: balance → low-balance nudge
+  A->>M: recall decisions
+  M->>W: fetch blobs
+  W-->>M: Seal-encrypted payloads
+  M-->>A: decisions, decrypted for our delegate
+  A->>A: reconcile · match by day + recipient
+  A-->>B: rows · approvalId null = spend nobody agreed to
+  Note over B,W: An unmatched row exists in neither source alone — that is the integration
+```
+
+**The daily history** — why the chain holds real days rather than one afternoon of transfers.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant G as GitHub Actions · daily
+  participant T as Tatum gateway
+  participant S as Sui Mainnet
+  participant M as MemWal relayer
+  participant W as Walrus Mainnet
+  G->>T: has today already been sent? suix_queryTransactionBlocks
+  T-->>G: count of today's transfers
+  alt already sent
+    G->>G: exit — the chain is the idempotence guard
+  else not yet
+    G->>T: signAndExecuteTransaction · house key
+    T->>S: transfer
+    S-->>T: digest
+    T-->>G: confirmed
+    opt the household agreed to it
+      G->>M: writeDecision · only after the transfer confirms
+      M->>W: append blob
+    end
+    Note over G,W: ~1 in 5 has no decision on purpose — Reality check is meant to find it
+  end
+```
 
 ### One network
 
@@ -93,6 +205,10 @@ rather than by network.
   model would drift slowly when the truth is that everything changed on a Tuesday.
 - **Rent, utilities, insurance and debt are out of scope.** Subscriptions have the same shape as
   rent, which is why the `rhythm` dimension exists at all.
+- **Keys is a rehearsal.** Revoking this deployment's real delegate key would lock every visitor
+  out of the house's memory — which is the property the screen demonstrates. So `/keys` plays the
+  protocol's behaviour locally (the rotation counter moves, the next `remember()` fails) and says so
+  on the screen.
 - **Onchain ratification is not built.** Signing a proposal on `/digest` resolves locally and
   writes the new rule version to Mainnet; the Move package that would hold the ratified agreement
   does not exist, and the `ratifiedTx` on a seeded belief is a placeholder rather than a real

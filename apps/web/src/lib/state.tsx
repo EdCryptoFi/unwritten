@@ -4,20 +4,23 @@ import {
   BELIEFS, type Belief, DECISIONS, type DecisionEvent, HOUSE, type Member, type Ref,SPEND, 
   type SpendEvent, TOPUPS,type TopUpEvent, 
 } from '@unwritten/fixtures';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type Viewer = Ref | 'judge';
+
+/** A guided path through the product. `null` is free browsing. */
+export type Tour = 'wilson' | 'judge' | null;
 
 /** Each role gets a different app. A spender has three screens and no oversight surfaces. */
 export const NAV: Record<string, Array<[label: string, href: string]>> = {
   owner: [
-    ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],
+    ['How the house works', '/house'], ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],
     ['Weekly digest', '/digest'], ['Reality check', '/reality'], ['Rhythm', '/rhythm'],
     ['Allowance', '/allowance'], ['History', '/history'], ['Keys', '/keys'],
     ['Try it yourself', '/try'], ['Setup', '/onboarding'],
   ],
   approver: [
-    ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],
+    ['How the house works', '/house'], ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],
     ['Weekly digest', '/digest'], ['Reality check', '/reality'], ['Rhythm', '/rhythm'],
     ['Allowance', '/allowance'], ['History', '/history'], ['Try it yourself', '/try'],
   ],
@@ -63,6 +66,8 @@ interface Ctx {
   nav: Array<[string, string]>;
   house: HouseData;
   loading: boolean;
+  tour: Tour;
+  setTour: (t: Tour) => void;
 }
 
 const C = createContext<Ctx | null>(null);
@@ -72,6 +77,22 @@ export function StateProvider({ children }: { children: React.ReactNode }) {
   const [viewer, setViewer] = useState<Viewer>('m1');
   const [house, setHouse] = useState<HouseData>(FALLBACK);
   const [loading, setLoading] = useState(true);
+  /* Survives a refresh mid-tour, never another tab or device. Storage can be absent (private
+     windows, blocked site data), so every access is guarded and the tour degrades to "off". */
+  const [tour, setTourState] = useState<Tour>(null);
+  useEffect(() => {
+    try {
+      const t = sessionStorage.getItem('unwritten.tour');
+      if (t === 'wilson' || t === 'judge') setTourState(t);
+    } catch { /* no storage — tour starts off */ }
+  }, []);
+  const setTour = useCallback((t: Tour) => {
+    setTourState(t);
+    try {
+      if (t) sessionStorage.setItem('unwritten.tour', t);
+      else sessionStorage.removeItem('unwritten.tour');
+    } catch { /* no storage — in-memory only */ }
+  }, []);
 
   useEffect(() => {
     fetch('/api/house')
@@ -84,8 +105,11 @@ export function StateProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<Ctx>(() => {
     const me = viewer === 'judge' ? undefined : HOUSE.members.find((m) => m.ref === viewer);
     const role = viewer === 'judge' ? 'judge' : (me?.role ?? 'owner');
-    return { week, setWeek, viewer, setViewer, role, me, nav: NAV[role] ?? NAV.owner!, house, loading };
-  }, [week, viewer, house, loading]);
+    return {
+      week, setWeek, viewer, setViewer, role, me, nav: NAV[role] ?? NAV.owner!, house, loading,
+      tour, setTour,
+    };
+  }, [week, viewer, house, loading, tour, setTour]);
 
   return <C.Provider value={value}>{children}</C.Provider>;
 }
