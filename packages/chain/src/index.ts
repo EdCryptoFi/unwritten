@@ -117,30 +117,50 @@ export interface OutgoingTransfer {
  * The plan allows three requests a second, so anything polling this must be throttled. The
  * reconciliation pass is scheduled rather than reactive for that reason as well as the Walrus one.
  */
-export async function outgoingTransfers(address: string, limit = 50): Promise<OutgoingTransfer[]> {
-  const res = await tatumRpc<{
-    data?: Array<{
-      digest: string;
-      timestampMs?: string;
-      balanceChanges?: Array<{ owner: { AddressOwner?: string } | string; amount: string }>;
-    }>;
-  }>('sui', 'suix_queryTransactionBlocks', [
-    { filter: { FromAddress: address }, options: { showBalanceChanges: true } },
-    null, limit, true,
-  ]);
+/** Named so `res` does not reference its own type through `cursor`, which TS cannot resolve. */
+interface TxPage {
+  data?: Array<{
+    digest: string;
+    timestampMs?: string;
+    balanceChanges?: Array<{ owner: { AddressOwner?: string } | string; amount: string }>;
+  }>;
+  nextCursor?: string | null;
+  hasNextPage?: boolean;
+}
 
-  return (res.data ?? []).flatMap((t) => {
-    const spent = t.balanceChanges?.find((b) => b.amount.startsWith('-'));
-    if (!spent) return [];
-    const received = t.balanceChanges?.find((b) => !b.amount.startsWith('-'));
-    const owner = received?.owner;
-    return [{
-      digest: t.digest,
-      timestampMs: Number(t.timestampMs ?? 0),
-      mist: Math.abs(Number(spent.amount)),
-      to: typeof owner === 'object' && owner?.AddressOwner ? owner.AddressOwner : null,
-    }];
-  });
+export async function outgoingTransfers(address: string, limit = 200): Promise<OutgoingTransfer[]> {
+  /* Paginated, and that is not premature.
+     `suix_queryTransactionBlocks` caps a page at 50 and returns newest-first. The daily spend
+     script adds a couple of transfers a day, so a single unpaginated page silently starts dropping
+     the OLDEST days the moment the history passes fifty — which is precisely the six-week history
+     the reconciliation exists to read. The bug would have appeared only once the demo got good. */
+  const out: OutgoingTransfer[] = [];
+  let cursor: string | null = null;
+
+  for (let page = 0; page < 10 && out.length < limit; page++) {
+    const res: TxPage = await tatumRpc<TxPage>('sui', 'suix_queryTransactionBlocks', [
+      { filter: { FromAddress: address }, options: { showBalanceChanges: true } },
+      cursor, Math.min(50, limit - out.length), true,
+    ]);
+
+    for (const t of res.data ?? []) {
+      // The negative change is what left this address; the positive one is where it landed.
+      const spent = t.balanceChanges?.find((b) => b.amount.startsWith('-'));
+      if (!spent) continue;
+      const received = t.balanceChanges?.find((b) => !b.amount.startsWith('-'));
+      const owner = received?.owner;
+      out.push({
+        digest: t.digest,
+        timestampMs: Number(t.timestampMs ?? 0),
+        mist: Math.abs(Number(spent.amount)),
+        to: typeof owner === 'object' && owner?.AddressOwner ? owner.AddressOwner : null,
+      });
+    }
+
+    if (!res.hasNextPage || !res.nextCursor) break;
+    cursor = res.nextCursor;
+  }
+  return out;
 }
 
 /** Sui RPC · every coin type the address holds. */

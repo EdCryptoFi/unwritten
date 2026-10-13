@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The daily spend run.
+
+  Install:
+    cp scripts/com.unwritten.daily-spend.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.unwritten.daily-spend.plist
+
+  Check:
+    launchctl print gui/$(id -u)/com.unwritten.daily-spend | head -20
+    tail -20 .daily.log
+
+  Remove:
+    launchctl bootout gui/$(id -u)/com.unwritten.daily-spend
+    rm ~/Library/LaunchAgents/com.unwritten.daily-spend.plist
+
+  The paths below are absolute because launchd does not expand ~ or inherit a shell. If the repo
+  moves, this file has to be edited and the job reloaded.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.unwritten.daily-spend</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/fabioalves/Projects/Total recall - Tatum/unwritten/scripts/daily.sh</string>
+  </array>
+
+  <!-- 10:00 local. If the Mac is asleep or powered off at that moment, launchd runs the job at
+       the next opportunity instead of skipping the day — which is the reason this is a LaunchAgent
+       and not a crontab entry. A missed day of chain history cannot be reconstructed. -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>10</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- Safe because the wrapper is idempotent per UTC date: it records its last success and exits
+       early if today already ran. So a login or reboot can recover a day rather than double-spend
+       one. -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/fabioalves/Projects/Total recall - Tatum/unwritten</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/fabioalves/Projects/Total recall - Tatum/unwritten/.launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/fabioalves/Projects/Total recall - Tatum/unwritten/.launchd.err.log</string>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+</dict>
+</plist>

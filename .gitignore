@@ -6,3 +6,6 @@ dist/
 !.env.example
 .DS_Store
 *.tsbuildinfo
+.daily.log
+.daily-last-success
+.daily.lock/
