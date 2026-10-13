@@ -195,6 +195,13 @@ Never cut the screens.
   The Move package was listed for weeks and never written.
 - A Tatum read that nothing branches on is decoration. The balance was claimed, exported, and
   never called, while the UI showed a hardcoded constant.
+- A cast is where a bug hides. `['games', 'apparel'] as Category[]` compiled for weeks against a
+  category that does not exist, and the probe silently derived nothing. Annotate the type; do not
+  cast the value.
+- An exported function nothing calls is a claim about behaviour the code does not have. Two were
+  found in one day (`chain.readObject`, `policy.recencyWeight`). Delete, or call it.
+- A spec is audited against the code, not trusted. Four were written from the plan and three had
+  drifted; one of them asserted a universal gate the code never implemented.
 - Never run `biome format --write` on this repo. The formatter's defaults disagree with the
   hand-written style, and a lint fix once became a 2400-line reformat of untouched files eight
   days from the deadline. `biome check` for lint; fix what it reports by hand.
