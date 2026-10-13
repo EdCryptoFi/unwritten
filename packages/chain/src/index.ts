@@ -53,28 +53,54 @@ export async function tatumFetch(path: string, init: RequestInit = {}): Promise<
   });
 }
 
-/** JSON-RPC against a chain's gateway. */
+/**
+ * Errors that mean "ask again", as opposed to "you are wrong".
+ *
+ * The gateway returns `No healthy upstream available` (JSON-RPC -16503) intermittently — measured
+ * at two failures in three consecutive attempts on 13 Oct 2026. Without a retry that lands on the
+ * reconciliation a reviewer is looking at, and on the daily spend run, where a failure costs a day
+ * of history that cannot be recreated. A bad key or a malformed call must NOT be retried: three
+ * attempts at the wrong answer is just three times the latency.
+ */
+const TRANSIENT = /no healthy upstream|502|503|504|timeout|fetch failed|ECONNRESET|socket hang up/i;
+const RETRIES = 3;
+
+/** JSON-RPC against a chain's gateway. Retries only what is worth retrying. */
 export async function tatumRpc<T = unknown>(
   chain: string,
   method: string,
   params: unknown[] = [],
   network?: string,
 ): Promise<T> {
-  const res = await fetch(gatewayUrl(chain, network), {
-    method: 'POST',
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-    headers: withKey({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-  });
-  if (!res.ok) {
-    throw new Error(`${method}: HTTP ${res.status} ${(await res.text()).slice(0, 160)}`);
+  let last: Error | undefined;
+
+  for (let attempt = 0; attempt < RETRIES; attempt++) {
+    if (attempt > 0) {
+      // 400ms, 800ms. Also keeps three-a-second from being the thing that fails next.
+      await new Promise((r) => setTimeout(r, 400 * 2 ** (attempt - 1)));
+    }
+    try {
+      const res = await fetch(gatewayUrl(chain, network), {
+        method: 'POST',
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        headers: withKey({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+      });
+      if (!res.ok) {
+        throw new Error(`${method}: HTTP ${res.status} ${(await res.text()).slice(0, 160)}`);
+      }
+      const json = (await res.json()) as { result?: T; error?: { message: string } };
+      if (json.error) throw new Error(`${method}: ${json.error.message}`);
+      // A 200 that carries no result is a failure the caller cannot act on. Treating it as success
+      // is how `health()` reported four passes against a host that rejects every one of our keys.
+      if (json.result === undefined) throw new Error(`${method}: 200 with no result`);
+      return json.result;
+    } catch (e) {
+      last = e instanceof Error ? e : new Error(String(e));
+      if (!TRANSIENT.test(last.message)) throw last;
+    }
   }
-  const json = (await res.json()) as { result?: T; error?: { message: string } };
-  if (json.error) throw new Error(`${method}: ${json.error.message}`);
-  // A 200 that carries no result is a failure the caller cannot act on. Treating it as success is
-  // how `health()` reported four passes against a host that rejects every one of our keys.
-  if (json.result === undefined) throw new Error(`${method}: 200 with no result`);
-  return json.result;
+  throw new Error(`${last?.message ?? `${method}: failed`} (after ${RETRIES} attempts)`);
 }
 
 /**

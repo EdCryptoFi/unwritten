@@ -17,9 +17,22 @@ import { JsonRpcHTTPTransport, SuiJsonRpcClient } from '@mysten/sui/jsonRpc';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Transaction } from '@mysten/sui/transactions';
 
-for (const l of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n')) {
-  const m = l.match(/^([A-Z_]+)=(.*)$/);
-  if (m?.[1] && m[2] !== undefined) process.env[m[1]] ??= m[2];
+/* Local runs read .env.local; CI has no such file and supplies real environment variables. Either
+   is fine, neither is required to exist. */
+try {
+  for (const l of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n')) {
+    const m = l.match(/^([A-Z_]+)=(.*)$/);
+    if (m?.[1] && m[2] !== undefined) process.env[m[1]] ??= m[2];
+  }
+} catch {
+  // no .env.local — expected in CI
+}
+
+for (const k of ['TATUM_API_KEY', 'SUI_HOUSE_KEY', 'SUI_HOUSE_ADDRESS', 'MEMWAL_PRIVATE_KEY']) {
+  if (!process.env[k]) {
+    console.error(`\x1b[31mmissing ${k}\x1b[0m — set it in .env.local or the runner's secrets`);
+    process.exit(2);
+  }
 }
 
 const COMMIT = process.argv.includes('--commit');
@@ -42,9 +55,34 @@ const spaced = <T>(fn: () => Promise<T>): Promise<T> => {
   return next as Promise<T>;
 };
 
+/**
+ * Throttled AND retried.
+ *
+ * The gateway intermittently answers `No healthy upstream available`: two failures in three
+ * consecutive attempts, measured 13 Oct 2026. Unretried, that is a day of history gone, and the
+ * history is the one thing this script cannot recreate tomorrow.
+ *
+ * Retries only transient faults. A `signAndExecuteTransaction` that failed for a real reason —
+ * insufficient gas, a stale object — must surface, because retrying a signature is how you send
+ * twice.
+ */
+const TRANSIENT = /no healthy upstream|502|503|504|timeout|fetch failed|ECONNRESET|socket hang up/i;
+
 class ThrottledTransport extends JsonRpcHTTPTransport {
-  override request<T>(input: Parameters<JsonRpcHTTPTransport['request']>[0]): Promise<T> {
-    return spaced(() => super.request<T>(input));
+  override async request<T>(input: Parameters<JsonRpcHTTPTransport['request']>[0]): Promise<T> {
+    let last: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await spaced(() => super.request<T>(input));
+      } catch (e) {
+        last = e;
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!TRANSIENT.test(msg)) throw e;
+        process.stdout.write(d(`    gateway unhealthy, retry ${attempt + 1}/3\n`));
+        await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
+      }
+    }
+    throw last;
   }
 }
 
@@ -153,6 +191,44 @@ if (!plan.length) { console.log(d('  nothing scheduled for today\n')); process.e
 
 const bal = await client.getBalance({ owner: house.toSuiAddress() });
 console.log(d(`  house balance ${Number(bal.totalBalance) / 1e9} SUI`));
+
+/**
+ * Has today already been sent?
+ *
+ * This used to be a file on one machine, which meant the job could only ever run from that
+ * machine: a second runner cannot see another's stamp, so two of them would send the same
+ * deterministic transfers twice. The chain is the one place every runner can agree on, and it is
+ * also the thing being asserted — so ask it.
+ *
+ * Refuses rather than guesses if the read fails. Sending twice is unfixable; skipping a day is
+ * merely bad.
+ */
+if (COMMIT) {
+  const { outgoingTransfers } = await import('@unwritten/chain');
+  let sentToday: number;
+  try {
+    const prior = await outgoingTransfers(process.env.SUI_HOUSE_ADDRESS as string);
+    sentToday = prior.filter(
+      (t) => new Date(t.timestampMs).toISOString().slice(0, 10) === today,
+    ).length;
+  } catch (e) {
+    console.error(`\x1b[31m  cannot read today's transfers — refusing to send blind\x1b[0m`);
+    console.error(d(`  ${(e as Error).message.slice(0, 160)}`));
+    process.exit(3);
+  }
+  if (sentToday >= plan.length) {
+    console.log(d(`  ${today} already has ${sentToday} transfer(s) on chain — nothing to do\n`));
+    process.exit(0);
+  }
+  if (sentToday > 0) {
+    /* A partial day: the run died between transfers. Resuming would re-send the ones that already
+       landed, because the plan is positional and the chain cannot tell us WHICH merchant was paid
+       without matching addresses. Stop and let a human look. */
+    console.log(`  \x1b[33m${today} has ${sentToday} of ${plan.length} already sent — partial day, stopping\x1b[0m`);
+    console.log(d('  re-running would duplicate. Inspect the wallet and send the remainder by hand.\n'));
+    process.exit(4);
+  }
+}
 
 for (const p of plan) {
   console.log(`  ${(p.mist / 1e9).toFixed(4)} SUI  ${p.label}`);

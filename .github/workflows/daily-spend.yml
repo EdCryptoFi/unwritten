@@ -1,0 +1,60 @@
+# The daily spend run.
+#
+# The product tells a six-week story, so the chain history has to accrue one day at a time —
+# sixty transfers made in one sitting would all carry the same timestamp and contradict the
+# narrative they are meant to corroborate. A missed day cannot be recovered: spend.mts is
+# deterministic on the date and there is no backfill.
+#
+# This runs here rather than only on a laptop because the submission has to stand on its own.
+# The job is safe to run from anywhere and more than once: spend.mts asks the chain whether
+# today's transfers already landed, so this and the local LaunchAgent can both be armed and
+# whichever fires first wins.
+name: daily spend
+
+on:
+  schedule:
+    # 13:00 UTC = 10:00 in UTC-3. GitHub's scheduler is best-effort and can run late under load,
+    # which is harmless here: the only thing that matters is landing once inside the UTC day.
+    - cron: '0 13 * * *'
+  # So a missed day can be driven by hand while it is still that UTC day.
+  workflow_dispatch:
+
+concurrency:
+  # Two overlapping runs would split coins from the same gas object and the second would fail on
+  # a stale object version.
+  group: daily-spend
+  cancel-in-progress: false
+
+jobs:
+  spend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: spend
+        env:
+          TATUM_API_KEY: ${{ secrets.TATUM_API_KEY }}
+          TATUM_API_BASE: ${{ secrets.TATUM_API_BASE }}
+          SUI_NETWORK: ${{ secrets.SUI_NETWORK }}
+          SUI_HOUSE_KEY: ${{ secrets.SUI_HOUSE_KEY }}
+          SUI_HOUSE_ADDRESS: ${{ secrets.SUI_HOUSE_ADDRESS }}
+          SUI_GROCER_ADDRESS: ${{ secrets.SUI_GROCER_ADDRESS }}
+          SUI_SUBS_ADDRESS: ${{ secrets.SUI_SUBS_ADDRESS }}
+          SUI_FASTFOOD_ADDRESS: ${{ secrets.SUI_FASTFOOD_ADDRESS }}
+          MEMWAL_PRIVATE_KEY: ${{ secrets.MEMWAL_PRIVATE_KEY }}
+          MEMWAL_ACCOUNT_ID: ${{ secrets.MEMWAL_ACCOUNT_ID }}
+          MEMWAL_SERVER_URL: ${{ secrets.MEMWAL_SERVER_URL }}
+          SEED_VERSION: ${{ secrets.SEED_VERSION }}
+        run: pnpm -s exec tsx scripts/spend.mts --commit

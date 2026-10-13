@@ -17,7 +17,6 @@ set -uo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$REPO/.daily.log"
-STAMP="$REPO/.daily-last-success"
 LOCK="$REPO/.daily.lock"
 
 export PATH="/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
@@ -32,18 +31,16 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 fi
 trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 
+# No local stamp. spend.mts asks the CHAIN whether today was already sent, which is the only
+# guard two runners can agree on — and a stamp written for one plan blocked a later run with a
+# different plan, which is how today's transfer was nearly lost.
 TODAY="$(date -u '+%Y-%m-%d')"
-if [ "$(cat "$STAMP" 2>/dev/null)" = "$TODAY" ]; then
-  say "SKIP  $TODAY already succeeded"
-  exit 0
-fi
-
 say "START $TODAY"
 if pnpm --dir "$REPO" -s exec tsx "$REPO/scripts/spend.mts" --commit >>"$LOG" 2>&1; then
-  echo "$TODAY" >"$STAMP"
   say "OK    $TODAY"
 else
   code=$?
+  # 0 is also returned when the chain says today is already done, so this is a real fault.
   # Loud on purpose. A silent failure costs a day of history that cannot be reconstructed.
   say "FAIL  $TODAY exit $code — this day is lost unless re-run before 00:00 UTC"
   osascript -e 'display notification "Unwritten: the daily spend run failed. That day of chain history cannot be recovered." with title "spend.mts failed"' 2>/dev/null
