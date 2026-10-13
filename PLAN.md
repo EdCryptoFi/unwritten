@@ -188,6 +188,13 @@ Never cut the screens.
   tour, and `/proof` opens by answering the checklist in the organisers' own words.
 - Links published after the code freezes (blog post, video) live in `lib/links.ts` as nullable. A
   null renders as "not published yet". A 404 in front of a reviewer is worse than an absence.
+- Every claim in the README, the description and the blog post has a call site in the code, named.
+  Five documents once said Tatum's Data API reads the house wallet while `packages/chain` carried
+  a comment explaining it does not cover Sui. Docs drift; the code is the source of truth.
+- A capability claimed in the architecture table exists, or it is in "What is honest about it".
+  The Move package was listed for weeks and never written.
+- A Tatum read that nothing branches on is decoration. The balance was claimed, exported, and
+  never called, while the UI showed a hardcoded constant.
 - Never run `biome format --write` on this repo. The formatter's defaults disagree with the
   hand-written style, and a lint fix once became a 2400-line reformat of untouched files eight
   days from the deadline. `biome check` for lint; fix what it reports by hand.
