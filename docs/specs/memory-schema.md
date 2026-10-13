@@ -1,6 +1,9 @@
 # Spec — Memory Schema
 
-Status: draft · derived from `prototype/unwritten-prototype.html`
+Status: audited against the code on 12 Oct 2026. Claims the code does not support are
+marked **Not built** inline rather than quietly removed, because the gap is the useful
+information.
+Derived from `prototype/unwritten-prototype.html`.
 Written in English: this document is read alongside the code by implementing agents.
 
 ## Context
@@ -41,8 +44,13 @@ a day. A wrong memory schema costs the Mainnet seed and the provenance story wit
 | `spend` | onchain movements observed via Tatum | `house · server`, on reconciliation |
 | `topup` | allowance distributions (the denominator) | `house · server`, on transfer |
 | `beliefs` | derived rules, versioned | `house · server`, on the daily derive pass |
+| `marker` | one seed marker carrying the counts | `scripts/seed.mts`, last write of a seed |
 
-A fifth namespace, `digest`, exists **on the Observer account**, never on the house account.
+`marker` is not product data. It exists because Memory has no delete, so a second seed into the
+same namespace version could not be undone — the marker is what lets a re-run refuse politely.
+A seeded account therefore holds **five** namespaces; a real house would hold four.
+
+A further namespace, `digest`, exists **on the Observer account**, never on the house account.
 
 ## 2. The never-write list
 
@@ -64,7 +72,8 @@ Identity lives in the application database, which is deletable. Memory stores `r
 id              string
 kind            'decision'
 date            ISO date
-category        enum: groceries|household|dining|pet|apparel|electronics|health
+category        enum: groceries|subscriptions|games|pets|fastfood|household|unclassified
+                // CATEGORIES in packages/fixtures is the single source of truth
 amountCents      int
 quorumRequired  enum: auto|1-of-2|2-of-2|all
 decidedBy       [{ ref, role }]     // ORDERED. The order is the data.
@@ -112,6 +121,7 @@ id              string      // '<key>-v<n>'
 dimension       enum: value_band|silence|authority|friction|drift|member_pattern|rhythm
 version         int
 supersedes      string | null
+fromWeek        int         // the week the pass that derived it ran in
 scope           { actor: ref|'*', category: string|'*' }
 confidence      0..1
 evidenceCount   int
@@ -212,9 +222,14 @@ Belief; a rejected one produces nothing but sets `cooldownUntil` in the database
 | Contradictory evidence, no stable rule | no belief written; `confidence` stays below the floor |
 | Fewer than `minEvidence` events | no belief; the empty state states how many are still needed |
 | Quorum unsatisfiable (declared-but-inactive approvers) | block the band; never downgrade silently |
-| Derive pass would exceed the rate limit | 500 points/hour ÷ 5 per `remember` = 100 writes/hour; batch with `rememberBulk` and run daily |
+| Derive pass would exceed the rate limit | Three limits, and the tightest is per-key: **30 points/min per delegate key** ÷ 5 per `remember` = **6 writes/min**. The account limits (500 points/hour, 60/min burst) bind later, at 100 writes/hour. One server key therefore caps the whole system at six writes a minute; `scripts/seed.mts` paces at 5.5s for that reason, and the relayer's own `SERVER_SUI_PRIVATE_KEYS` pool is the documented fix. `rememberBulk` exists in `packages/memory` and is the right tool for a derive pass once one is scheduled |
 | Blob expiry | `walrusEpochs` default 50 × ~2 weeks on Mainnet ≈ 2 years; renew rather than rewrite |
 | Seeded history | the seeder runs the real engine and is disclosed in the README |
+
+**Not built.** The daily derive pass this spec describes as the writer of `beliefs` does not exist
+as a scheduled job. Beliefs reach Mainnet through `scripts/seed.mts`, which runs the same
+`policy.deriveAll` a daily pass would call — so the derivation is real and the schedule is not.
+`scripts/spend.mts` is the only thing that runs daily, and it writes decisions and spend.
 
 ## 7. Open questions
 

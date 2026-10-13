@@ -1,6 +1,9 @@
 # Spec — Decision Flow
 
-Status: draft · derived from the clickable prototype, every path below was exercised there
+Status: audited against the code on 12 Oct 2026. Claims the code does not support are
+marked **Not built** inline rather than quietly removed, because the gap is the useful
+information.
+Derived from the clickable prototype; every path below was exercised there.
 Depends on: `memory-schema.md`
 
 ## Context
@@ -27,13 +30,17 @@ database.
 
 ## 3. Resolve quorum
 
-Read the **currently ratified policy** from chain via Tatum RPC. Then:
+Read the **currently ratified policy**. Then:
 
 ```
 active        = members where approver AND state == 'active'
 needed        = quorumRequired == '2-of-2' ? active.length : 1
 unsatisfiable = needed > active.length
 ```
+
+> **Not built.** This spec says the policy is read from chain, and there is no chain to read it
+> from — the Move package does not exist. Policy is `HOUSE.policy`, held in the application. The
+> quorum arithmetic below is real and tested; its source of truth is not yet onchain.
 
 `declared` and `invited` approvers **do not count**. If the quorum is unsatisfiable the band is
 **blocked** — never silently downgraded to one signature. This is what closes the identity hole
@@ -79,11 +86,19 @@ Rejection records **who** rejected.
 
 ## 7. Execute
 
-A testnet transfer. Approved-but-never-executed expires; the approval does not stay open.
+A **Mainnet** transfer, signed through Tatum's gateway (`SUI_NETWORK=mainnet`). The two-network
+plan this spec was written against never existed: `sui-testnet.gateway.tatum.io` returns 404 and
+the Walrus staging relayer rejects Mainnet keys, so the whole system runs on one network with real
+SUI. The amounts are small by design — `scripts/spend.mts` moves cents, not dollars.
+
+Approved-but-never-executed expires; the approval does not stay open.
 
 ## 8. Write memory
 
-`rememberBulk` into `decisions`. **Only terminal states.**
+One `remember` per event into `decisions` — **not** `rememberBulk`, although `packages/memory`
+exposes it. A single `remember` is what lets the seeder pace itself against the 30 points/min
+per-key limit and report progress write by write; a bulk call that fails halfway into an
+append-only store is the worse failure. **Only terminal states.**
 
 > **Invariant.** Nothing reaches Walrus before the decision resolves. Pending approvals live in
 > the application database. Memory is append-only, so a pending state written is a state that can
@@ -105,11 +120,17 @@ Without the first row, the Reality check screen flags every subscription renewal
 
 ## 10. Derive (scheduled, daily — never per event)
 
-See `policy-learning.md`. Scheduled rather than event-driven because: the relayer allows ~100
+> **Not built as a schedule.** `policy.deriveAll` exists and is called by `scripts/seed.mts` and
+> by `/proof`; no cron runs it. See `policy-learning.md`. Scheduled rather than event-driven because: the relayer allows ~100
 writes/hour (500 points ÷ 5 per `remember`); per-event derivation depends on arrival order and
 makes the demo non-deterministic; and learning in cadence is the honest model.
 
 ## 11. Ratification — two-phase commit
+
+> **Not built.** Signing on `/digest` resolves locally, including the simulated-failure path, and
+> writes the superseding belief to Mainnet. There is no transaction, so the ordering guarantee
+> below is a design this code is shaped for rather than one it currently exercises. The
+> `ratifiedTx` on a seeded belief is a placeholder.
 
 Accepting a proposal writes to **two systems**, and Walrus has no delete.
 

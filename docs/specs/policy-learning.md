@@ -1,6 +1,7 @@
 # Spec — Policy Learning
 
-Status: draft
+Status: audited against the code on 12 Oct 2026. Claims the code does not support are
+marked **Not built** inline rather than quietly removed, because the gap is the useful information
 Depends on: `memory-schema.md`, `decision-flow.md`
 
 ## Context
@@ -43,13 +44,44 @@ No precedent in Rosie — this spec defines them.
 | Knob | Default | Governs |
 |---|---|---|
 | `confidenceFloor` | 0.65 | below this, no belief is written at all |
-| `minEvidence` | 8 | events required before a belief can form |
+| `minEvidence` | 8 | the ceiling on the evidence a dimension may demand — **not a universal gate** |
 | `recencyHalfLifeDays` | 21 | passed to `recall` as `scoringWeights.recency`; recent behaviour outweighs old |
 | `driftTolerance` | 0.30 | how far behaviour may diverge from a ratified rule before drift is raised |
 | `rejectedCooldownDays` | 45 | silence after a proposal is rejected |
 
 `recall` is called with recency weighting deliberately: rule derivation must weigh recent
-behaviour above old. This is a protocol-native mechanism, not a workaround.
+behaviour above old. This is a protocol-native mechanism, not a workaround. Note where it applies —
+`packages/memory` passes `scoringWeights: { semantic: 0.6, recency: 0.4, recencyHalfLifeDays }`, so
+recency shapes **retrieval**. Inside a dimension every retrieved event counts equally. Weighting
+within the window is a stated gap, not a thing the code does.
+
+### Evidence floors are per dimension
+
+`minEvidence: 8` is the house's appetite, not a single gate, because the dimensions do not see
+comparable amounts of evidence. A 2-of-2 decision is rarer than a solo approval, so demanding
+eight of them would mean `authority` never forms at all.
+
+| Dimension | Floor in code | Why |
+|---|---|---|
+| `value_band` | `minEvidence` (8) | solo approvals are the most common event; full appetite applies |
+| `silence` | `minEvidence` (8) | same — auto-outcomes are plentiful |
+| `authority` | `min(minEvidence, 5)` | reads multi-signature decisions only, which are rarer |
+| `drift` | `min(minEvidence, 5)` | same population as `authority` |
+| `member_pattern` | `min(minEvidence, 4)` | one top-up per week caps the evidence at the week count |
+| `rhythm` | 3 occurrences | three points is the minimum that can establish a cadence |
+| `friction` | 1 rejection | deliberate: a rejection is rare and informative. Confidence is
+  correspondingly low and the UI always shows the raw count, so the reader can discount it |
+
+The consequence is visible in the product and should be: of the Wilson house's seven rules, two
+rest on eight or more events and five rest on fewer. Every card shows its own count.
+
+### Confidence is Laplace-smoothed
+
+`confidenceOf(hits, total) = (hits + 1) / (total + 2)`.
+
+Never the raw ratio. Eleven approvals out of eleven is 0.92, not 1.0, because certainty from a
+small sample is the thing a learning system most needs to avoid claiming. It also means a single
+observation yields 0.67 — above the 0.65 floor by a hair, which is the intended edge.
 
 ## 3. When a belief does NOT form
 
@@ -65,6 +97,11 @@ first-class screens, not decoration, and must state what is still missing.
 ## 4. The derive pass
 
 Runs **daily**, never per event.
+
+**Not built as a scheduled job.** `policy.deriveAll` is the pass and it is real — `scripts/seed.mts`
+and `/proof` both call it, which is why the page can show that the rules on screen are derived. What
+does not exist is the schedule. `scripts/spend.mts` is the only daily script, and it writes events
+rather than beliefs.
 
 ```
 for each dimension:
@@ -110,9 +147,10 @@ card says exactly that. A digest section that never clears teaches the admin to 
 
 ## Acceptance criteria
 
-**Given** 7 qualifying events and `minEvidence: 8`
+**Given** 7 qualifying solo approvals and `minEvidence: 8`
 **When** the derive pass runs
-**Then** no belief is written and the empty state reports one event still needed
+**Then** no `value_band` is written and the empty state reports one event still needed.
+Dimensions with lower floors are unaffected — see *Evidence floors are per dimension*.
 
 **Given** behaviour that oscillates between two bands
 **When** the derive pass runs
@@ -147,3 +185,9 @@ card says exactly that. A digest section that never clears teaches the admin to 
   probably be broken by a large change in evidence, not only by time. Same root as regime change.
 - **Exception vs. drift.** An $800 repair at 23:00 bypasses the rule legitimately. Today that reads
   as drift.
+- **Recency inside a dimension.** `recencyHalfLifeDays` shapes retrieval through `recall`, but once
+  events are in hand every dimension counts them equally. A `recencyWeight` helper existed in
+  `packages/policy`, exported and never called; it was removed rather than left to imply a
+  behaviour the code does not have. Wiring it would change every derived threshold, and the beliefs
+  it would contradict are already on Mainnet, where there is no delete. It belongs to a v2 with a
+  fresh namespace.

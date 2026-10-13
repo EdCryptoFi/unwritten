@@ -42,11 +42,6 @@ export const confidenceOf = (hits: number, total: number) => (hits + 1) / (total
 
 const blobStub = (key: string, v: number) => `0x${key}v${v}…pending`;
 
-/** Recent behaviour outweighs old. Mirrors `scoringWeights.recency` on the recall side. */
-export function recencyWeight(ageDays: number, halfLifeDays: number): number {
-  return 2 ** (-ageDays / halfLifeDays);
-}
-
 function nextVersion(key: string, existing: Belief[] | undefined) {
   const prior = (existing ?? [])
     .filter((b) => b.id.startsWith(`${key}-v`))
@@ -458,8 +453,8 @@ export interface Probes {
   member: { ref: Ref; category: Category; capCents: number };
   drift: { category: Category; claim: string };
   frictionCategories: Category[];
-  /** `[category, weekdayName?]` — a weekday makes it a day-of-week rhythm. */
-  rhythms: Array<readonly [Category, string?]>;
+  /** `[category]`, or `[category, weekdayName]` to make it a day-of-week rhythm. */
+  rhythms: Array<readonly [Category] | readonly [Category, string]>;
 }
 
 export function deriveAll(input: Omit<Input, 'existing'>, probes: Probes): Belief[] {

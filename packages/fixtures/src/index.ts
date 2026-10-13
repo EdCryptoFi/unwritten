@@ -506,19 +506,29 @@ export const capFor = (ref: Ref, week: number) => {
  *
  * `capCents` is week-dependent, so this is a function of the week rather than a constant.
  */
-export const wilsonProbes = (week: number) => ({
+export const wilsonProbes = (week: number): {
+  approvers: Ref[];
+  bandCategories: Category[];
+  authorityCategories: Category[];
+  member: { ref: Ref; category: Category; capCents: number };
+  drift: { category: Category; claim: string };
+  frictionCategories: Category[];
+  rhythms: Array<readonly [Category] | readonly [Category, string]>;
+} => ({
   approvers: HOUSE.members.filter((m) => m.approver).map((m) => m.ref),
-  bandCategories: ['groceries', 'household'] as Category[],
-  authorityCategories: ['household', 'groceries'] as Category[],
+  bandCategories: ['groceries', 'household'],
+  authorityCategories: ['household', 'groceries'],
   member: {
-    ref: 'm4' as Ref,
-    category: 'games' as Category,
+    ref: 'm4',
+    category: 'games',
     capCents: MAXSPEND.slice(0, week).reduce((a, w) => a + w.games, 0),
   },
-  drift: { category: 'household' as Category, claim: '2-of-2 above $100' },
-  frictionCategories: ['games', 'apparel'] as Category[],
+  drift: { category: 'household', claim: '2-of-2 above $100' },
+  // 'apparel' sat here behind an `as Category[]` cast for weeks. It is not in CATEGORIES, so the
+  // probe found nothing and derived nothing, silently. The annotation above is what catches that.
+  frictionCategories: ['games'],
   rhythms: [
     ['fastfood', 'Friday'],
-    ['subscriptions', undefined],
-  ] as Array<readonly [Category, string?]>,
+    ['subscriptions'],
+  ],
 });

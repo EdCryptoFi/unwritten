@@ -29,7 +29,7 @@ export default function Proof() {
   /* The rubric is one thing and the submission checklist is another. A reviewer ticking boxes
      should not have to work out which section answers which requirement. */
   const CHECKS: Array<[string, string, string | null]> = [
-    ['Walrus Memory integrated and writing on Mainnet', `${total} memories across 4 namespaces, every blob id below resolvable`, '#walrus'],
+    ['Walrus Memory integrated and writing on Mainnet', `${total} memories across ${Object.keys(counts ?? {}).length || 4} namespaces, every blob id below resolvable`, '#walrus'],
     ['At least 10 memories stored on Mainnet', `${total}, counted with listNamespaces rather than recall`, '#walrus'],
     ['Tatum RPC used for onchain data where relevant', 'four calls, and the only path that exists since fullnodes dropped JSON-RPC', '#tatum'],
     ['Working demo', LINKS.video ? 'the video' : 'the application you are in; video not published yet', LINKS.video],
@@ -47,7 +47,7 @@ export default function Proof() {
         ['Memories on Mainnet', String(total)],
         ['Seed', seed ?? '—'],
         ['Requirement', '10+'],
-        ['Namespaces', '4'],
+        ['Namespaces', String(Object.keys(counts ?? {}).length || 4)],
         ['Walrus epochs', '50 ≈ 2y'],
       ]} />
 

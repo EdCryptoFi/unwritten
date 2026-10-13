@@ -1,6 +1,7 @@
 # Spec — Try it yourself
 
-Status: draft
+Status: audited against the code on 12 Oct 2026. Claims the code does not support are
+marked **Not built** inline rather than quietly removed, because the gap is the useful information
 Depends on: `memory-schema.md`, `policy-learning.md`
 
 ## Context
@@ -83,8 +84,16 @@ configuration rather than hardcoded constants.
 delegate key is capped at 30 points/minute.
 
 - a session writes 4 memories = **20 points**
-- the account therefore sustains **~25 sessions/hour**
-- a session is capped at **5 writes**, after which the buttons disable
+- the account budget alone would sustain ~25 sessions/hour
+- but the code caps sandbox writes at **60 memories/hour** across all visitors
+  (`MAX_SANDBOX_TOTAL_PER_HOUR`), which is **15 sessions/hour** — deliberately stricter than the
+  protocol limit, so a burst of curiosity on the eve of judging cannot spend the house's budget
+- a session is capped at **5 writes** (`MAX_PER_SESSION`), after which the buttons disable
+
+The per-session cap alone bounded nothing, because a new session id buys a fresh allowance. The
+hourly total is the real protection, and it is measured by counting `memory_count` across every
+`sandbox-*` namespace through `listNamespaces` — a counter the visitor cannot reset. If that read
+fails the write is refused rather than attempted blind into a store with no delete.
 
 With a pool of 2+ server delegate keys the account limit binds rather than the key limit.
 
@@ -137,9 +146,17 @@ already derived and says the write is queued — it must not show a stack trace 
 **When** the Wilson house is opened
 **Then** its data is unchanged
 
-## Known gaps, pending the pipeline
+## Status
 
-- Writes are local state until `packages/memory` (step 6) swaps the target to Mainnet.
-- The derivation is inline until `packages/policy` (step 5) exists; it must then call the same
-  pure function as production, with only `minEvidence` differing.
-- Rate-limit degradation cannot be implemented or tested until there is a relayer to be limited by.
+Built. `apps/web/src/app/api/sandbox/route.ts` writes real `DecisionEvent` memories to Mainnet in
+`sandbox-<session>` and derives with `policy.valueBand` — the production function, with
+`minEvidence: 3` passed in as a knob rather than a branch in the code.
+
+Remaining gaps:
+
+- **Rate-limit degradation is coded but unproven.** The route refuses with an explanation when the
+  hourly budget is spent, and the client shows the rule already derived. Nothing has driven the
+  relayer to a real 429, so the path is reasoned rather than observed.
+- **A visitor cannot return to a session.** The namespace is derived from a session id held in the
+  browser; clearing it is losing it. The memories persist on Mainnet and are unreachable, which is
+  honest but not useful.
