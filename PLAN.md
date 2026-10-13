@@ -196,7 +196,17 @@ Never cut the screens.
   a comment explaining it does not cover Sui. Docs drift; the code is the source of truth.
 - A capability claimed in the architecture table exists, or it is in "What is honest about it".
   The Move package was listed for weeks and never written.
-- A Tatum read that nothing branches on is decoration. The balance was claimed, exported, and
+- A Tatum read that nothing branches on is decoration.
+- Uncommitted work is unverified work. A full design-system port (globals.css, primitives.tsx)
+  sat in the working tree across a session boundary, never built or typechecked, and carried a
+  real bug (`BadgeTone` renamed `gray`→`neutral` with five call sites left on the old name).
+  `git status` before trusting "this already looks done"; commit or stash at the end of a session.
+- A page wrapped in the shared `Shell` inherits its styling for free through `Card`/`Page`/`Badge`
+  from `primitives.tsx` — upgrade the primitive once rather than each page. The home page is the
+  one screen that doesn't use them, which is why it was the one that needed a real rewrite.
+- Screenshot mobile, don't reason about it. The sidebar's full nav list pushed all home-page
+  content below the fold on a phone — invisible in a desktop-only review, obvious in one shot.
+ The balance was claimed, exported, and
   never called, while the UI showed a hardcoded constant.
 - A cast is where a bug hides. `['games', 'apparel'] as Category[]` compiled for weeks against a
   category that does not exist, and the probe silently derived nothing. Annotate the type; do not
