@@ -1,8 +1,10 @@
 'use client';
 
-import { money } from '@unwritten/fixtures';
+import { BELIEFS, HOUSE, money, say, wilsonProbes } from '@unwritten/fixtures';
+import { agreement, deriveAll } from '@unwritten/policy';
 import { Card, Kpi, Meta, Page, Rule } from '@/components/primitives';
 import { addrUrl, sui, txUrl, useChain } from '@/lib/chain';
+import { LINKS } from '@/lib/links';
 import { useHouse } from '@/lib/state';
 
 /* For reviewers. THE APP NEVER LINKS HERE — it is referenced from the README, the write-up and
@@ -13,6 +15,28 @@ export default function Proof() {
   const { chain } = useChain();
   const total = Object.values(counts ?? {}).reduce<number>((a, b) => a + b, 0)
     || decisions.length + spendUpTo.length + topupsUpTo.length + beliefsUpTo.length;
+
+  /* Re-derived on every render rather than imported, so this cannot silently become a snapshot
+     of a passing result. `week: 6` matches the seeded window. */
+  const checks = agreement(
+    deriveAll({
+      decisions, spend: spendUpTo, topups: topupsUpTo,
+      knobs: HOUSE.learning, policy: HOUSE.policy, week: 6,
+    }, wilsonProbes(6)),
+    BELIEFS, say,
+  );
+
+  /* The rubric is one thing and the submission checklist is another. A reviewer ticking boxes
+     should not have to work out which section answers which requirement. */
+  const CHECKS: Array<[string, string, string | null]> = [
+    ['Walrus Memory integrated and writing on Mainnet', `${total} memories across 4 namespaces, every blob id below resolvable`, '#walrus'],
+    ['At least 10 memories stored on Mainnet', `${total}, counted with listNamespaces rather than recall`, '#walrus'],
+    ['Tatum RPC used for onchain data where relevant', 'four calls, and the only path that exists since fullnodes dropped JSON-RPC', '#tatum'],
+    ['Working demo', LINKS.video ? 'the video' : 'the application you are in; video not published yet', LINKS.video],
+    ['Public repo', 'EdCryptoFi/unwritten', LINKS.repo],
+    ['Published blog post', LINKS.writeup ? 'the write-up' : 'written, not published yet', LINKS.writeup],
+    ['Optional · built with Tatum AI Builder', 'the generated first version, kept in its own repo', LINKS.aiBuilder],
+  ];
 
   return (
     <Page
@@ -26,6 +50,23 @@ export default function Proof() {
         ['Namespaces', '4'],
         ['Walrus epochs', '50 ≈ 2y'],
       ]} />
+
+      <H>The submission checklist, line by line</H>
+      <Card>
+        {CHECKS.map(([req, where, href]) => (
+          <div key={req} className="border-border-primary flex gap-3 border-b py-2 last:border-0">
+            <span className="text-text-quaternary w-[13px] shrink-0 font-mono text-[13px]">
+              {href === null ? '○' : '✓'}
+            </span>
+            <div>
+              <div className="text-[13.5px]">{req}</div>
+              <Meta>
+                {href === null ? where : <a href={href} className="text-text-brand-primary">{where} →</a>}
+              </Meta>
+            </div>
+          </div>
+        ))}
+      </Card>
 
       <Card tone="note">
         <Rule>Verify it yourself</Rule>
@@ -65,7 +106,7 @@ export default function Proof() {
         </Meta>
       </Card>
 
-      <H>decisions · {decisions.length} blobs</H>
+      <H id="walrus">decisions · {decisions.length} blobs</H>
       {decisions.slice(0, 4).map((e) => (
         <Card key={e.id}>
           <Meta>
@@ -85,6 +126,30 @@ export default function Proof() {
             {b.ratifiedTx ? ` · tx ${b.ratifiedTx}` : ''}
           </Meta>
           <Blob id={b.blobId} />
+        </Card>
+      ))}
+
+      {/* The strongest claim in the project — that the rules are derived, not written — used to
+          be provable only by reading a terminal during a seed that can never be re-run. */}
+      <H>derived, not hardcoded · {checks.filter((r) => r.agrees).length} of {checks.length}</H>
+      <Card>
+        <Meta>
+          Computed in your browser, right now. Every rule below was produced by running
+          <code> packages/policy</code> over the six weeks of events — the same function the seeder
+          called to write to Mainnet — and compared against what the screens show. If a rule were
+          hardcoded, this is where it would say <em>differs</em>.
+        </Meta>
+      </Card>
+      {checks.map((r) => (
+        <Card key={r.id}>
+          <Meta>
+            <span className={r.agrees ? 'text-text-success-primary' : 'text-text-warning-primary'}>
+              {r.agrees ? 'agrees' : 'differs'}
+            </span>
+            {` · ${r.dimension} · ${r.id}`}
+          </Meta>
+          <div className="mt-1 text-[13px]">{r.derived}</div>
+          {!r.agrees && <Meta>screen says: {r.fixture}</Meta>}
         </Card>
       ))}
 
@@ -112,7 +177,7 @@ export default function Proof() {
         </Card>
       ))}
 
-      <H>the four Tatum reads</H>
+      <H id="tatum">the four Tatum reads</H>
       <Card>
         <Meta>
           <strong>suix_queryTransactionBlocks</strong> · the house wallet&apos;s outgoing
@@ -158,6 +223,6 @@ function Blob({ id }: { id?: string | undefined }) {
   );
 }
 
-const H = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="text-text-quaternary mt-[26px] mb-[9px] text-[12px] font-semibold uppercase tracking-[0.8px]">{children}</h2>
+const H = ({ children, id }: { children: React.ReactNode; id?: string }) => (
+  <h2 id={id} className="text-text-quaternary mt-[26px] mb-[9px] scroll-mt-6 text-[12px] font-semibold uppercase tracking-[0.8px]">{children}</h2>
 );

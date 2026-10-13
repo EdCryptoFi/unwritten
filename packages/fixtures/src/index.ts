@@ -496,3 +496,29 @@ export const capFor = (ref: Ref, week: number) => {
     ? { cents: b.thresholdCents, source: `personal · ${b.id}` }
     : { cents: HOUSE.policy.autoApproveCents, source: 'house number' as const };
 };
+
+/**
+ * Where to look for each dimension in the Wilson house.
+ *
+ * The seeder used to carry this inline, which meant the only way to see whether the rules on
+ * screen were actually derived was to re-run a script that can never be re-run — Memory has no
+ * delete. Exporting it lets `/proof` run the identical pass in the browser.
+ *
+ * `capCents` is week-dependent, so this is a function of the week rather than a constant.
+ */
+export const wilsonProbes = (week: number) => ({
+  approvers: HOUSE.members.filter((m) => m.approver).map((m) => m.ref),
+  bandCategories: ['groceries', 'household'] as Category[],
+  authorityCategories: ['household', 'groceries'] as Category[],
+  member: {
+    ref: 'm4' as Ref,
+    category: 'games' as Category,
+    capCents: MAXSPEND.slice(0, week).reduce((a, w) => a + w.games, 0),
+  },
+  drift: { category: 'household' as Category, claim: '2-of-2 above $100' },
+  frictionCategories: ['games', 'apparel'] as Category[],
+  rhythms: [
+    ['fastfood', 'Friday'],
+    ['subscriptions', undefined],
+  ] as Array<readonly [Category, string?]>,
+});

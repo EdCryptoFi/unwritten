@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Card, Meta, Page } from '@/components/primitives';
+import { LINKS } from '@/lib/links';
 
 /* A reviewer has three to five minutes and spends most of it deciding whether to keep going.
    Sending them straight to a page of hashes means they score the evidence and skip the product. */
@@ -11,14 +12,14 @@ const PATH: Array<[string, string, string]> = [
   ['/digest', 'Weekly digest', 'Accept a proposal as Sam and it waits — only the owner key can sign it onchain. Switch to Alex at the top left and sign. There is a button to simulate the transaction failing.'],
   ['/keys', 'Keys', 'As Alex: revoke the delegate, then press remember(). The application loses access to the house’s own memory and cannot stop it.'],
   ['/try', 'Try it yourself', 'Three taps and the same engine derives a rule about you, written to Walrus Mainnet in a sandbox namespace.'],
-  ['/proof', 'Proof', 'Blob ids, the seed disclosure, the four Tatum reads, and the command to verify it against the live relayer yourself.'],
+  ['/proof', 'Proof', 'The submission checklist answered line by line, then the evidence: blob ids, the seed disclosure, the four Tatum reads, a derivation check that re-runs the engine in your browser, and the command to verify all of it against the live relayer yourself.'],
 ];
 
 export default function Judge() {
   return (
     <Page
       title="For reviewers"
-      lede="Six stops, in order, with the point of each one. The whole path is about four minutes."
+      lede="Six stops with the point of each one, about four minutes. The order matters — each one needs the one before it to have happened. If you only have a minute, skip to Proof: it answers the checklist on its own and nothing on it depends on the tour."
     >
       {PATH.map(([href, title, why], i) => (
         <Card key={href}>
@@ -36,13 +37,15 @@ export default function Judge() {
 
       <Card>
         <Meta>
-          <a href="https://github.com/EdCryptoFi/unwritten" target="_blank" rel="noreferrer"
+          <a href={LINKS.repo} target="_blank" rel="noreferrer"
             className="text-text-brand-primary">Repository ↗</a>
           {' · '}
-          <a href="https://github.com/EdCryptoFi/unwritten-ai-builder" target="_blank" rel="noreferrer"
+          <a href={LINKS.aiBuilder} target="_blank" rel="noreferrer"
             className="text-text-brand-primary">AI Builder first version ↗</a>
           {' · '}
           <Link href="/proof" className="text-text-brand-primary">Proof</Link>
+          {LINKS.writeup && <>{' · '}<a href={LINKS.writeup} target="_blank" rel="noreferrer"
+            className="text-text-brand-primary">Write-up ↗</a></>}
         </Meta>
       </Card>
 

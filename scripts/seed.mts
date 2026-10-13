@@ -16,11 +16,11 @@
  */
 import { readFileSync } from 'node:fs';
 import {
-  BELIEFS, DECISIONS, HOUSE, MAXSPEND, SPEND, TOPUPS, say, upTo,
+  BELIEFS, DECISIONS, HOUSE, SPEND, TOPUPS, say, upTo, wilsonProbes,
 } from '@unwritten/fixtures';
-import type { Belief, Category, Ref } from '@unwritten/fixtures';
+import type { Belief } from '@unwritten/fixtures';
 import { client, recall, writeBelief, writeDecision, writeSpend, writeTopUp } from '@unwritten/memory';
-import { authority, drift, friction, memberPattern, rhythm, silence, valueBand } from '@unwritten/policy';
+import { agreement, deriveAll } from '@unwritten/policy';
 
 for (const l of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n')) {
   const m = l.match(/^([A-Z_]+)=(.*)$/);
@@ -72,29 +72,7 @@ const input = {
   policy: HOUSE.policy,
   week: WEEK,
 };
-const derived: Belief[] = [];
-const add = (b: Belief | null) => { if (b) derived.push(b); };
-
-for (const m of HOUSE.members.filter((x) => x.approver)) {
-  for (const c of ['groceries', 'household'] as Category[]) {
-    add(valueBand({ ...input, existing: derived }, m.ref, c));
-  }
-}
-add(silence({ ...input, existing: derived }));
-for (const c of ['household', 'groceries'] as Category[]) {
-  add(authority({ ...input, existing: derived }, c));
-}
-add(memberPattern(
-  { ...input, existing: derived },
-  'm4' as Ref, 'games',
-  MAXSPEND.slice(0, WEEK).reduce((a, w) => a + w.games, 0),
-));
-add(drift({ ...input, existing: derived }, 'household', '2-of-2 above $100'));
-for (const c of ['games', 'apparel'] as Category[]) {
-  add(friction({ ...input, existing: derived }, c, WEEK));
-}
-add(rhythm({ ...input, existing: derived }, 'fastfood', 'Friday'));
-add(rhythm({ ...input, existing: derived }, 'subscriptions'));
+const derived: Belief[] = deriveAll(input, wilsonProbes(WEEK));
 
 for (const b of derived) {
   console.log(d(`      ${b.dimension.padEnd(15)} ${say(b).slice(0, 72)}`));
@@ -122,23 +100,12 @@ console.log(d(`    namespaces: ${['decisions','spend','topup','beliefs','marker'
 
 // ── does the engine agree with the screens? ─────────────────────────────────
 console.log('\n  derived vs. the fixtures the prototype validated');
-let agree = 0;
-for (const b of derived) {
-  // compare against the LIVE version, not a superseded one
-  const candidates = BELIEFS.filter((x) => x.dimension === b.dimension
-    && x.scope.actor === b.scope.actor && x.scope.category === b.scope.category);
-  const superseded = new Set(BELIEFS.map((x) => x.supersedes).filter(Boolean));
-  const shown = candidates.find((x) => !superseded.has(x.id)) ?? candidates[0];
-  if (!shown) { console.log(d(`    ${b.dimension} — new, no fixture to compare`)); continue; }
-  // Compare the headline claim, not the bookkeeping: ids, versions, blob ids and confidence are
-  // expected to differ between a hand-written fixture and a derived belief.
-  const headline = (x: Belief) => say(x).replace(/· \d+ of \d+.*/, '').trim();
-  const same = headline(shown) === headline(b);
-  console.log(`    ${same ? g('agrees') : '\x1b[33mdiffers\x1b[0m'}  ${b.dimension.padEnd(15)} ${shown.id}`);
-  if (!same) {
-    console.log(d(`        fixture  ${headline(shown)}`));
-    console.log(d(`        derived  ${headline(b)}`));
+const rows = agreement(derived, BELIEFS, say);
+for (const r of rows) {
+  console.log(`    ${r.agrees ? g('agrees') : '\x1b[33mdiffers\x1b[0m'}  ${r.dimension.padEnd(15)} ${r.id}`);
+  if (!r.agrees) {
+    console.log(d(`        fixture  ${r.fixture}`));
+    console.log(d(`        derived  ${r.derived}`));
   }
-  if (same) agree++;
 }
-console.log(d(`    ${agree}/${derived.filter((b) => BELIEFS.some((x) => x.dimension === b.dimension && x.scope.actor === b.scope.actor && x.scope.category === b.scope.category)).length} match what the screens show\n`));
+console.log(d(`    ${rows.filter((r) => r.agrees).length}/${rows.length} match what the screens show\n`));

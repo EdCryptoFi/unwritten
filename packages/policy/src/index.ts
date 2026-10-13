@@ -439,3 +439,84 @@ export function reconcile(
 
 /** What the Reality check asks for: money that moved with nobody agreeing to it. */
 export const unapproved = (rows: Reconciled[]) => rows.filter((r) => r.approvalId === null);
+
+/**
+ * One pass over every dimension, in the order the seeder runs them.
+ *
+ * This exists so there is exactly ONE definition of 'derive the house's beliefs'. The seeder
+ * calls it to write to Mainnet; `/proof` calls it in the browser to show that the rules on screen
+ * are what these functions produce. If the two could drift apart, the claim that nothing is
+ * hardcoded would be unverifiable — which is the entire point of the page.
+ *
+ * `probes` is not the learning. It is the list of places to look, which belongs to a house, not
+ * to an algorithm.
+ */
+export interface Probes {
+  approvers: Ref[];
+  bandCategories: Category[];
+  authorityCategories: Category[];
+  member: { ref: Ref; category: Category; capCents: number };
+  drift: { category: Category; claim: string };
+  frictionCategories: Category[];
+  /** `[category, weekdayName?]` — a weekday makes it a day-of-week rhythm. */
+  rhythms: Array<readonly [Category, string?]>;
+}
+
+export function deriveAll(input: Omit<Input, 'existing'>, probes: Probes): Belief[] {
+  const out: Belief[] = [];
+  // Each call sees what the pass has already derived, so a new version can name what it
+  // supersedes. Order therefore matters and must match the seeder's.
+  const add = (b: Belief | null) => {
+    if (b) out.push(b);
+  };
+  const ctx = () => ({ ...input, existing: out });
+
+  for (const ref of probes.approvers) {
+    for (const c of probes.bandCategories) add(valueBand(ctx(), ref, c));
+  }
+  add(silence(ctx()));
+  for (const c of probes.authorityCategories) add(authority(ctx(), c));
+  add(memberPattern(ctx(), probes.member.ref, probes.member.category, probes.member.capCents));
+  add(drift(ctx(), probes.drift.category, probes.drift.claim));
+  for (const c of probes.frictionCategories) add(friction(ctx(), c, input.week));
+  for (const [c, day] of probes.rhythms) add(rhythm(ctx(), c, day));
+  return out;
+}
+
+/**
+ * Does the engine agree with the screens?
+ *
+ * Compares each derived belief against the live version of the fixture the prototype validated.
+ * Only the HEADLINE claim is compared: ids, versions, blob ids and confidence are expected to
+ * differ between a hand-written fixture and a freshly derived belief, and asserting on them would
+ * make the check fail for reasons that mean nothing.
+ */
+export function agreement(
+  derived: Belief[],
+  shown: Belief[],
+  say: (b: Belief) => string,
+): Array<{ dimension: string; id: string; fixture: string; derived: string; agrees: boolean }> {
+  const headline = (x: Belief) =>
+    say(x)
+      .replace(/· \d+ of \d+.*/, '')
+      .trim();
+  const live = shown.filter((s) => !shown.some((o) => o.supersedes === s.id));
+  return derived.flatMap((b) => {
+    const f = live.find(
+      (s) =>
+        s.dimension === b.dimension &&
+        s.scope.actor === b.scope.actor &&
+        s.scope.category === b.scope.category,
+    );
+    if (!f) return [];
+    return [
+      {
+        dimension: b.dimension,
+        id: f.id,
+        fixture: headline(f),
+        derived: headline(b),
+        agrees: headline(f) === headline(b),
+      },
+    ];
+  });
+}
