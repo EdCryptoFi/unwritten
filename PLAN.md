@@ -179,6 +179,18 @@ Never cut the screens.
   configured at onboarding.
 - Drift is the rationale inside a proposal, never a card of its own. It stands alone only when the
   evidence does not say which direction to propose — and then the card says so.
+- A proof that only exists in terminal output is not a proof. The derivation check printed during
+  `seed --commit`, which can never be re-run — Memory has no delete — so no reviewer could ever
+  see the single strongest claim in the project. Anything load-bearing runs in the browser.
+- There is exactly ONE definition of "derive the house's beliefs" (`policy.deriveAll`). The seeder
+  and `/proof` call it. If they could drift, the claim that nothing is hardcoded is unverifiable.
+- The rubric and the submission checklist are different documents. Build for both: `/judge` is the
+  tour, and `/proof` opens by answering the checklist in the organisers' own words.
+- Links published after the code freezes (blog post, video) live in `lib/links.ts` as nullable. A
+  null renders as "not published yet". A 404 in front of a reviewer is worse than an absence.
+- Never run `biome format --write` on this repo. The formatter's defaults disagree with the
+  hand-written style, and a lint fix once became a 2400-line reformat of untouched files eight
+  days from the deadline. `biome check` for lint; fix what it reports by hand.
 
 ## Findings from the interaction test (prototype, clickable)
 
