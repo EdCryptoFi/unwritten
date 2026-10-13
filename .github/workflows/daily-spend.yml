@@ -32,9 +32,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `version:` here on purpose — package.json already pins packageManager, and the action
+      # errors out when both are set.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
