@@ -81,18 +81,13 @@ export async function writeDecision(e: DecisionEvent, ns: Namespace = 'decisions
     ? `${e.decidedBy.length} signature${e.decidedBy.length > 1 ? 's' : ''} from ${e.decidedBy.map((d) => d.role).join(' then ')}`
     : 'nobody was asked';
   const sentence =
-    `${e.outcome} ${dollars(e.amountCents)} of ${e.category}, ${who}` +
-    (e.latencySeconds !== null ? `, in ${e.latencySeconds} seconds` : '') +
-    (e.escalated ? ', after escalating' : '') + '.';
+    `${e.outcome} ${dollars(e.amountCents)} of ${e.category}, ${who}${e.latencySeconds !== null ? `, in ${e.latencySeconds} seconds` : ''}${e.escalated ? ', after escalating' : ''}.`;
   return client(ns).remember(encode(sentence, e));
 }
 
 export async function writeSpend(e: SpendEvent, ns: Namespace = 'spend') {
   const sentence =
-    `${dollars(e.amountCents)} of ${e.category} left the ${e.wallet} wallet` +
-    (e.hasApproval ? ' against an approval' : ' with no approval recorded') +
-    (e.expectedCents !== undefined ? `, where ${dollars(e.expectedCents)} was expected` : '') +
-    (e.offRhythm ? `, off its usual rhythm: ${e.offRhythm}` : '') + '.';
+    `${dollars(e.amountCents)} of ${e.category} left the ${e.wallet} wallet${e.hasApproval ? ' against an approval' : ' with no approval recorded'}${e.expectedCents !== undefined ? `, where ${dollars(e.expectedCents)} was expected` : ''}${e.offRhythm ? `, off its usual rhythm: ${e.offRhythm}` : ''}.`;
   return client(ns).remember(encode(sentence, e));
 }
 

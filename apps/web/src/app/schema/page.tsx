@@ -1,7 +1,7 @@
 'use client';
 
-import { BELIEFS, DECISIONS, HOUSE, PROPOSALS, SPEND, TOPUPS } from '@unwritten/fixtures';
 import { Card, Meta, Page } from '@/components/primitives';
+import { BELIEFS, DECISIONS, HOUSE, PROPOSALS, SPEND, TOPUPS } from '@unwritten/fixtures';
 
 export default function Schema() {
   return (

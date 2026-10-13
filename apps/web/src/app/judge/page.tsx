@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { Card, Meta, Page } from '@/components/primitives';
 import { LINKS } from '@/lib/links';
+import Link from 'next/link';
 
 /* A reviewer has three to five minutes and spends most of it deciding whether to keep going.
    Sending them straight to a page of hashes means they score the evidence and skip the product. */

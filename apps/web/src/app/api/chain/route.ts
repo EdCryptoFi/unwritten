@@ -1,5 +1,5 @@
-import type { Category, DecisionEvent } from '@unwritten/fixtures';
 import { outgoingTransfers, suiBalance } from '@unwritten/chain';
+import type { Category, DecisionEvent } from '@unwritten/fixtures';
 import { recall } from '@unwritten/memory';
 import { reconcile } from '@unwritten/policy';
 import { NextResponse } from 'next/server';

@@ -1,10 +1,10 @@
 'use client';
 
-import { type DecisionEvent, HOUSE, money, RECIPIENTS, recipientSay } from '@unwritten/fixtures';
+import { Gate, ROLES } from '@/components/gate';
 import { Badge, Card, Empty, Kpi, Meta, Page, Rule } from '@/components/primitives';
 import { type Reconciled, sui, txUrl, useChain } from '@/lib/chain';
 import { useHouse } from '@/lib/state';
-import { Gate, ROLES } from '@/components/gate';
+import { type DecisionEvent, HOUSE, RECIPIENTS, money, recipientSay } from '@unwritten/fixtures';
 
 /* The balance is read from the chain through Tatum — see `/api/chain`. Only the nudge threshold
    and the top-up week are ours, because they are policy and seeding, not facts about money. */

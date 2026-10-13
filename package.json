@@ -8,12 +8,12 @@
     "lint": "biome check .",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "verify": "tsx scripts/verify.mts",
     "spike": "tsx scripts/spike.mts",
     "seed": "tsx scripts/seed.mts",
     "secrets": "bash scripts/set-secrets.sh",
-    "daily": "tsx scripts/spend.mts"
+    "daily": "tsx scripts/spend.mts",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

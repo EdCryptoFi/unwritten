@@ -1,9 +1,9 @@
 'use client';
 
+import { useApp } from '@/lib/state';
 import { HOUSE, WEEK_NOTE } from '@unwritten/fixtures';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useApp } from '@/lib/state';
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { nav, viewer, setViewer, role, house, loading } = useApp();
@@ -25,7 +25,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             : house.source === 'mainnet' ? 'bg-utility-success-700' : 'bg-utility-warning-700'}`} />
           <span className="text-text-quaternary font-mono text-[10.5px]">
             {loading ? 'reading…' : house.source === 'mainnet'
-              ? `live · walrus mainnet` : 'fixtures · relayer unreachable'}
+              ? 'live · walrus mainnet' : 'fixtures · relayer unreachable'}
           </span>
         </div>
 

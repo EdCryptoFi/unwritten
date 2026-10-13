@@ -1,9 +1,9 @@
 'use client';
 
-import { HOUSE, MAXSPEND, money, say } from '@unwritten/fixtures';
+import { Gate, ROLES } from '@/components/gate';
 import { Card, Empty, Kpi, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
-import { Gate, ROLES } from '@/components/gate';
+import { HOUSE, MAXSPEND, money, say } from '@unwritten/fixtures';
 
 function AllowanceInner() {
   const { week } = useApp();

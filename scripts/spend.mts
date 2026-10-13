@@ -11,11 +11,11 @@
  * history.
  */
 import { readFileSync } from 'node:fs';
-import type { Category, DecisionEvent } from '@unwritten/fixtures';
-import { writeDecision } from '@unwritten/memory';
 import { JsonRpcHTTPTransport, SuiJsonRpcClient } from '@mysten/sui/jsonRpc';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Transaction } from '@mysten/sui/transactions';
+import type { Category, DecisionEvent } from '@unwritten/fixtures';
+import { writeDecision } from '@unwritten/memory';
 
 /* Local runs read .env.local; CI has no such file and supplies real environment variables. Either
    is fine, neither is required to exist. */
@@ -251,6 +251,6 @@ for (const p of plan) {
     latencySeconds: null, escalated: false, initiatedBy: 'routine', blobId: 'pending',
   };
   await writeDecision(event, `${process.env.SEED_VERSION ?? 'wilson-v2'}-decisions` as never);
-  console.log(d(`       decision written to memory`));
+  console.log(d('       decision written to memory'));
 }
 console.log('');

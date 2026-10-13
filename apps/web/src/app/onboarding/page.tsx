@@ -1,9 +1,9 @@
 'use client';
 
-import { activeApprovers, HOUSE, money } from '@unwritten/fixtures';
-import { useState } from 'react';
-import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
 import { Gate, ROLES } from '@/components/gate';
+import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
+import { HOUSE, activeApprovers, money } from '@unwritten/fixtures';
+import { useState } from 'react';
 
 const STATE_TONE = {
   active: 'success', declared: 'brand', invited: 'warning', subject: 'gray', revoked: 'error',

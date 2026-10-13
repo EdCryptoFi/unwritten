@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Card, Meta, Page } from '@/components/primitives';
+import Link from 'next/link';
 
 export default function NotFound() {
   return (

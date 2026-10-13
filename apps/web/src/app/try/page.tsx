@@ -1,13 +1,13 @@
 'use client';
 
+import { Badge, Card, Meta, Page, Progress, Rule } from '@/components/primitives';
 import {
-  type Category, type DecisionEvent, HOUSE, money, type Ref,
+  type Category, type DecisionEvent, HOUSE, type Ref,money, 
 } from '@unwritten/fixtures';
 import { valueBand } from '@unwritten/policy';
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Badge, Card, Meta, Page, Progress, Rule } from '@/components/primitives';
+import { Suspense, useEffect, useState } from 'react';
 
 /* The sandbox is the product's six-week arc compressed into a minute. It is a STAGE MACHINE, not
    a page that accumulates: each stage replaces the last, so the payoff lands alone instead of

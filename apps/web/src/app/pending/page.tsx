@@ -1,9 +1,9 @@
 'use client';
 
-import { activeApprovers, HOUSE, money, nameOf, type Ref } from '@unwritten/fixtures';
-import { useState } from 'react';
-import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
 import { Gate, ROLES } from '@/components/gate';
+import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
+import { HOUSE, type Ref, activeApprovers, money, nameOf } from '@unwritten/fixtures';
+import { useState } from 'react';
 
 type State = 'pending' | 'escalated' | 'approved' | 'rejected' | 'expired';
 const TONE: Record<State, 'brand' | 'warning' | 'success' | 'error'> = {

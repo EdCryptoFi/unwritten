@@ -1,9 +1,9 @@
 'use client';
 
-import { nameOf, type Ref } from '@unwritten/fixtures';
-import { useState } from 'react';
 import { Badge, Card, Empty, Meta, Page, Rule } from '@/components/primitives';
 import { useApp } from '@/lib/state';
+import { type Ref, nameOf } from '@unwritten/fixtures';
+import { useState } from 'react';
 
 /* A notification is a RECORD; the channel (in-app, email, push) is a delivery adapter.
    Only three kinds interrupt — an agent that notifies you about its own learning is unbearable. */

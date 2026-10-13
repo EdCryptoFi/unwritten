@@ -19,7 +19,7 @@ const ok = (s: string) => console.log(`  \x1b[32m✓\x1b[0m ${s}`);
 const bad = (s: string) => console.log(`  \x1b[31m✗\x1b[0m ${s}`);
 
 async function tatum() {
-  console.log('\n── 1. Tatum · Sui RPC ' + '─'.repeat(42));
+  console.log(`\n── 1. Tatum · Sui RPC ${'─'.repeat(42)}`);
   // Which host does the key belong to? The wrong one 401s in a way that reads as a bad key.
   for (const base of ['https://api.tatum.io', 'https://api.tatum.dev']) {
     for (const [label, key] of [
@@ -37,7 +37,7 @@ async function tatum() {
 }
 
 async function walrus() {
-  console.log('\n── 2. Walrus Memory · staging ' + '─'.repeat(34));
+  console.log(`\n── 2. Walrus Memory · staging ${'─'.repeat(34)}`);
   const { MEMWAL_ACCOUNT_ID, MEMWAL_PRIVATE_KEY, MEMWAL_SERVER_URL } = process.env;
   if (!MEMWAL_ACCOUNT_ID || !MEMWAL_PRIVATE_KEY) return bad('credentials missing');
 

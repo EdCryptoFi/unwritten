@@ -473,17 +473,17 @@ export function soWhat(b: Belief): string {
     case 'silence':
       return `So ${money(b.thresholdCents)} is already your real number, whatever the setting says.`;
     case 'authority':
-      return `Nobody decided this. Worth knowing before the next disagreement.`;
+      return 'Nobody decided this. Worth knowing before the next disagreement.';
     case 'friction':
       return `${b.rejections} rejection in ${b.windowWeeks} weeks, and everything else went through — which makes this the one worth talking about.`;
     case 'drift':
-      return `Either make it real or drop it. Pretending costs someone a tap every single time.`;
+      return 'Either make it real or drop it. Pretending costs someone a tap every single time.';
     case 'member_pattern':
       return `${who}'s limit was a guess somebody made on day one. There is finally enough here to revise it.`;
     case 'rhythm':
       return b.isCommitment
-        ? `Nobody decides this each month, which is why nobody notices when the price moves.`
-        : `Reliable enough to plan around, and small enough that nobody ever asked.`;
+        ? 'Nobody decides this each month, which is why nobody notices when the price moves.'
+        : 'Reliable enough to plan around, and small enough that nobody ever asked.';
   }
 }
 

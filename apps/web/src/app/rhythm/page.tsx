@@ -1,11 +1,15 @@
 'use client';
 
-import { dayISO, money, say } from '@unwritten/fixtures';
+import { Gate, ROLES } from '@/components/gate';
 import { Badge, Card, Empty, Meta, Page, Progress, Rule } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
-import { Gate, ROLES } from '@/components/gate';
+import { dayISO, money, say } from '@unwritten/fixtures';
 
-const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DOW = [
+  { id: 'sun', label: 'S' }, { id: 'mon', label: 'M' }, { id: 'tue', label: 'T' },
+  { id: 'wed', label: 'W' }, { id: 'thu', label: 'T' }, { id: 'fri', label: 'F' },
+  { id: 'sat', label: 'S' },
+];
 
 function RhythmInner() {
   const { week } = useApp();
@@ -28,8 +32,10 @@ function RhythmInner() {
       lede="Not a calendar. A calendar as input would make this a configuration app — cadence is derived, like every other rule."
     >
       <div className="mb-1.5 grid max-w-[300px] grid-cols-7 gap-[3px]">
-        {DOW.map((d, i) => (
-          <div key={`${d}${i}`} className="text-text-quaternary text-center font-mono text-[11px]">{d}</div>
+        {DOW.map((d) => (
+          <div key={d.id} className="text-text-quaternary text-center font-mono text-[11px]">
+            {d.label}
+          </div>
         ))}
         {cells.map((c) => (
           <div

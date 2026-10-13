@@ -1,11 +1,11 @@
 'use client';
 
-import { BELIEFS, HOUSE, money, say, wilsonProbes } from '@unwritten/fixtures';
-import { agreement, deriveAll } from '@unwritten/policy';
 import { Card, Kpi, Meta, Page, Rule } from '@/components/primitives';
 import { addrUrl, sui, txUrl, useChain } from '@/lib/chain';
 import { LINKS } from '@/lib/links';
 import { useHouse } from '@/lib/state';
+import { BELIEFS, HOUSE, money, say, wilsonProbes } from '@unwritten/fixtures';
+import { agreement, deriveAll } from '@unwritten/policy';
 
 /* For reviewers. THE APP NEVER LINKS HERE — it is referenced from the README, the write-up and
    the architecture beat of the demo, so the product stays abstracted and the evidence stays

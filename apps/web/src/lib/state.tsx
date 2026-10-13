@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  BELIEFS, DECISIONS, HOUSE, type Belief, type DecisionEvent, type Member, type Ref,
-  type SpendEvent, SPEND, type TopUpEvent, TOPUPS,
+  BELIEFS, type Belief, DECISIONS, type DecisionEvent, HOUSE, type Member, type Ref,SPEND, 
+  type SpendEvent, TOPUPS,type TopUpEvent, 
 } from '@unwritten/fixtures';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 

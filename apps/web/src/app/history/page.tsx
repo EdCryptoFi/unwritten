@@ -1,9 +1,9 @@
 'use client';
 
-import { money, nameOf } from '@unwritten/fixtures';
+import { Gate, ROLES } from '@/components/gate';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
 import { useHouse } from '@/lib/state';
-import { Gate, ROLES } from '@/components/gate';
+import { money, nameOf } from '@unwritten/fixtures';
 
 function HistoryInner() {
   const { decisionsUpTo } = useHouse();

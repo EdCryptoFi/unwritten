@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { Card, Meta, Page } from '@/components/primitives';
 import { NAV, useApp } from '@/lib/state';
+import Link from 'next/link';
 
 /**
  * Role enforcement, not role decoration.

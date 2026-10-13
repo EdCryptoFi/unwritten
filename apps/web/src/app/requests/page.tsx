@@ -1,9 +1,9 @@
 'use client';
 
-import { capFor, money } from '@unwritten/fixtures';
+import { Gate, ROLES } from '@/components/gate';
 import { Badge, Card, Meta, Page, Rule } from '@/components/primitives';
 import { useApp } from '@/lib/state';
-import { Gate, ROLES } from '@/components/gate';
+import { capFor, money } from '@unwritten/fixtures';
 
 const MINE = [
   { id: 'q1', amountCents: 4270, category: 'groceries', state: 'pending' as const, signatures: 2 },

@@ -1,8 +1,8 @@
 'use client';
 
-import { type Belief, HOUSE, money, say, soWhat, WEEK_NOTE } from '@unwritten/fixtures';
 import { Card, Empty, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
+import { type Belief, HOUSE, WEEK_NOTE, money, say, soWhat } from '@unwritten/fixtures';
 
 export default function Agreement() {
   const { week, me, role } = useApp();

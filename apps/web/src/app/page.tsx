@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Meta } from '@/components/primitives';
 import { useApp } from '@/lib/state';
+import { useRouter } from 'next/navigation';
 
 /* Three doors, deliberately not equal weight. The example teaches what a derived rule is in ten
    seconds; "try it yourself" only lands once you know that, so it is second. The judge door leads

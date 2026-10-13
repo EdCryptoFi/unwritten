@@ -1,0 +1,42 @@
+# Lint, typecheck, tests and build on every push.
+#
+# The project is judged in part on technical quality, and a reviewer has no way to tell whether
+# 47 tests pass except by cloning and running them. A green check on the default branch is the
+# cheapest way to make that claim checkable.
+#
+# No secrets. Everything here runs offline — packages/policy is pure functions by design, and
+# packages/chain's tests mock fetch rather than reaching Tatum. If this workflow ever needs a
+# credential, something has drifted.
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version:` — package.json pins packageManager, and the action errors when both are set.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build

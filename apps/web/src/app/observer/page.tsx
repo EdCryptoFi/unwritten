@@ -1,8 +1,8 @@
 'use client';
 
-import { DECISIONS, upTo } from '@unwritten/fixtures';
 import { Card, Meta, Page } from '@/components/primitives';
 import { useApp } from '@/lib/state';
+import { DECISIONS, upTo } from '@unwritten/fixtures';
 
 export default function Observer() {
   const { week } = useApp();

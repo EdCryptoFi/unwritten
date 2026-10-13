@@ -1,9 +1,9 @@
 'use client';
 
-import { PROPOSALS, say, upTo } from '@unwritten/fixtures';
-import { useState } from 'react';
 import { Badge, Card, Empty, Meta, Page, Rule } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
+import { PROPOSALS, say, upTo } from '@unwritten/fixtures';
+import { useState } from 'react';
 
 type TxState = 'idle' | 'awaiting' | 'signing' | 'confirmed' | 'failed';
 
@@ -92,7 +92,7 @@ export default function Digest() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <Btn onClick={() => accept(p.id)}>Make it official</Btn>
-              <Btn ghost onClick={() => { setTx((t) => ({ ...t, [p.id]: 'idle' })); add(`rejected — nothing written to memory, cooldown set`); }}>
+              <Btn ghost onClick={() => { setTx((t) => ({ ...t, [p.id]: 'idle' })); add('rejected — nothing written to memory, cooldown set'); }}>
                 Keep the rule
               </Btn>
               <Btn ghost onClick={() => sign(p.id, true)}>Simulate tx failure</Btn>
