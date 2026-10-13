@@ -181,15 +181,17 @@ export default function Proof() {
       <Card>
         <Meta>
           <strong>suix_queryTransactionBlocks</strong> · the house wallet&apos;s outgoing
-          transfers, which is the reconciliation&apos;s only source of truth about money
+          transfers, which is the reconciliation&apos;s only source of truth about money.
+          <code> api/chain</code>
           <br />
-          <strong>suix_getBalance</strong> · the treasury, for the low-balance nudge
+          <strong>suix_getAllBalances</strong> · the treasury figure on <code>/reality</code> and
+          the low-balance nudge that branches on it. <code>api/chain</code>
           <br />
           <strong>sui_getLatestCheckpointSequenceNumber</strong> · anchors a sandbox session
-          against a chain height
+          against a chain height. <code>api/checkpoint</code>
           <br />
           <strong>signAndExecuteTransaction</strong> · the transfers themselves are signed through
-          the gateway
+          the gateway. <code>scripts/spend.mts</code>
           <br />
           <br />
           endpoint: <code>sui-mainnet.gateway.tatum.io</code>. Not a convenience — public Sui

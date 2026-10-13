@@ -13,6 +13,8 @@ export interface Reconciled {
 
 export interface ChainState {
   wallet: string;
+  /** Absent when the balance read failed — the page shows the rest rather than nothing. */
+  balanceMist?: string;
   transfers: number;
   decisions: number;
   reconciled: Reconciled[];

@@ -1,5 +1,5 @@
 import type { Category, DecisionEvent } from '@unwritten/fixtures';
-import { outgoingTransfers } from '@unwritten/chain';
+import { outgoingTransfers, suiBalance } from '@unwritten/chain';
 import { recall } from '@unwritten/memory';
 import { reconcile } from '@unwritten/policy';
 import { NextResponse } from 'next/server';
@@ -39,6 +39,10 @@ export async function GET() {
     /* Three requests a second is the whole budget, so these run in sequence rather than in
        parallel — a burst here starves the reads the product needs on the next page load. */
     const transfers = await outgoingTransfers(HOUSE, 50);
+    /* The treasury figure on /reality used to be a hardcoded constant while /proof claimed Tatum
+       supplied it. Reading it is cheaper than the contradiction. Degrades to null, never throws:
+       a missing balance costs a KPI, an exception costs the page. */
+    const mist = await suiBalance(HOUSE).catch(() => null);
     const rows = await recall<DecisionEvent>(`${SEED}-decisions` as never, 'a household decision', 100)
       .catch((e: Error) => { recallError = e.message.slice(0, 160); return []; });
     const decisions = rows.map((r) => r.payload).filter((d): d is DecisionEvent => d !== null);
@@ -46,6 +50,7 @@ export async function GET() {
     const reconciled = reconcile(transfers, decisions, CATEGORY);
     const value = {
       wallet: HOUSE,
+      ...(mist === null ? {} : { balanceMist: mist.toString() }),
       transfers: transfers.length,
       decisions: decisions.length,
       reconciled: reconciled.map((r) => ({

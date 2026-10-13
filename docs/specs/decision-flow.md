@@ -91,8 +91,9 @@ A testnet transfer. Approved-but-never-executed expires; the approval does not s
 
 ## 9. Reconcile (background)
 
-Read the house wallet's transaction history via Tatum Data API. Every outbound transfer must match
-an approval. Unmatched transfers are classified before alerting:
+Read the house wallet's transaction history via Tatum's Sui RPC gateway
+(`suix_queryTransactionBlocks`) — not the Data API, which does not cover Sui. Every outbound
+transfer must match an approval. Unmatched transfers are classified before alerting:
 
 | Classification | Handling |
 |---|---|

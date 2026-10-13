@@ -6,7 +6,9 @@ import { type Reconciled, sui, txUrl, useChain } from '@/lib/chain';
 import { useHouse } from '@/lib/state';
 import { Gate, ROLES } from '@/components/gate';
 
-const TREASURY = { balanceCents: 41200, lastTopUpWeek: 5, lowThresholdCents: 5000 };
+/* The balance is read from the chain through Tatum — see `/api/chain`. Only the nudge threshold
+   and the top-up week are ours, because they are policy and seeding, not facts about money. */
+const TREASURY = { lastTopUpWeek: 5, lowThresholdMist: 500_000_000n };
 
 function RealityInner() {
   const { spendUpTo, decisionsUpTo } = useHouse();
@@ -37,6 +39,10 @@ function RealityInner() {
     && v.every((x) => x.amountCents <= HOUSE.policy.bothFloorCents));
 
   const unaccounted = plain.reduce((a, b) => a + b.amountCents, 0);
+
+  /* The nudge fires off the real balance. A read that nothing branches on is decoration. */
+  const low = chain?.balanceMist !== undefined
+    && BigInt(chain.balanceMist) < TREASURY.lowThresholdMist;
 
   return (
     <Page
@@ -87,7 +93,8 @@ function RealityInner() {
 
       <H>What the memory knows</H>
       <Kpi items={[
-        ['House balance', money(TREASURY.balanceCents)],
+        ['House balance', chain?.balanceMist ? sui(Number(chain.balanceMist)) : '—',
+          low ? 'text-text-warning-primary' : undefined],
         ['Last top-up', `wk ${TREASURY.lastTopUpWeek}`],
         ['Decisions recorded', String(decisionsUpTo.length)],
         ['Unaccounted', money(unaccounted), unaccounted ? 'text-text-error-primary' : undefined],

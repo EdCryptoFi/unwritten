@@ -96,9 +96,6 @@ export async function health(): Promise<{
 // ── the four reads the product needs ────────────────────────────────────────
 
 /** Sui RPC · the ratified policy object. */
-export const readObject = (id: string) =>
-  tatumRpc('sui', 'sui_getObject', [id, { showContent: true, showOwner: true }]);
-
 export interface OutgoingTransfer {
   digest: string;
   /** Milliseconds since epoch, as the chain recorded it — not a date we chose. */
@@ -146,5 +143,20 @@ export async function outgoingTransfers(address: string, limit = 50): Promise<Ou
   });
 }
 
-/** Sui RPC · balances, used for the low-treasury nudge. */
+/** Sui RPC · every coin type the address holds. */
 export const balance = (address: string) => tatumRpc('sui', 'suix_getAllBalances', [address]);
+
+/**
+ * The SUI balance in MIST, for the low-treasury nudge.
+ *
+ * `suix_getAllBalances` rather than `suix_getBalance` so one call covers an address that will
+ * eventually hold WAL too. An address with no coins returns an empty list, not a zero entry, so a
+ * missing coin type is 0n rather than an error — a fresh wallet is not a failure.
+ */
+export async function suiBalance(address: string): Promise<bigint> {
+  const all = await tatumRpc<Array<{ coinType: string; totalBalance: string }>>(
+    'sui', 'suix_getAllBalances', [address],
+  );
+  const sui = all.find((c) => c.coinType === '0x2::sui::SUI');
+  return sui ? BigInt(sui.totalBalance) : 0n;
+}

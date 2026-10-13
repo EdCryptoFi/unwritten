@@ -50,8 +50,7 @@ Mainnet is exactly the kind of lie this project exists to avoid.
 | Layer | What it does |
 |---|---|
 | **Walrus Memory** (Sui Mainnet) | every decision and every derived rule, append-only and versioned |
-| **Tatum** Sui RPC + Data APIs | reads the household and dependent wallets; catches spend with no approval |
-| **Move policy package** (Sui testnet) | the ratified agreement and approval records |
+| **Tatum** Sui RPC (gateway) | reads the household wallet; catches spend with no approval. Not the Data API — it does not cover Sui |
 | `packages/policy` | the learning — seven dimensions, **pure functions, no LLM** |
 
 ### One network
@@ -94,6 +93,11 @@ rather than by network.
   model would drift slowly when the truth is that everything changed on a Tuesday.
 - **Rent, utilities, insurance and debt are out of scope.** Subscriptions have the same shape as
   rent, which is why the `rhythm` dimension exists at all.
+- **Onchain ratification is not built.** Signing a proposal on `/digest` resolves locally and
+  writes the new rule version to Mainnet; the Move package that would hold the ratified agreement
+  does not exist, and the `ratifiedTx` on a seeded belief is a placeholder rather than a real
+  digest. Every Walrus write and every Tatum read is real — this one thing is not, and a page that
+  discloses its seed should disclose this too.
 
 ## Repo
 
@@ -108,5 +112,17 @@ PLAN.md          anti-drift: artifacts, build order, and 25 invariants
 
 Two wrapper packages exist so that one file answers "where is every Walrus write" and one answers
 "where is every Tatum read".
+
+### Built with Tatum AI Builder
+
+The first version of the main screen was generated on **[ai.tatum.io](https://ai.tatum.io)** and is
+kept in its own repository — **[EdCryptoFi/unwritten-ai-builder](https://github.com/EdCryptoFi/unwritten-ai-builder)** —
+rather than squashed into the first commit here, so the lineage is verifiable instead of asserted.
+
+Two things from it survived into this codebase: the design tokens in `apps/web/src/app/globals.css`
+are Tatum's own, extracted from that output, and `packages/chain` is built on its
+`server/tatum-client.mjs`. What did not survive was the single-file shape — the generated screen
+held state, fetching and rendering in one place, and the seven learning dimensions had to become
+pure functions before they could be tested without a browser.
 
 MIT.
