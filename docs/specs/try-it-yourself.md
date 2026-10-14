@@ -22,6 +22,9 @@ first implementation: "you approve up to $41" only means something next to "you 
 0. **The visitor adds a household.** One tap adds Carol, who spends, and Sam, who approves. An
    agreement is between people, so the sandbox needs at least two of them present — without this
    the visitor approves three things alone and never feels that this is a household product.
+0b. **The house pot, then what it buys.** A monthly pot (simulated, and labelled so) that every
+   approval visibly draws down, and up to four categories the requests are drawn from. The number
+   in step 1 is capped at an eighth of the pot so three requests cannot overdraw it.
 1. **The visitor sets the one number** — the same question onboarding asks, and the same framing:
    you are meant to get it wrong, because the product is the app coming back to correct you.
 2. Three grocery requests arrive **from Carol and Sam**, above that number, so approving them is
@@ -70,9 +73,16 @@ configuration rather than hardcoded constants.
 
 ## What is deliberately not in the sandbox
 
-- **Treasury funding / claiming an amount.** Already decided: top-ups are a seeding script, not a
-  product feature, and the only user-facing touch is the low-balance nudge. In a sandbox that
-  lives on being short, it is a step that teaches nothing about the thesis.
+- **Real money.** The house pot (stage two) is a number in the browser and the screen says so. A
+  visitor has no wallet and needs none, and a real transfer would be our funds sent to anyone with a
+  browser. It was first left out entirely ("teaches nothing about the thesis"); it came back because
+  setup that ends without money leaves a house that cannot buy anything, and because a pot the
+  approvals visibly draw down is the shared balance the product is about. The screen points at where
+  a balance *is* real: the Wilson house wallet, read through Tatum on Reality check.
+- **The old `/onboarding` screen.** It lived in the Wilson house's menu, replayed the Wilsons'
+  roster and number as setup "steps", and offered "Receive 412 USDC (testnet)" — false three ways:
+  the house holds SUI, everything is Mainnet, and the button moved nothing. Setup is for a house
+  being created, which is this sandbox; `/onboarding` now redirects here.
 - **Escalation and notification.** Described in words on the blocked card rather than played out.
   A visitor cannot wait four hours for a deadline.
 - **Member invitation.** The two members appear in one tap. Invite links, sessions and roster

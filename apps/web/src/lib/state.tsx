@@ -17,7 +17,7 @@ export const NAV: Record<string, Array<[label: string, href: string]>> = {
     ['How the house works', '/house'], ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],
     ['Weekly digest', '/digest'], ['Reality check', '/reality'], ['Rhythm', '/rhythm'],
     ['Allowance', '/allowance'], ['History', '/history'], ['Keys', '/keys'],
-    ['Try it yourself', '/try'], ['Setup', '/onboarding'],
+    ['Try it yourself', '/try'],
   ],
   approver: [
     ['How the house works', '/house'], ['The Agreement', '/agreement'], ['Notifications', '/notifications'], ['Pending', '/pending'],

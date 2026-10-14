@@ -19,11 +19,16 @@ import { Suspense, useEffect, useState } from 'react';
  *
  * One knob differs from production — a rule forms after three decisions instead of eight. The
  * screen says so, which also shows the thresholds are configuration rather than constants. */
-type Stage = 'cast' | 'spend' | 'number' | 'deciding' | 'payoff' | 'quorum' | 'receipts';
+type Stage = 'cast' | 'fund' | 'spend' | 'number' | 'deciding' | 'payoff' | 'quorum' | 'receipts';
 type From = 'spender' | 'approver' | 'routine';
 
 const MIN_EVIDENCE = 3;
 const CHOICES = [1000, 1800, 2500] as const;
+/* The house's monthly pot. Simulated and SAID so: a visitor has no wallet, and a real transfer
+   would be our money sent to anyone with a browser. What it teaches is real — approvals spend a
+   shared balance — and the screen points at where a balance IS real: the Wilson house wallet,
+   read through Tatum on Reality check. */
+const POTS = [40000, 80000, 150000] as const;
 
 /* What a request sounds like, per category. `from` is a ROLE, so the visitor's names fill it in.
    `mult` bounds the amount as a multiple of the visitor's number: every request sits above it,
@@ -106,7 +111,7 @@ function drawRequests(cap: number, cats: Array<keyof typeof POOL>): Request[] {
 }
 
 const STEPS: Array<[Stage, string]> = [
-  ['cast', 'Your people'], ['spend', 'What you buy'], ['number', 'Your number'],
+  ['cast', 'Your people'], ['fund', 'The house pot'], ['spend', 'What you buy'], ['number', 'Your number'],
   ['deciding', 'Decisions'], ['payoff', 'The rule'], ['quorum', 'The limit'], ['receipts', 'Proof'],
 ];
 
@@ -114,6 +119,8 @@ function TryInner() {
   const { decisions: houseDecisions } = useHouse();
   const [stage, setStage] = useState<Stage>('cast');
   const [cap, setCap] = useState(0);
+  const [pot, setPot] = useState(0);
+  const [customPot, setCustomPot] = useState('');
   const [cats, setCats] = useState<Array<keyof typeof POOL>>(DEFAULT_CATS);
   const [queue, setQueue] = useState<Request[]>([]);
   const [taken, setTaken] = useState<Decision[]>([]);
@@ -169,13 +176,29 @@ function TryInner() {
   const threshold = derivedBelief?.dimension === 'value_band' ? derivedBelief.thresholdCents : 0;
   const next = queue[taken.length];
   const bothSignature = Math.round((cap * 7.5) / 50) * 50;
+  const spent = taken.reduce((a, t) => a + t.cents, 0);
+  const left = pot - spent;
+  /* The same nudge the Wilson owner gets. There it branches on the balance Tatum reads from the
+     house wallet; here, on the simulated pot. */
+  const low = pot > 0 && left < pot * 0.25;
 
   const start = (c: number) => { setCap(c); setQueue(drawRequests(c, cats)); setStage('deciding'); };
+  const choosePot = (c: number) => { setPot(c); setStage('spend'); };
+  const chooseCustomPot = () => {
+    const n = Math.round(Number(customPot) * 100);
+    // Bounded below by what three requests can plausibly cost, above by what still reads as a
+    // household rather than a treasury.
+    if (!Number.isFinite(n) || n < 10_000 || n > 1_000_000) return;
+    choosePot(n);
+  };
+  /* Three requests run up to ~2.4x the number each, so a number above an eighth of the pot would
+     overdraw it before the rule forms. Bounded by the pot, then by the old ceiling. */
+  const maxCap = Math.min(20_000, Math.floor(pot / 8 / 100) * 100);
   const startCustom = () => {
     const n = Math.round(Number(custom) * 100);
     // Bounded: below a dollar the amounts stop looking like a household, and a number high enough
     // to auto-approve everything leaves no decision to learn from — the gap the audit found.
-    if (!Number.isFinite(n) || n < 100 || n > 20_000) return;
+    if (!Number.isFinite(n) || n < 100 || n > maxCap) return;
     start(n);
   };
   const toggleCat = (c: keyof typeof POOL) =>
@@ -279,7 +302,53 @@ function TryInner() {
           <p className="text-on-surface-variant mt-3 font-mono text-[11px]">
             these names stay in your browser — memory stores the role, never the person
           </p>
-          <ClayButton className="mt-4" onClick={() => setStage('spend')}>That&apos;s my house</ClayButton>
+          <ClayButton className="mt-4" onClick={() => setStage('fund')}>That&apos;s my house</ClayButton>
+        </Card>
+      )}
+
+      {stage === 'fund' && (
+        <Card>
+          <div className="flex items-start gap-4">
+            <span className="bg-secondary-fixed text-secondary flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
+              <span className="material-symbols-outlined text-[28px]">savings</span>
+            </span>
+            <div>
+              <Rule>How much goes into the house each month?</Rule>
+              <Meta>
+                The shared pot every approval draws from. Without it, setup would end in a house
+                that cannot buy anything.
+              </Meta>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            {POTS.map((c) => (
+              <ClayButton key={c} variant="secondary" onClick={() => choosePot(c)}>{money(c)}</ClayButton>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-on-surface-variant text-sm">or your own</span>
+            <span className="clay-well inline-flex items-center rounded-full px-3 py-1.5">
+              <span className="text-on-surface-variant">$</span>
+              <input
+                value={customPot} inputMode="decimal" placeholder="1000"
+                onChange={(e) => setCustomPot(e.target.value.replace(/[^0-9.]/g, ''))}
+                onKeyDown={(e) => { if (e.key === 'Enter') chooseCustomPot(); }}
+                aria-label="the house's monthly pot in dollars"
+                className="text-on-surface w-20 bg-transparent px-1 text-sm outline-none"
+              />
+            </span>
+            <ClayButton variant="secondary" size="sm" onClick={chooseCustomPot}>Use it</ClayButton>
+          </div>
+          <div className="clay-well mt-4 rounded-xl px-4 py-3">
+            <p className="text-on-surface-variant text-body-sm">
+              <span className="text-on-surface font-semibold">No money moves here.</span> You have
+              no wallet and need none, so the pot is a number in your browser. In a real house this
+              is a transfer into the house wallet — the Wilsons&apos; holds real SUI on Mainnet, and{' '}
+              <Link href="/reality" className="text-primary font-semibold">Reality check</Link> reads
+              it through Tatum.
+            </p>
+          </div>
+          <p className="text-on-surface-variant mt-2 font-mono text-[11px]">anything from $100 to $10,000</p>
         </Card>
       )}
 
@@ -324,7 +393,7 @@ function TryInner() {
             get it wrong, because the whole product is the app coming back later to correct you.
           </Meta>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            {CHOICES.map((c) => (
+            {CHOICES.filter((c) => c <= maxCap).map((c) => (
               <ClayButton key={c} variant="secondary" onClick={() => start(c)}>{money(c)}</ClayButton>
             ))}
           </div>
@@ -343,7 +412,7 @@ function TryInner() {
             <ClayButton variant="secondary" size="sm" onClick={startCustom}>Use it</ClayButton>
           </div>
           <p className="text-on-surface-variant mt-2 font-mono text-[11px]">
-            anything from $1 to $200 — the requests scale with it, so the arc works either way
+            anything from $1 to {money(maxCap)} with a {money(pot)} pot — the requests scale with it
           </p>
         </Card>
       )}
@@ -369,6 +438,7 @@ function TryInner() {
               </Meta>
             </div>
           </div>
+          <PotBar pot={pot} left={left} low={low} />
           <ClayButton className="mt-4" onClick={approve} disabled={sending}>
             {sending ? 'Writing to Walrus…' : `Approve ${money(next.cents)}`}
           </ClayButton>
@@ -395,6 +465,10 @@ function TryInner() {
               it a rule: a band nobody ever configured.
             </Meta>
             <Approved taken={taken} nameFor={nameFor} />
+            <p className="text-on-surface-variant mt-3 font-mono text-[11px]">
+              {money(spent)} of your {money(pot)} pot approved · {money(Math.max(left, 0))} left
+              {low ? ' — this is where the house would nudge the owner that the balance is low' : ''}
+            </p>
           </Card>
           <Card className="mb-4">
             <div className="flex items-start justify-between gap-3.5">
@@ -478,10 +552,10 @@ function TryInner() {
           </div>
           <button
             type="button"
-            onClick={() => { setStage('spend'); setTaken([]); setCap(0); setQueue([]); }}
+            onClick={() => { setStage('fund'); setTaken([]); setCap(0); setPot(0); setQueue([]); }}
             className="text-primary mt-3 font-mono text-[11.5px]"
           >
-            Start over with different categories or a different number →
+            Start over with a different pot, categories or number →
           </button>
         </>
       )}
@@ -490,8 +564,9 @@ function TryInner() {
 }
 
 const LEDE: Record<Stage, (cap: number) => string> = {
-  cast: () => 'Your people, what you buy, one number — and a rule about you, written to Walrus Mainnet, never into the Wilson house.',
-  spend: () => 'Three people in. Now what your house spends on.',
+  cast: () => 'Set up a house of your own — your people, its pot, what it buys, one number — and get a rule about you, written to Walrus Mainnet, never into the Wilson house.',
+  fund: () => 'Three people in. Now the money they share.',
+  spend: () => 'A pot to spend from. Now what your house spends it on.',
   number: () => 'One question to go.',
   deciding: (c) => `You said ${money(c)}. Now approve what comes in and see whether that was true.`,
   payoff: () => 'Nobody wrote this rule. It came out of what you just did.',
@@ -548,6 +623,29 @@ function QuorumStep({ cents, onDone, asker, approver }: { cents: number; onDone:
       </Card>
       <ClayButton onClick={onDone}>See what you wrote →</ClayButton>
     </>
+  );
+}
+
+function PotBar({ pot, left, low }: { pot: number; left: number; low: boolean }) {
+  const pct = pot > 0 ? Math.max(0, Math.min(1, left / pot)) : 0;
+  return (
+    <div className="mt-4">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-on-surface-variant flex items-center gap-1 text-xs">
+          <span className="material-symbols-outlined text-[16px]">savings</span>
+          house pot · simulated
+        </span>
+        <span className={`text-xs font-bold tabular-nums ${low ? 'text-tertiary' : 'text-on-surface'}`}>
+          {money(Math.max(left, 0))} of {money(pot)} left
+        </span>
+      </div>
+      <div className="clay-gauge h-2">
+        <div className={`clay-gauge-fill h-full ${low ? 'friction' : ''}`} style={{ width: `${pct * 100}%` }} />
+      </div>
+      {low && (
+        <p className="text-tertiary mt-1 text-xs">Low balance — the owner gets the same nudge the Wilsons do.</p>
+      )}
+    </div>
   );
 }
 
