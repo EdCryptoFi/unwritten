@@ -10,6 +10,14 @@ export const LINKS = {
   site: 'https://unwritten-house.vercel.app',
   repo: 'https://github.com/EdCryptoFi/unwritten',
   aiBuilder: 'https://github.com/EdCryptoFi/unwritten-ai-builder',
+  /** Where a reviewer goes to check a claim themselves — each URL opened in a real browser. */
+  walruscanBlob: (id: string) => `https://walruscan.com/mainnet/blob/${id}`,
+  aggregatorBlob: (id: string) => `https://aggregator.walrus-mainnet.walrus.space/v1/blobs/${id}`,
+  suiscanObject: (id: string) => `https://suiscan.xyz/mainnet/object/${id}`,
+  tatumSuiRpcDocs: 'https://docs.tatum.io/reference/rpc-sui',
+  tatumSui: 'https://tatum.io/chain/sui',
+  tatumDashboard: 'https://dashboard.tatum.io',
+  walrusDocs: 'https://docs.wal.app/',
   /** The checklist's 'published blog post'. Fill in on publish. */
   writeup: null as string | null,
   /** The checklist's 'working demo' video. Fill in on upload. */

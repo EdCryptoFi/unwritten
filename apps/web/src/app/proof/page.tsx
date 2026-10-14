@@ -1,5 +1,6 @@
 'use client';
 
+import { LiveCalls } from '@/components/live-calls';
 import { Card, Kpi, Meta, Page, Rule } from '@/components/primitives';
 import { addrUrl, sui, txUrl, useChain } from '@/lib/chain';
 import { LINKS } from '@/lib/links';
@@ -11,7 +12,7 @@ import { agreement, deriveAll } from '@unwritten/policy';
    the architecture beat of the demo, so the product stays abstracted and the evidence stays
    findable. This is the only surface in the app where a hash appears. */
 export default function Proof() {
-  const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, beliefsUpTo, beliefs: mainnetBeliefs, counts, seed, source } = useHouse();
+  const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, beliefsUpTo, beliefs: mainnetBeliefs, counts, seed, source, account } = useHouse();
   const { chain } = useChain();
   const total = Object.values(counts ?? {}).reduce<number>((a, b) => a + b, 0)
     || decisions.length + spendUpTo.length + topupsUpTo.length + beliefsUpTo.length;
@@ -58,7 +59,7 @@ export default function Proof() {
         ['Seed', seed ?? '—'],
         ['Requirement', '10+'],
         ['Namespaces', String(Object.keys(counts ?? {}).length || 4)],
-        ['Walrus epochs', '50 ≈ 2y'],
+        ['Storage', 'per blob · Walruscan'],
       ]} />
 
       <H>The submission checklist, line by line</H>
@@ -78,32 +79,71 @@ export default function Proof() {
         ))}
       </Card>
 
-      <Card tone="note">
+      {/* The integrations, happening in front of the reviewer rather than described to them. */}
+      <H id="live">Run the integrations live</H>
+      <LiveCalls />
+
+      <Card tone="note" className="mt-3">
         <Rule>Verify it yourself</Rule>
         <Meta>
-          Every blob id below is a link. It resolves on a public Walrus aggregator and returns
-          Seal-encrypted bytes — unreadable by design, and present, which is the whole claim.
+          Every blob id below has two links. <strong>bytes</strong> fetches it from a public Walrus
+          aggregator: Seal-encrypted, unreadable by design, and present, which is the claim.{' '}
+          <strong>Walruscan</strong> shows the onchain record of the same blob — size, the epochs
+          it is paid for, and the <code>seal_encrypt_fence</code> and <code>certify_blob</code>{' '}
+          transactions that stored it. The storage period is chosen by the relayer and differs per
+          blob, so it is read there rather than claimed here.
           <br />
           <br />
-          <code className="text-text-brand-primary">pnpm verify</code> queries the live relayer and
-          chain and prints the memory count per namespace, every blob id, the two-account Observer
-          comparison, and the onchain policy state. A page of hashes is something you have to
-          believe; a script is something you can run.
+          <code className="text-text-brand-primary">pnpm verify</code>, from the repository, asks
+          the live relayer and Tatum directly and prints the relayer&apos;s health, the current Sui
+          checkpoint, and the memory count per namespace with a sample of each. A page of hashes is
+          something you have to believe; a script is something you can run.
+        </Meta>
+      </Card>
+
+      <H>The identifiers the submission asks for</H>
+      <Card>
+        <Meta>
+          <strong>memwalAgentId</strong> · the MemWal account, a Sui object:{' '}
+          {account ? (
+            <a href={LINKS.suiscanObject(account)} target="_blank" rel="noreferrer" className="text-text-brand-primary break-all">{account} ↗</a>
+          ) : '—'}
+          <br />
+          <strong>suiAddress</strong> · the house wallet:{' '}
+          {chain?.wallet ? (
+            <a href={addrUrl(chain.wallet)} target="_blank" rel="noreferrer" className="text-text-brand-primary break-all">{chain.wallet} ↗</a>
+          ) : '—'}
+          <br />
+          <strong>tatumAccountId</strong> · supplied in the submission form, not printed on a public page.
         </Meta>
       </Card>
 
       <H>Where everything else is</H>
       <Card>
         <Meta>
-          <a href="https://github.com/EdCryptoFi/unwritten" target="_blank" rel="noreferrer"
+          <a href={LINKS.repo} target="_blank" rel="noreferrer"
             className="text-text-brand-primary">The repository ↗</a>
           {' — specs, the clickable prototype the schema was derived from, and '}
           <code>pnpm verify</code>.
           <br />
-          <a href="https://github.com/EdCryptoFi/unwritten-ai-builder" target="_blank" rel="noreferrer"
+          <a href={LINKS.aiBuilder} target="_blank" rel="noreferrer"
             className="text-text-brand-primary">The first version ↗</a>
           {' — the main screen as Tatum AI Builder generated it, kept separate so the lineage is verifiable.'}
         </Meta>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            ['Tatum · Sui RPC reference', LINKS.tatumSuiRpcDocs],
+            ['Tatum · Sui gateway', LINKS.tatumSui],
+            ['Tatum · get an API key', LINKS.tatumDashboard],
+            ['Walrus · docs', LINKS.walrusDocs],
+            ['Walruscan · a seeded blob', LINKS.walruscanBlob(decisions.find((d) => d.blobId && !d.blobId.startsWith('0x'))?.blobId ?? '')],
+          ].map(([label, href]) => (
+            <a key={label} href={href} target="_blank" rel="noreferrer"
+              className="clay-pill clay-pill-secondary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold">
+              {label} ↗
+            </a>
+          ))}
+        </div>
       </Card>
 
       <H>Seed disclosure</H>
@@ -247,13 +287,15 @@ function Blob({ id }: { id?: string | undefined }) {
     return <div className="text-text-quaternary font-mono text-[10.5px]">not recalled from Mainnet</div>;
   }
   return (
-    <a
-      href={`https://aggregator.walrus-mainnet.walrus.space/v1/blobs/${id}`}
-      target="_blank" rel="noreferrer"
-      className="text-text-brand-primary font-mono text-[10.5px] break-all underline decoration-dotted underline-offset-2"
-    >
-      {id} ↗
-    </a>
+    <div className="font-mono text-[10.5px]">
+      <span className="text-on-surface break-all">{id}</span>
+      <span className="ml-2 inline-flex gap-2 whitespace-nowrap">
+        <a href={LINKS.aggregatorBlob(id)} target="_blank" rel="noreferrer"
+          className="text-text-brand-primary underline decoration-dotted underline-offset-2">bytes ↗</a>
+        <a href={LINKS.walruscanBlob(id)} target="_blank" rel="noreferrer"
+          className="text-text-brand-primary underline decoration-dotted underline-offset-2">Walruscan ↗</a>
+      </span>
+    </div>
   );
 }
 

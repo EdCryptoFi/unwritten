@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { JsonRpcHTTPTransport, SuiJsonRpcClient } from '@mysten/sui/jsonRpc';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Transaction } from '@mysten/sui/transactions';
+import { MIST_PER_CENT, weekOf } from '@unwritten/fixtures';
 import type { Category, DecisionEvent } from '@unwritten/fixtures';
 import { writeDecision } from '@unwritten/memory';
 
@@ -94,10 +95,12 @@ const client = new SuiJsonRpcClient({
 });
 const house = Ed25519Keypair.fromSecretKey(process.env.SUI_HOUSE_KEY as string);
 
+/* Story amounts in cents, matching the seeded six weeks: shops of $25–45, a $10.99 subscription,
+   fast food around $16–34. The transfer itself is the story amount × MIST_PER_CENT. */
 const MERCHANTS = [
-  { name: 'grocer', to: process.env.SUI_GROCER_ADDRESS!, category: 'groceries', mist: [9_000_000, 16_000_000] },
-  { name: 'subs', to: process.env.SUI_SUBS_ADDRESS!, category: 'subscriptions', mist: [4_000_000, 4_000_000] },
-  { name: 'fastfood', to: process.env.SUI_FASTFOOD_ADDRESS!, category: 'fastfood', mist: [6_000_000, 11_000_000] },
+  { name: 'grocer', to: process.env.SUI_GROCER_ADDRESS!, category: 'groceries', cents: [2500, 4500] },
+  { name: 'subs', to: process.env.SUI_SUBS_ADDRESS!, category: 'subscriptions', cents: [1099, 1299] },
+  { name: 'fastfood', to: process.env.SUI_FASTFOOD_ADDRESS!, category: 'fastfood', cents: [1600, 3400] },
 ] as const;
 
 /**
@@ -156,13 +159,20 @@ const subsCycle = (date: string) => {
   return days >= 0 && days % SUBS_PERIOD_DAYS === 0 ? days / SUBS_PERIOD_DAYS : null;
 };
 
-const today = new Date().toISOString().slice(0, 10);
+/* SPEND_DATE previews another day's plan — dry runs only. With --commit it is refused: the whole
+   point of this script is that each day's transfers happen ON that day, so the chain can be read
+   as a diary. A backdated run would be the one thing that makes it a fabrication. */
+if (process.env.SPEND_DATE && process.argv.includes('--commit')) {
+  console.error('SPEND_DATE is for previews; refusing to send money on a date that is not today');
+  process.exit(5);
+}
+const today = process.env.SPEND_DATE ?? new Date().toISOString().slice(0, 10);
 const rand = seeded(today);
 const weekday = new Date(today).getUTCDay();
 
 /* A household does not spend uniformly. Groceries most days, fast food on Friday, the
    subscription once a month — which is what gives the rhythm dimension something to find. */
-const plan: Array<{ to: string; mist: number; label: string; category: Category; approved: boolean }> = [];
+const plan: Array<{ to: string; mist: number; cents: number; label: string; category: Category; approved: boolean }> = [];
 for (const m of MERCHANTS) {
   const cycle = m.name === 'subs' ? subsCycle(today) : null;
   const fires =
@@ -170,18 +180,20 @@ for (const m of MERCHANTS) {
     : m.name === 'fastfood' ? weekday === 5 || rand() < 0.15
     : cycle !== null;
   if (!fires) continue;
-  const [lo, hi] = m.mist;
+  const [lo, hi] = m.cents;
   /* A commitment is a fixed amount by definition, so it does not get the random band — it gets
-     its list price, and 12% more from the second billing on. That step IS the price creep. */
-  const amount = m.name === 'subs'
-    ? Math.round(lo * (cycle && cycle > 0 ? 1.12 : 1))
-    : Math.round(lo + rand() * (hi - lo));
+     its list price, $10.99, and $12.99 from the second billing on. That step IS the price creep,
+     and it is the same repricing the seeded story tells. */
+  const cents = m.name === 'subs'
+    ? (cycle && cycle > 0 ? hi : lo)
+    : Math.round((lo + rand() * (hi - lo)) / 10) * 10;
+  const amount = cents * MIST_PER_CENT;
   /* Most spending is agreed to; some is not. A household where everything reconciles has nothing
      for the Reality check to find, and one where nothing does is not a household. Roughly one in
      five goes through without a decision — which is what the product exists to notice. */
   const approved = rand() > 0.2;
   plan.push({
-    to: m.to, mist: amount, approved, category: m.category as Category,
+    to: m.to, mist: amount, cents, approved, category: m.category as Category,
     label: `${m.category} → ${m.name}${approved ? '' : '  (no approval — deliberate)'}`,
   });
 }
@@ -231,7 +243,7 @@ if (COMMIT) {
 }
 
 for (const p of plan) {
-  console.log(`  ${(p.mist / 1e9).toFixed(4)} SUI  ${p.label}`);
+  console.log(`  ${(p.mist / 1e9).toFixed(6)} SUI  = $${(p.cents / 100).toFixed(2)} at the declared scale  ${p.label}`);
   if (!COMMIT) continue;
   const tx = new Transaction();
   const [coin] = tx.splitCoins(tx.gas, [p.mist]);
@@ -245,8 +257,8 @@ for (const p of plan) {
      it, and why neither side could have found it alone. */
   if (!p.approved) { console.log(d('       no decision written — this one is the anomaly')); continue; }
   const event: DecisionEvent = {
-    id: `s-${today}-${p.category}`, kind: 'decision', week: 1, date: today,
-    category: p.category, amountCents: Math.round(p.mist / 1000),
+    id: `s-${today}-${p.category}`, kind: 'decision', week: weekOf(today), date: today,
+    category: p.category, amountCents: p.cents,
     quorumRequired: 'auto', decidedBy: [], outcome: 'auto',
     latencySeconds: null, escalated: false, initiatedBy: 'routine', blobId: 'pending',
   };

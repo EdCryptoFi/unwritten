@@ -41,6 +41,8 @@ export type OnChain<T> = T & { blobId?: string | undefined; writtenAt?: string |
 export interface HouseData {
   source: 'mainnet' | 'fixtures';
   seed?: string | undefined;
+  /** The MemWal account object on Sui — public, unlike the delegate key that writes to it. */
+  account?: string | undefined;
   /** Real counts from listNamespaces — what `pnpm verify` prints, shown on /proof. */
   counts?: Record<string, number> | undefined;
   decisions: Array<OnChain<DecisionEvent>>;

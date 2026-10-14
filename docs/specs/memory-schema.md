@@ -223,7 +223,7 @@ Belief; a rejected one produces nothing but sets `cooldownUntil` in the database
 | Fewer than `minEvidence` events | no belief; the empty state states how many are still needed |
 | Quorum unsatisfiable (declared-but-inactive approvers) | block the band; never downgrade silently |
 | Derive pass would exceed the rate limit | Three limits, and the tightest is per-key: **30 points/min per delegate key** ÷ 5 per `remember` = **6 writes/min**. The account limits (500 points/hour, 60/min burst) bind later, at 100 writes/hour. One server key therefore caps the whole system at six writes a minute; `scripts/seed.mts` paces at 5.5s for that reason, and the relayer's own `SERVER_SUI_PRIVATE_KEYS` pool is the documented fix. `rememberBulk` exists in `packages/memory` and is the right tool for a derive pass once one is scheduled |
-| Blob expiry | `walrusEpochs` default 50 × ~2 weeks on Mainnet ≈ 2 years; renew rather than rewrite |
+| Blob expiry | The relayer chooses the storage period, not this app. The seed's blobs are paid for epochs 41→56 — 15 epochs × 2 weeks ≈ 7 months, past judging — readable per blob on Walruscan. This row used to claim 50 epochs ≈ 2 years, a number from the SDK docs that the onchain record contradicts. Renew rather than rewrite. |
 | Seeded history | the seeder runs the real engine and is disclosed in the README |
 
 **Not built.** The daily derive pass this spec describes as the writer of `beliefs` does not exist

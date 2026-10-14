@@ -29,12 +29,19 @@ const AVATAR_COLOR: Record<Member['role'], 'primary' | 'secondary' | 'tertiary' 
   owner: 'primary', approver: 'secondary', spender: 'neutral', dependent: 'tertiary',
 };
 
+/* Rows written by the daily job from real Mainnet transfers, and the two written before the
+   story-dollar scale was declared. */
+const isDaily = (id: string) => /^s-\d{4}-\d{2}-\d{2}-/.test(id);
+const isLegacyScale = (d: { id: string; date: string }) => isDaily(d.id) && d.date <= '2026-10-13';
+
 const SHOWN: Category[] = ['groceries', 'fastfood', 'games', 'subscriptions', 'pets', 'household'];
 
 export default function House() {
-  const { decisionsUpTo } = useHouse();
+  /* All decisions, not the week-filtered ones: the newest rows are the daily job's real transfers,
+     which fall after the six-week story, and they are the most interesting rows on the page. */
+  const { decisions: allDecisions } = useHouse();
   const go = useGo();
-  const recent = [...decisionsUpTo].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+  const recent = [...allDecisions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
   const auto = money(HOUSE.policy.autoApproveCents);
 
   return (
@@ -140,6 +147,11 @@ export default function House() {
                   {d.initiatedBy === 'routine' ? 'autorenew' : 'front_hand'}
                 </span>
                 {d.initiatedBy === 'routine' ? 'raised by a routine' : 'asked by a member'} · {d.date}
+                {isDaily(d.id) && (
+                  <span className="text-secondary ml-1 font-sans font-semibold">
+                    · real transfer{isLegacyScale(d) ? ' · old scale ¹' : ''}
+                  </span>
+                )}
               </p>
             </div>
             <div className="hidden items-center -space-x-1.5 sm:flex">
@@ -157,6 +169,13 @@ export default function House() {
           </div>
         ))}
       </div>
+      {recent.some(isLegacyScale) && (
+        <p className="text-on-surface-variant mb-2 font-mono text-[11px]">
+          ¹ The daily job&apos;s first two decisions recorded the transfer at 1 SUI = $1,000, an
+          undeclared scale that made a groceries run read $98.45. Memory has no edit, so they stay;
+          every decision since uses the declared scale of $1.00 = 0.0003 SUI.
+        </p>
+      )}
       <p className="text-on-surface-variant mb-8 font-mono text-[11px]">
         Memory records who decided and in what order. Who asked stays in the application database, with
         every other name — a name written to Walrus could never be removed.

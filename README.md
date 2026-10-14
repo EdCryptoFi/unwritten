@@ -28,6 +28,13 @@ owner, an approver and a spender each get.
 
 ## Verify it
 
+The fastest way: **[/proof](https://unwritten-house.vercel.app/proof)** has a *Run it live* panel
+that calls Tatum (checkpoint, house wallet) and Walrus Memory (the house's namespaces) from your
+browser and shows the answer and its latency. Every blob id there links to its bytes on a public
+aggregator and to its onchain record on [Walruscan](https://walruscan.com) — size, storage epochs,
+and the `seal_encrypt_fence` / `certify_blob` transactions. Transfers link to Suiscan.
+
+
 ```bash
 pnpm verify
 ```

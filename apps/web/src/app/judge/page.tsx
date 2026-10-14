@@ -5,7 +5,7 @@ import { ClayButton } from '@/components/primitives';
 import { useGo } from '@/components/tour';
 import { ARCHITECTURE, RECONCILE, WRITE_PATH } from '@/lib/diagrams';
 import { LINKS } from '@/lib/links';
-import { useApp } from '@/lib/state';
+import { type Viewer, useApp } from '@/lib/state';
 import { TOURS, VIEWER_LABEL } from '@/lib/tours';
 
 /* A reviewer has three to five minutes and spends most of it deciding whether to keep going.
@@ -28,6 +28,42 @@ const PROVES: Record<string, { icon: string; proves: string; tag: string; tone: 
   '/proof': { icon: 'verified', tone: 'tertiary', tag: 'The checklist',
     proves: 'Each submission requirement answered with evidence: memory count, resolvable blob ids, the four Tatum calls with call sites, and the derivation re-run in your browser.' },
 };
+
+/* The hackathon's rubric, in its own words and weights, each point pointing at the screen that
+   shows it. A reviewer scores against this; the tour is the same material in story order. */
+const RUBRIC: Array<{ title: string; weight: number; points: Array<[string, string | null, Viewer?]> }> = [
+  { title: 'Walrus and Tatum integration', weight: 30, points: [
+    ['Walrus Memory on Mainnet: decisions, spend, top-ups and versioned rules, each a blob you can open on Walruscan', '/proof#walrus', 'judge'],
+    ['Tatum is the only way the app reads Sui — public fullnodes dropped JSON-RPC — and the daily transfers are signed through it', '/proof#tatum', 'judge'],
+    ['The two meet in Reality check: spend nobody agreed to exists in neither source alone', '/reality', 'm1'],
+    ['Run both integrations live from the proof page', '/proof#live', 'judge'],
+  ] },
+  { title: 'Technical quality', weight: 30, points: [
+    ['Seven pure learning functions with no network or LLM, tested in CI on every push — and re-derived in your browser on /proof', '/proof', 'judge'],
+    ['Append-only discipline: nothing pending ever reaches memory; a rule is superseded, never edited', '/agreement', 'm1'],
+    ['Hostile-input validation and an hourly budget on the only public write path', '/try', 'm1'],
+    ['Paginated, retried Tatum reads; a daily job made idempotent by asking the chain', null],
+  ] },
+  { title: 'Creativity', weight: 20, points: [
+    ['The agreement is discovered, not configured — setup asks one number so week five has something to correct', '/house', 'm1'],
+    ['Memory that learns across two kinds of actor: who the house defers to, and what an allowance is really for', '/agreement', 'm1'],
+  ] },
+  { title: 'Presentation', weight: 20, points: [
+    ['This guided path, three architecture diagrams, and a flowchart of the house', '/house', 'm1'],
+    ['Your own house in a minute, written to Walrus Mainnet', '/try', 'm1'],
+    ['Every simulation disclosed where it runs — the onchain signature and the key revocation', '/keys', 'm1'],
+  ] },
+];
+
+const CHECKLIST: Array<[string, string, string | null]> = [
+  ['Walrus Memory integrated and writing on Mainnet', 'Five namespaces on the MemWal relayer; the seed, the daily job and every visitor’s sandbox write to it', '/proof#walrus'],
+  ['At least 10 memories stored on Mainnet', 'Counted with listNamespaces on /proof — the seeded house alone holds 50', '/proof'],
+  ['Tatum RPC used for onchain data', 'Four calls through sui-mainnet.gateway.tatum.io, each with its call site', '/proof#tatum'],
+  ['Working demo', 'This site, live on Mainnet', '/'],
+  ['Public repository', 'EdCryptoFi/unwritten — specs, tests, and pnpm verify', LINKS.repo],
+  ['Blog post: what it does, how it uses Tatum + Walrus, how it learned over time', LINKS.writeup ? 'The write-up' : 'Written; link added on publish', LINKS.writeup],
+  ['Optional · built with Tatum AI Builder', 'The generated first version, kept in its own repository', LINKS.aiBuilder],
+];
 
 export default function Judge() {
   const go = useGo();
@@ -55,7 +91,61 @@ export default function Judge() {
         </ClayButton>
       </div>
 
+      {/* ── The hackathon's own terms ───────────────────────────────── */}
+      <span className="text-label-caps text-tertiary font-bold tracking-widest uppercase">How to score it</span>
+      <h2 className="text-on-surface mt-1 mb-4 text-2xl font-bold tracking-tight">The rubric, and where each part is</h2>
+      <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-2">
+        {RUBRIC.map((r) => (
+          <div key={r.title} className="clay-card rounded-xl p-5">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-on-surface text-base font-bold">{r.title}</span>
+              <span className="bg-tertiary-fixed text-tertiary rounded-full px-3 py-0.5 text-sm font-extrabold tabular-nums">{r.weight}%</span>
+            </div>
+            <ul className="space-y-1.5">
+              {r.points.map(([text, href, as]) => (
+                <li key={text} className="text-body-sm text-on-surface-variant flex gap-2">
+                  <span aria-hidden="true" className="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
+                  <span>
+                    {text}{' '}
+                    {href && (
+                      <button type="button" onClick={() => go(href, as ?? 'm1', 'judge')} className="text-tertiary font-semibold">
+                        see it →
+                      </button>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <span className="text-label-caps text-tertiary font-bold tracking-widest uppercase">The submission checklist</span>
+      <h2 className="text-on-surface mt-1 mb-4 text-2xl font-bold tracking-tight">Every required item, with its evidence</h2>
+      <div className="clay-card mb-8 rounded-xl p-2">
+        {CHECKLIST.map(([req, evidence, href]) => (
+          <div key={req} className="flex items-start gap-3 rounded-lg px-3 py-2.5 odd:bg-surface-container-low/60">
+            <span aria-hidden="true" className={`material-symbols-outlined text-[20px] ${href ? 'text-secondary' : 'text-outline'}`}>
+              {href ? 'task_alt' : 'radio_button_unchecked'}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-on-surface text-sm font-semibold">{req}</p>
+              <p className="text-body-sm text-on-surface-variant">{evidence}</p>
+            </div>
+            {href && (
+              href.startsWith('http') ? (
+                <a href={href} target="_blank" rel="noreferrer" className="text-tertiary shrink-0 text-sm font-semibold">open ↗</a>
+              ) : (
+                <button type="button" onClick={() => go(href, 'judge', 'judge')} className="text-tertiary shrink-0 text-sm font-semibold">open →</button>
+              )
+            )}
+          </div>
+        ))}
+      </div>
+
       {/* ── The stops, illustrated ─────────────────────────────────── */}
+      <span className="text-label-caps text-tertiary font-bold tracking-widest uppercase">The tour</span>
+      <h2 className="text-on-surface mt-1 mb-4 text-2xl font-bold tracking-tight">Six stops, in order</h2>
       <ol className="relative mb-12 space-y-4">
         <span aria-hidden className="bg-outline-variant absolute top-6 bottom-6 left-[27px] w-0.5 rounded-full" />
         {stops.map((s, i) => {

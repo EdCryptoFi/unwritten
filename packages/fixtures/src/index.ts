@@ -217,6 +217,28 @@ export const HOUSE: House = {
 };
 
 const START = new Date('2026-09-01T12:00:00Z');
+
+/**
+ * The house's week for any date, counted from the seed's first day.
+ *
+ * The daily spend job stamped every decision `week: 1`, which filed October's real transfers under
+ * the first week of a September story — they showed up when the week control was dragged to 1.
+ * A week is a function of the date, so it is computed rather than typed.
+ */
+export const weekOf = (date: string) =>
+  Math.max(1, Math.floor((new Date(`${date}T12:00:00Z`).getTime() - START.getTime()) / (7 * 864e5)) + 1);
+
+/**
+ * The demo's declared exchange rate: one story-dollar cent is this many MIST of real SUI.
+ *
+ * The daily job moves real SUI on Mainnet, but a household's $40 shop moved as $40 of SUI would
+ * spend the house wallet in a week. So transfers are scaled down and the decision records the
+ * story amount. It used to divide MIST by 1000 inline — 1 SUI = $1,000, undeclared — which put a
+ * $98.45 grocery run next to a seeded story whose shops are $25–45. Declared once, used by both
+ * sides: $1.00 = 0.0003 SUI.
+ */
+export const MIST_PER_CENT = 300;
+
 export const dayISO = (n: number) =>
   new Date(START.getTime() + (n - 1) * 864e5).toISOString().slice(0, 10);
 

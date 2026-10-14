@@ -1,4 +1,4 @@
-import type { Belief, DecisionEvent, SpendEvent, TopUpEvent } from '@unwritten/fixtures';
+import { type Belief, type DecisionEvent, type SpendEvent, type TopUpEvent, weekOf } from '@unwritten/fixtures';
 import { listNamespaces, recall } from '@unwritten/memory';
 import { NextResponse } from 'next/server';
 
@@ -22,6 +22,7 @@ interface House {
   source: 'mainnet';
   seed: string;
   counts: Record<string, number>;
+  account?: string;
   decisions: DecisionEvent[];
   spend: SpendEvent[];
   topups: TopUpEvent[];
@@ -62,7 +63,16 @@ export async function GET() {
 
   const value: House = {
     source: 'mainnet', seed: SEED, counts,
-    decisions: decisions.sort((a, b) => a.date.localeCompare(b.date)),
+    // The MemWal account is a Sui object, public by nature — the delegate KEY stays server-side.
+    // It is the `memwalAgentId` the submission form asks for, so a reviewer can look it up.
+    ...(process.env.MEMWAL_ACCOUNT_ID ? { account: process.env.MEMWAL_ACCOUNT_ID } : {}),
+    /* The daily job's first decisions were stamped `week: 1` regardless of their date. Memory has
+       no edit, so the correction happens on read: a week is a function of the date, and the
+       stored number is ignored for the daily job's rows (ids `s-YYYY-MM-DD-…`). New rows carry
+       the right week already. */
+    decisions: decisions
+      .map((d) => (/^s-\d{4}-\d{2}-\d{2}-/.test(d.id) ? { ...d, week: weekOf(d.date) } : d))
+      .sort((a, b) => a.date.localeCompare(b.date)),
     spend, topups,
     beliefs: beliefs.sort((a, b) => a.fromWeek - b.fromWeek),
   };
