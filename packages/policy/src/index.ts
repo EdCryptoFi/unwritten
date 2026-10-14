@@ -481,20 +481,20 @@ export function deriveAll(input: Omit<Input, 'existing'>, probes: Probes): Belie
 /**
  * Does the engine agree with the screens?
  *
- * Compares each derived belief against the live version of the fixture the prototype validated.
- * Only the HEADLINE claim is compared: ids, versions, blob ids and confidence are expected to
- * differ between a hand-written fixture and a freshly derived belief, and asserting on them would
- * make the check fail for reasons that mean nothing.
+ * Compares each derived belief against the live version of the fixture the prototype validated,
+ * sentence for sentence. Ids, versions, blob ids and confidence are expected to differ and are not
+ * in the sentence, so nothing has to be cut away.
+ *
+ * It used to compare a "headline" — the sentence cut at the first "· n of m". That hid every number
+ * after the count: the Friday rhythm said $34.00 ± $4.08 on the screen and $32.40 ± $10.69 on
+ * Mainnet, and this check reported agreement. A check that can only pass is not a check.
  */
 export function agreement(
   derived: Belief[],
   shown: Belief[],
   say: (b: Belief) => string,
 ): Array<{ dimension: string; id: string; fixture: string; derived: string; agrees: boolean }> {
-  const headline = (x: Belief) =>
-    say(x)
-      .replace(/· \d+ of \d+.*/, '')
-      .trim();
+  const headline = (x: Belief) => say(x).trim();
   const live = shown.filter((s) => !shown.some((o) => o.supersedes === s.id));
   return derived.flatMap((b) => {
     const f = live.find(

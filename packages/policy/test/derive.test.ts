@@ -64,9 +64,13 @@ describe("agreement", () => {
     expect(superseded).not.toContain(vb?.id);
   });
 
-  it("ignores the confidence tail, which is expected to differ", () => {
-    // If the headline were compared with its "· n of m" suffix nothing would ever agree.
-    expect(rows.every((r) => !/· \d+ of \d+/.test(r.derived))).toBe(true);
+  it('compares the whole sentence — a number after the count is caught', () => {
+    // It once compared only up to "· n of m", which hid the rhythm's amounts and reported 7 of 7
+    // while the screen and Mainnet disagreed by $1.60 and a third of the variance.
+    const tampered = BELIEFS.map((b) =>
+      b.dimension === 'rhythm' && !b.isCommitment ? { ...b, medianCents: b.medianCents + 160 } : b,
+    );
+    expect(agreement(derived, tampered, say).find((r) => r.dimension === 'rhythm')?.agrees).toBe(false);
   });
 
   it("reports differs when a screen drifts from the engine", () => {

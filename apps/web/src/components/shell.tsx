@@ -52,7 +52,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         }`}
       >
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-base">gavel</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-base">gavel</span>
           <span>a judge</span>
         </div>
       </button>
@@ -100,7 +100,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <nav className="w-full md:w-72 flex-shrink-0 bg-surface-container-low border-r border-outline-variant/50 p-4 md:sticky md:h-screen md:border-b-0">
         <Link href="/" className="clay-card flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-4">
           <span className="bg-primary flex h-8 w-8 items-center justify-center rounded-full shadow-[0_4px_10px_rgba(70,72,212,0.3)]">
-            <span className="material-symbols-outlined text-on-primary text-[18px]">balance</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-on-primary text-[18px]">balance</span>
           </span>
           <span className="flex flex-col leading-tight">
             <span className="text-on-surface text-sm font-bold">Unwritten</span>
@@ -115,7 +115,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <details className="md:hidden group">
           <summary className="clay-pill clay-pill-secondary mx-3 mb-3 flex cursor-pointer list-none items-center justify-between px-4 py-2.5 text-sm font-semibold text-on-surface [&::-webkit-details-marker]:hidden">
             <span>Menu · viewer &amp; navigation</span>
-            <span className="material-symbols-outlined text-[18px] transition-transform group-open:rotate-180">expand_more</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-[18px] transition-transform group-open:rotate-180">expand_more</span>
           </summary>
           <div className="pt-1">{links}</div>
         </details>

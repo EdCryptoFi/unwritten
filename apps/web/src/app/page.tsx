@@ -3,7 +3,7 @@
 import { useGo } from '@/components/tour';
 import { LINKS } from '@/lib/links';
 import { useApp, useHouse } from '@/lib/state';
-import { WEEK_NOTE } from '@unwritten/fixtures';
+import { type Belief, WEEK_NOTE, money } from '@unwritten/fixtures';
 
 /* Three doors, deliberately not equal weight. The example teaches what a derived rule is in ten
    seconds; "try it yourself" only lands once you know that, so it is second. The judge door leads
@@ -15,7 +15,17 @@ import { WEEK_NOTE } from '@unwritten/fixtures';
    same engine the rest of the product reads from; nothing here is decorative marketing copy. */
 export default function Landing() {
   const { loading, house } = useApp();
-  const { decisionsUpTo, beliefsUpTo } = useHouse();
+  const { decisionsUpTo, beliefsUpTo, spendUpTo } = useHouse();
+
+  /* The four showcase numbers are READ, not written. They were typed into this file once and the
+     Friday rhythm drifted — $34.00 ± $4.08 here, $32.40 ± $10.69 on Mainnet — under a line saying
+     "every number here is live". Now they are the same beliefs /agreement renders. */
+  const find = <D extends Belief['dimension']>(dim: D, cat: string) =>
+    beliefsUpTo.find((b): b is Extract<Belief, { dimension: D }> => b.dimension === dim && b.scope.category === cat);
+  const friday = find('rhythm', 'fastfood');
+  const games = find('member_pattern', 'games');
+  const groceries = find('value_band', 'groceries');
+  const repriced = spendUpTo.find((x) => x.isCommitment && x.expectedCents !== undefined && x.amountCents > x.expectedCents);
   const go = useGo();
 
   const totalMemories = Object.values(house.counts ?? {}).reduce<number>((a, b) => a + b, 0);
@@ -26,7 +36,7 @@ export default function Landing() {
       <header className="mb-6 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span className="bg-primary flex h-9 w-9 items-center justify-center rounded-full shadow-[0_4px_10px_rgba(70,72,212,0.3)]">
-            <span className="material-symbols-outlined text-on-primary text-[20px]">balance</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-on-primary text-[20px]">balance</span>
           </span>
           <span className="flex flex-col leading-tight">
             <span className="text-on-surface text-base font-bold">Unwritten</span>
@@ -118,7 +128,7 @@ export default function Landing() {
               />
               <div className="bg-surface-container-lowest/90 absolute right-3 bottom-3 left-3 flex items-center gap-2.5 rounded-full px-4 py-2.5 shadow-[0_12px_28px_-4px_rgba(112,128,160,0.18),inset_0_2px_4px_rgba(255,255,255,0.9)] backdrop-blur-md">
                 <span className="bg-primary-fixed text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                  <span className="material-symbols-outlined text-[18px]">cottage</span>
+                  <span aria-hidden="true" className="material-symbols-outlined text-[18px]">cottage</span>
                 </span>
                 <div className="min-w-0 text-left">
                   <p className="text-on-surface text-sm leading-snug font-semibold">The Wilson House</p>
@@ -155,17 +165,21 @@ export default function Landing() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <ThemeCard icon="/design/icon-fastfood.webp" badge="Observed" badgeTone="secondary"
-          title="Friday Fast Food Ritual" stat="$34.00 ± $4.08" statTone="primary"
-          body="5 of 6 weeks. Small enough that nobody ever asked." />
+        <ThemeCard icon="/design/icon-fastfood.webp" badge={friday?.state ?? 'forming'} badgeTone="secondary"
+          title="Friday Fast Food Ritual"
+          stat={friday ? `${money(friday.medianCents)} ± ${money(Math.round((friday.medianCents * friday.variancePct) / 100))}` : '—'}
+          statTone="primary"
+          body={friday ? `${friday.streak[0]} of ${friday.streak[1]} weeks. Small enough that nobody ever asked.` : 'Not enough weeks yet.'} />
         <ThemeCard icon="/design/icon-games.webp" badge="Friction point" badgeTone="tertiary"
-          title="Max's Gaming Budget" stat="72% of allowance" statTone="tertiary"
+          title="Max's Gaming Budget" stat={games ? `${games.sharePct}% of allowance` : '—'} statTone="tertiary"
           body="One rejection in six weeks — the only contested category." />
-        <ThemeCard icon="/design/icon-groceries.webp" badge="Ratified" badgeTone="secondary"
-          title="Groceries Autonomous Ceiling" stat="Up to $45.00 solo" statTone="secondary"
-          body="11 of 11 times agreed without discussion." />
+        <ThemeCard icon="/design/icon-groceries.webp" badge={groceries?.state ?? 'forming'} badgeTone="secondary"
+          title="Groceries Autonomous Ceiling" stat={groceries ? `Up to ${money(groceries.thresholdCents)} solo` : '—'} statTone="secondary"
+          body={groceries ? `${groceries.streak[0]} of ${groceries.streak[1]} times agreed without discussion.` : 'Not enough decisions yet.'} />
         <ThemeCard icon="/design/icon-subscriptions.webp" badge="Repriced" badgeTone="primary"
-          title="Silent Price Creep" stat="$10.99 → $12.99" statTone="primary"
+          title="Silent Price Creep"
+          stat={repriced?.expectedCents !== undefined ? `${money(repriced.expectedCents)} → ${money(repriced.amountCents)}` : '—'}
+          statTone="primary"
           body="Nobody approved it, nobody noticed — until Reality check." />
       </div>
 
@@ -205,7 +219,7 @@ export default function Landing() {
             </h3>
           </div>
           <span className="bg-surface-container-low text-on-surface-variant text-body-sm inline-flex items-center gap-2 rounded-full px-4 py-2">
-            <span className="material-symbols-outlined text-primary text-[18px]">verified_user</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-primary text-[18px]">verified_user</span>
             No wallet, no gas. Two keys in the whole system.
           </span>
         </div>
@@ -278,7 +292,7 @@ function GateCard({
           <span className={`h-2 w-2 rounded-full ${accent.dot}`} />
           {badge}
         </span>
-        <span className={`material-symbols-outlined text-[22px] ${accent.icon}`}>{icon}</span>
+        <span aria-hidden="true" className={`material-symbols-outlined text-[22px] ${accent.icon}`}>{icon}</span>
       </div>
       <h3 className="text-on-surface mb-1 text-lg font-bold tracking-tight">{title}</h3>
       <p className="text-on-surface-variant mb-4 text-sm leading-relaxed">{body}</p>
@@ -297,7 +311,7 @@ function GateCard({
           }`}
         >
           {cta}
-          <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
         </span>
       </div>
     </button>
@@ -354,7 +368,7 @@ function Step({ n, tone, icon, title, body }: { n: number; tone: 'primary' | 'se
         <p className="text-body-md text-on-surface-variant leading-relaxed">{body}</p>
       </div>
       <div className={`mt-6 flex items-center gap-2 pt-4 font-semibold ${c.text}`}>
-        <span className="material-symbols-outlined text-[18px]">{icon}</span>
+        <span aria-hidden="true" className="material-symbols-outlined text-[18px]">{icon}</span>
       </div>
     </div>
   );

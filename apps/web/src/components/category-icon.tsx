@@ -43,7 +43,7 @@ export function CategoryIcon({ category, size = 40 }: { category: Category; size
       className="bg-surface-container text-primary flex shrink-0 items-center justify-center rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.9)]"
       style={{ width: size, height: size }}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: Math.round(size * 0.5) }}>
+      <span aria-hidden="true" className="material-symbols-outlined" style={{ fontSize: Math.round(size * 0.5) }}>
         {GLYPH[category]}
       </span>
     </span>

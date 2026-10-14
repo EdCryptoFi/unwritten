@@ -76,7 +76,7 @@ export default function House() {
             <ClayAvatar label="C" color="neutral" size="sm" />
             <ClayAvatar label="M" color="tertiary" size="sm" />
             <span className="bg-surface-container text-on-surface-variant flex h-8 w-8 items-center justify-center rounded-full" title="routine">
-              <span className="material-symbols-outlined text-[18px]">autorenew</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[18px]">autorenew</span>
             </span>
           </div>
         </Node>
@@ -99,7 +99,7 @@ export default function House() {
           link={{ label: 'What is waiting', onClick: () => go('/pending', 'm1') }}>
           <div className="flex items-center gap-1.5">
             <ClayAvatar label="A" color="primary" size="sm" />
-            <span className="material-symbols-outlined text-on-surface-variant text-[18px]">arrow_forward</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-on-surface-variant text-[18px]">arrow_forward</span>
             <ClayAvatar label="S" color="secondary" size="sm" />
           </div>
         </Node>
@@ -136,7 +136,7 @@ export default function House() {
                 {money(d.amountCents)} · {CATEGORY_LABEL[d.category].toLowerCase()}
               </p>
               <p className="text-on-surface-variant flex items-center gap-1 font-mono text-[11px]">
-                <span className="material-symbols-outlined text-[14px]">
+                <span aria-hidden="true" className="material-symbols-outlined text-[14px]">
                   {d.initiatedBy === 'routine' ? 'autorenew' : 'front_hand'}
                 </span>
                 {d.initiatedBy === 'routine' ? 'raised by a routine' : 'asked by a member'} · {d.date}
@@ -164,7 +164,7 @@ export default function House() {
 
       <ClayButton variant="primary" size="lg" onClick={() => go('/agreement', 'm1')}>
         See what six weeks of this wrote down
-        <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+        <span aria-hidden="true" className="material-symbols-outlined text-[20px]">arrow_forward</span>
       </ClayButton>
     </>
   );
@@ -194,7 +194,7 @@ function Node({
       )}
       <div className="mb-3 flex items-center gap-2.5">
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${l.chip}`}>{n}</span>
-        <span className={`material-symbols-outlined text-[22px] ${l.chip.split(' ')[1]}`}>{icon}</span>
+        <span aria-hidden="true" className={`material-symbols-outlined text-[22px] ${l.chip.split(' ')[1]}`}>{icon}</span>
         <h3 className="text-on-surface text-base font-bold">{title}</h3>
       </div>
       <p className="text-body-sm text-on-surface-variant flex-1 leading-relaxed">{body}</p>
@@ -203,13 +203,13 @@ function Node({
         <button type="button" onClick={link.onClick}
           className="text-primary mt-3 inline-flex items-center gap-1 self-start text-sm font-semibold">
           {link.label}
-          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[16px]">arrow_forward</span>
         </button>
       )}
       {/* the arrow to the next box: down on one column, across on wider grids */}
       {n < 8 && (
         <span aria-hidden className="text-outline absolute -bottom-4 left-1/2 z-10 -translate-x-1/2 md:hidden">
-          <span className="material-symbols-outlined bg-background rounded-full text-[20px]">arrow_downward</span>
+          <span aria-hidden="true" className="material-symbols-outlined bg-background rounded-full text-[20px]">arrow_downward</span>
         </span>
       )}
     </li>

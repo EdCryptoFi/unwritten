@@ -46,11 +46,11 @@ export default function Judge() {
 
       <div className="mb-10 flex flex-col gap-3 sm:flex-row">
         <ClayButton variant="tertiary" size="lg" onClick={() => go('/agreement', 'm1', 'judge')}>
-          <span className="material-symbols-outlined text-[20px]">play_arrow</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[20px]">play_arrow</span>
           {tour === 'judge' ? 'Continue the tour' : 'Start the tour'}
         </ClayButton>
         <ClayButton variant="secondary" size="lg" onClick={() => go('/proof', 'judge', 'judge')}>
-          <span className="material-symbols-outlined text-[20px]">fact_check</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[20px]">fact_check</span>
           Straight to Proof
         </ClayButton>
       </div>
@@ -65,7 +65,7 @@ export default function Judge() {
           return (
             <li key={s.href} className="relative flex gap-4">
               <span className={`relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-[0_6px_14px_-2px_rgba(112,128,160,0.25),inset_0_2px_3px_rgba(255,255,255,0.9)] ${chip}`}>
-                <span className="material-symbols-outlined text-[26px]">{p.icon}</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-[26px]">{p.icon}</span>
               </span>
               <button type="button" onClick={() => go(s.href, s.as, 'judge')}
                 className="clay-card clay-card-hover flex-1 rounded-xl p-5 text-left">
@@ -78,7 +78,7 @@ export default function Judge() {
                 <p className="text-body-sm text-on-surface-variant leading-relaxed">{p.proves}</p>
                 <span className="text-tertiary mt-2 inline-flex items-center gap-1 text-sm font-semibold">
                   Open
-                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  <span aria-hidden="true" className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </span>
               </button>
             </li>

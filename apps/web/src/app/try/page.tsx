@@ -23,12 +23,12 @@ type Stage = 'cast' | 'fund' | 'spend' | 'number' | 'deciding' | 'payoff' | 'quo
 type From = 'spender' | 'approver' | 'routine';
 
 const MIN_EVIDENCE = 3;
-const CHOICES = [1000, 1800, 2500] as const;
+const CHOICES = [500, 1000, 1500, 1800, 2500, 4000, 5000] as const;
 /* The house's monthly pot. Simulated and SAID so: a visitor has no wallet, and a real transfer
    would be our money sent to anyone with a browser. What it teaches is real — approvals spend a
    shared balance — and the screen points at where a balance IS real: the Wilson house wallet,
    read through Tatum on Reality check. */
-const POTS = [40000, 80000, 150000] as const;
+const POTS = [20000, 40000, 80000, 150000, 300000] as const;
 
 /* What a request sounds like, per category. `from` is a ROLE, so the visitor's names fill it in.
    `mult` bounds the amount as a multiple of the visitor's number: every request sits above it,
@@ -73,7 +73,11 @@ const CAST_DEFAULT = [
 
 const VISITOR: Ref = 'you';
 
-type Request = { from: From; what: string; category: Category; cents: number };
+/* `label` is set only for a category the visitor typed themselves. It stays in the browser, like
+   their names; what reaches memory is `unclassified`, the one category the schema has for
+   "something this house buys that we did not anticipate". */
+type Request = { from: From; what: string; category: Category; cents: number; label?: string };
+const labelOf = (r: { category: Category; label?: string | undefined }) => r.label ?? CATEGORY_LABEL[r.category];
 type Decision = Request & { blobId: string };
 
 /** The sandbox speaks the same schema as the rest of the product, so the same function reads it. */
@@ -95,17 +99,23 @@ const toDecisionEvent = (d: Decision, i: number): DecisionEvent => ({
 
 /* Three requests from the categories the visitor picked. If any picked category has a routine,
    one of the three is it — the only moment the house acts without being asked. */
-function drawRequests(cap: number, cats: Array<keyof typeof POOL>): Request[] {
+function drawRequests(cap: number, cats: Array<keyof typeof POOL>, customs: string[] = []): Request[] {
   const round = (n: number) => Math.round(n / 50) * 50;
   const shuffle = <T,>(xs: T[]) => [...xs].sort(() => Math.random() - 0.5);
-  const all = cats.flatMap((c) => POOL[c].map((p) => ({ ...p, category: c as Category })));
+  const all: Array<{ from: From; what: string; mult: [number, number]; category: Category; label?: string }> = [
+    ...cats.flatMap((c) => POOL[c].map((p) => ({ ...p, category: c as Category }))),
+    ...customs.map((label) => ({
+      from: 'spender' as From, what: `${label}, this week`, mult: [1.4, 2.0] as [number, number],
+      category: 'unclassified' as Category, label,
+    })),
+  ];
   const routine = shuffle(all.filter((p) => p.from === 'routine'))[0];
   const people = shuffle(all.filter((p) => p.from !== 'routine'));
   const chosen = routine ? [routine, ...people.slice(0, 2)] : people.slice(0, 3);
   // A single picked category with two entries still needs a third: repeat one with a new amount.
   while (chosen.length < 3 && all.length) chosen.push(shuffle(all)[0] as (typeof all)[number]);
   return shuffle(chosen).map((c) => ({
-    from: c.from, what: c.what, category: c.category,
+    from: c.from, what: c.what, category: c.category, ...(c.label ? { label: c.label } : {}),
     cents: round(cap * (c.mult[0] + Math.random() * (c.mult[1] - c.mult[0]))),
   }));
 }
@@ -122,6 +132,8 @@ function TryInner() {
   const [pot, setPot] = useState(0);
   const [customPot, setCustomPot] = useState('');
   const [cats, setCats] = useState<Array<keyof typeof POOL>>(DEFAULT_CATS);
+  const [customs, setCustoms] = useState<string[]>([]);
+  const [newCat, setNewCat] = useState('');
   const [queue, setQueue] = useState<Request[]>([]);
   const [taken, setTaken] = useState<Decision[]>([]);
   const params = useSearchParams();
@@ -182,7 +194,7 @@ function TryInner() {
      house wallet; here, on the simulated pot. */
   const low = pot > 0 && left < pot * 0.25;
 
-  const start = (c: number) => { setCap(c); setQueue(drawRequests(c, cats)); setStage('deciding'); };
+  const start = (c: number) => { setCap(c); setQueue(drawRequests(c, cats, customs)); setStage('deciding'); };
   const choosePot = (c: number) => { setPot(c); setStage('spend'); };
   const chooseCustomPot = () => {
     const n = Math.round(Number(customPot) * 100);
@@ -201,8 +213,31 @@ function TryInner() {
     if (!Number.isFinite(n) || n < 100 || n > maxCap) return;
     start(n);
   };
+  /* No upper limit — a house buys what it buys. At least one thing stays picked, or there is
+     nothing to ask about. */
+  const picked = cats.length + customs.length;
   const toggleCat = (c: keyof typeof POOL) =>
-    setCats((xs) => (xs.includes(c) ? (xs.length > 1 ? xs.filter((x) => x !== c) : xs) : xs.length < 4 ? [...xs, c] : xs));
+    setCats((xs) => (xs.includes(c) ? (picked > 1 ? xs.filter((x) => x !== c) : xs) : [...xs, c]));
+  const addCustom = () => {
+    const label = newCat.trim().replace(/\s+/g, ' ').slice(0, 24);
+    if (!label || customs.some((x) => x.toLowerCase() === label.toLowerCase())) return;
+    setCustoms((xs) => [...xs, label]);
+    setNewCat('');
+  };
+  const removeCustom = (label: string) => {
+    if (picked <= 1) return;
+    setCustoms((xs) => xs.filter((x) => x !== label));
+  };
+
+  /* Back, but only while nothing has been written. Once a decision is on Mainnet it cannot be
+     unwritten, so the way out from there is "start over", which says so. */
+  const BACK: Partial<Record<Stage, Stage>> = { fund: 'cast', spend: 'fund', number: 'spend' };
+  const backTo = stage === 'deciding' && taken.length === 0 ? 'number' : BACK[stage];
+  const goBack = () => {
+    if (!backTo) return;
+    if (stage === 'deciding') { setQueue([]); setCap(0); }
+    setStage(backTo);
+  };
 
   const approve = async () => {
     if (!next || sending) return;
@@ -232,7 +267,7 @@ function TryInner() {
   };
 
   /* For the payoff: which of their categories carried the rule, and who asked most. */
-  const byCat = [...new Set(taken.map((t) => t.category))];
+  const byCat = [...new Set(taken.map((t) => labelOf(t)))];
   /* "Mostly asked by X" only when X actually asked more than anyone else — a 1-1 tie said
      "mostly" about one of them, which was simply false. */
   const askers = taken.filter((t) => t.from !== 'routine').map((t) => nameFor(t.from));
@@ -246,7 +281,16 @@ function TryInner() {
 
   return (
     <Page title="Try it yourself" lede={LEDE[stage](cap)}>
-      <Steps stage={stage} />
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        {backTo && (
+          <button type="button" onClick={goBack}
+            className="clay-pill clay-pill-secondary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold">
+            <span aria-hidden="true" className="material-symbols-outlined text-[16px]">arrow_back</span>
+            Back
+          </button>
+        )}
+        <Steps stage={stage} />
+      </div>
 
       {/* Not a key — the writes live under our account with our delegate, and pretending otherwise
           would be theatre. A link is honest, and it still proves the memory outlived the tab. */}
@@ -291,7 +335,7 @@ function TryInner() {
             ))}
             <div className="flex items-center gap-3">
               <span className="bg-surface-container text-on-surface-variant flex h-10 w-10 items-center justify-center rounded-full">
-                <span className="material-symbols-outlined text-[20px]">autorenew</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-[20px]">autorenew</span>
               </span>
               <div>
                 <p className="text-on-surface text-sm font-semibold">your routines</p>
@@ -310,7 +354,7 @@ function TryInner() {
         <Card>
           <div className="flex items-start gap-4">
             <span className="bg-secondary-fixed text-secondary flex h-14 w-14 shrink-0 items-center justify-center rounded-full shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
-              <span className="material-symbols-outlined text-[28px]">savings</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[28px]">savings</span>
             </span>
             <div>
               <Rule>How much goes into the house each month?</Rule>
@@ -355,7 +399,7 @@ function TryInner() {
       {stage === 'spend' && (
         <Card>
           <Rule>What does your house actually spend on?</Rule>
-          <Meta>Pick up to four. The requests you will be asked to approve come from these.</Meta>
+          <Meta>Pick as many as you like, or add your own. The requests you will be asked to approve come from these.</Meta>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {PICKABLE.map((c) => {
               const on = cats.includes(c);
@@ -368,7 +412,7 @@ function TryInner() {
                   <span className={`absolute top-2.5 right-2.5 flex h-6 w-6 items-center justify-center rounded-full ${
                     on ? 'bg-primary text-on-primary shadow-[0_4px_10px_rgba(70,72,212,0.3)]' : 'bg-surface-container-lowest text-outline-variant'
                   }`}>
-                    <span className="material-symbols-outlined text-[16px]">{on ? 'check' : 'add'}</span>
+                    <span aria-hidden="true" className="material-symbols-outlined text-[16px]">{on ? 'check' : 'add'}</span>
                   </span>
                   <CategoryIcon category={c} size={56} />
                   <span className={`text-sm font-semibold ${on ? 'text-primary' : 'text-on-surface-variant'}`}>{CATEGORY_LABEL[c]}</span>
@@ -376,8 +420,38 @@ function TryInner() {
               );
             })}
           </div>
+          <div className="mt-4">
+            <p className="text-on-surface mb-2 text-sm font-semibold">Something else?</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="clay-well inline-flex items-center rounded-full px-3 py-1.5">
+                <span aria-hidden="true" className="material-symbols-outlined text-on-surface-variant text-[18px]">add</span>
+                <input
+                  value={newCat} maxLength={24} placeholder="kids' sports, the car…"
+                  onChange={(e) => setNewCat(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') addCustom(); }}
+                  aria-label="add your own category"
+                  className="text-on-surface w-44 bg-transparent px-1 text-sm outline-none"
+                />
+              </span>
+              <ClayButton variant="secondary" size="sm" onClick={addCustom}>Add</ClayButton>
+              {customs.map((c) => (
+                <span key={c} className="clay-card inline-flex items-center gap-1.5 rounded-full py-1 pr-1.5 pl-3 text-sm font-semibold">
+                  <span className="text-primary">{c}</span>
+                  <button type="button" onClick={() => removeCustom(c)} aria-label={`remove ${c}`}
+                    className="text-on-surface-variant hover:text-on-surface flex h-6 w-6 items-center justify-center rounded-full">
+                    <span aria-hidden="true" className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </span>
+              ))}
+            </div>
+            {customs.length > 0 && (
+              <p className="text-on-surface-variant mt-2 font-mono text-[11px]">
+                your own categories stay in your browser — memory stores them as &ldquo;unclassified&rdquo;
+              </p>
+            )}
+          </div>
           <p className="text-on-surface-variant mt-3 font-mono text-[11px]">
-            {cats.length} picked · {cats.some((c) => POOL[c].some((p) => p.from === 'routine'))
+            {picked} picked · {cats.some((c) => POOL[c].some((p) => p.from === 'routine'))
               ? 'one of your requests will come from a routine'
               : 'pick fast food or subscriptions to see a routine ask on its own'}
           </p>
@@ -392,24 +466,27 @@ function TryInner() {
             This is the only thing setup ever asks. Pick whichever feels right — you are meant to
             get it wrong, because the whole product is the app coming back later to correct you.
           </Meta>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            {CHOICES.filter((c) => c <= maxCap).map((c) => (
-              <ClayButton key={c} variant="secondary" onClick={() => start(c)}>{money(c)}</ClayButton>
-            ))}
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-on-surface-variant text-sm">or your own</span>
-            <span className="clay-well inline-flex items-center rounded-full px-3 py-1.5">
-              <span className="text-on-surface-variant">$</span>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="clay-well inline-flex items-center rounded-full px-4 py-2.5">
+              <span className="text-on-surface text-xl font-bold">$</span>
               <input
-                value={custom} inputMode="decimal" placeholder="35"
+                value={custom} inputMode="decimal" placeholder="type an amount"
                 onChange={(e) => setCustom(e.target.value.replace(/[^0-9.]/g, ''))}
                 onKeyDown={(e) => { if (e.key === 'Enter') startCustom(); }}
-                aria-label="your own number in dollars"
-                className="text-on-surface w-16 bg-transparent px-1 text-sm outline-none"
+                aria-label="how much one person can spend without asking, in dollars"
+                className="text-on-surface w-40 bg-transparent px-1 text-xl font-bold tabular-nums outline-none"
               />
             </span>
-            <ClayButton variant="secondary" size="sm" onClick={startCustom}>Use it</ClayButton>
+            <ClayButton onClick={startCustom}>Use this number</ClayButton>
+          </div>
+          {custom && (Number(custom) * 100 > maxCap || Number(custom) * 100 < 100) && (
+            <p className="text-tertiary mt-2 text-xs">Between $1.00 and {money(maxCap)} with this pot.</p>
+          )}
+          <p className="text-on-surface-variant mt-4 mb-2 text-xs">or pick one</p>
+          <div className="flex flex-wrap gap-2">
+            {CHOICES.filter((c) => c <= maxCap).map((c) => (
+              <ClayButton key={c} variant="secondary" size="sm" onClick={() => start(c)}>{money(c)}</ClayButton>
+            ))}
           </div>
           <p className="text-on-surface-variant mt-2 font-mono text-[11px]">
             anything from $1 to {money(maxCap)} with a {money(pot)} pot — the requests scale with it
@@ -428,7 +505,7 @@ function TryInner() {
                   {next.from === 'routine' ? 'nobody asked — a routine' : `${nameFor(next.from)} asks`}
                 </span>
               </div>
-              <Rule>{money(next.cents)} · {CATEGORY_LABEL[next.category].toLowerCase()}</Rule>
+              <Rule>{money(next.cents)} · {labelOf(next).toLowerCase()}</Rule>
               <Meta>
                 {next.what}.{' '}
                 {next.from === 'routine'
@@ -459,7 +536,7 @@ function TryInner() {
               It is actually <span className="text-primary">{money(threshold)}</span>.
             </p>
             <Meta>
-              Across {byCat.map((c) => CATEGORY_LABEL[c].toLowerCase()).join(', ')}
+              Across {byCat.map((c) => c.toLowerCase()).join(', ')}
               {askedLine} — every one went through without
               discussion. In the Wilson house this arrives in week five, and the app proposes making
               it a rule: a band nobody ever configured.
@@ -577,7 +654,7 @@ const LEDE: Record<Stage, (cap: number) => string> = {
 function Steps({ stage }: { stage: Stage }) {
   const at = STEPS.findIndex(([s]) => s === stage);
   return (
-    <div className="mb-6 flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2">
       {STEPS.map(([s, label], i) => (
         <span
           key={s}
@@ -632,7 +709,7 @@ function PotBar({ pot, left, low }: { pot: number; left: number; low: boolean })
     <div className="mt-4">
       <div className="mb-1 flex items-center justify-between">
         <span className="text-on-surface-variant flex items-center gap-1 text-xs">
-          <span className="material-symbols-outlined text-[16px]">savings</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[16px]">savings</span>
           house pot · simulated
         </span>
         <span className={`text-xs font-bold tabular-nums ${low ? 'text-tertiary' : 'text-on-surface'}`}>

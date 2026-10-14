@@ -67,22 +67,22 @@ export function TourBar() {
             </button>
           )}
           {prev && (
-            <button type="button" onClick={() => go(prev.href, prev.as)}
+            <button type="button" onClick={() => go(prev.href, prev.as)} aria-label={`Back to ${prev.title}`}
               className="clay-pill clay-pill-secondary inline-flex items-center gap-1 px-3 py-2 text-sm font-semibold">
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_back</span>
             </button>
           )}
           {next ? (
             <button type="button" onClick={() => go(next.href, next.as)}
               className={`clay-pill ${tour === 'judge' ? 'clay-pill-tertiary' : 'clay-pill-primary'} inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold`}>
               Next · {next.title}
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
           ) : (
             <button type="button" onClick={() => go(t.end.href, 'm1', null)}
               className={`clay-pill ${tour === 'judge' ? 'clay-pill-tertiary' : 'clay-pill-primary'} inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold`}>
               {t.end.label}
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
           )}
           <button type="button" onClick={() => setTour(null)}

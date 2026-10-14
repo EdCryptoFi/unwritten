@@ -1,8 +1,19 @@
 'use client';
 
-import { Card, Empty, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
+import { CATEGORY_LABEL, CategoryIcon } from '@/components/category-icon';
+import { Card, ClayAvatar, Empty, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
-import { type Belief, HOUSE, WEEK_NOTE, money, say, soWhat } from '@unwritten/fixtures';
+import { type Belief, type Category, HOUSE, WEEK_NOTE, money, nameOf, say, soWhat } from '@unwritten/fixtures';
+
+/* A house-wide rule has no category to draw, so it gets the dimension's own glyph. */
+const DIMENSION_GLYPH: Record<Belief['dimension'], string> = {
+  value_band: 'payments', silence: 'notifications_off', authority: 'how_to_reg',
+  friction: 'bolt', drift: 'speed', member_pattern: 'pie_chart', rhythm: 'event_repeat',
+};
+const DIMENSION_LABEL: Record<Belief['dimension'], string> = {
+  value_band: 'solo limit', silence: 'silence floor', authority: 'who decides',
+  friction: 'friction', drift: 'drift', member_pattern: 'allowance pattern', rhythm: 'rhythm',
+};
 
 export default function Agreement() {
   const { week, me, role } = useApp();
@@ -59,20 +70,43 @@ export default function Agreement() {
           const chain = chainOf(b);
           return (
             <Card key={b.id}>
-              <div className="flex items-start justify-between gap-3.5">
-                <Rule>{say(b)}</Rule>
-                <StateBadge state={b.state} />
-              </div>
+              <div className="flex items-start gap-4">
+                <div className="relative shrink-0">
+                  {b.scope.category === '*' ? (
+                    <span className="bg-primary-fixed text-primary flex h-14 w-14 items-center justify-center rounded-full shadow-[inset_0_2px_3px_rgba(255,255,255,0.9)]">
+                      <span aria-hidden="true" className="material-symbols-outlined text-[28px]">{DIMENSION_GLYPH[b.dimension]}</span>
+                    </span>
+                  ) : (
+                    <CategoryIcon category={b.scope.category as Category} size={56} />
+                  )}
+                  {/* who the rule is about, when it is about one person */}
+                  {b.scope.actor !== '*' && (
+                    <span className="absolute -right-2 -bottom-2" title={nameOf(b.scope.actor)}>
+                      <ClayAvatar label={nameOf(b.scope.actor).charAt(0) || '?'} size="sm"
+                        color={HOUSE.members.find((m) => m.ref === b.scope.actor)?.role === 'dependent' ? 'tertiary' : 'primary'} />
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                    <span className="clay-badge clay-badge-neutral normal-case tracking-normal">
+                      {b.scope.category === '*' ? 'whole house' : CATEGORY_LABEL[b.scope.category as Category]} · {DIMENSION_LABEL[b.dimension]}
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3.5">
+                    <Rule>{say(b)}</Rule>
+                    <StateBadge state={b.state} />
+                  </div>
               {/* The fact, then what it means for the person reading it. Without the second line
                   the screen is a report: seven true sentences and nothing to do about any of them. */}
-              <p className="text-text-tertiary mb-2 text-[13.5px]">{soWhat(b)}</p>
+              <p className="text-on-surface-variant mb-2 text-[13.5px]">{soWhat(b)}</p>
               <Meta>
                 {b.dimension} · {b.evidenceCount} event{b.evidenceCount === 1 ? '' : 's'} · confidence{' '}
                 {(b.confidence * 100).toFixed(0)}%{b.ratifiedTx ? ' · onchain' : ''}
               </Meta>
               <Progress value={b.confidence} />
               {chain.length > 1 && (
-                <div className="text-text-quaternary mt-[9px] flex items-center gap-[7px] font-mono text-[11.5px]">
+                <div className="text-on-surface-variant mt-[9px] flex items-center gap-[7px] font-mono text-[11.5px]">
                   {chain.map((v, i) => (
                     <span key={v.id} className={i < chain.length - 1 ? 'opacity-50' : 'font-bold'}>
                       v{v.version}{i < chain.length - 1 ? ' →' : ''}
@@ -81,6 +115,8 @@ export default function Agreement() {
                   <span>· superseded, never edited</span>
                 </div>
               )}
+                </div>
+              </div>
             </Card>
           );
         })
