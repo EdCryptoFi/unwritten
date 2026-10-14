@@ -153,4 +153,25 @@ export async function recall<T>(
 }
 
 export const health = (ns: Namespace = 'decisions') => client(ns).health();
-export const listNamespaces = (ns: Namespace = 'decisions') => client(ns).listNamespaces();
+/**
+ * Every namespace on the account, walked to the end.
+ *
+ * The relayer pages this at 100 by default (500 max) and says to paginate on `has_more`, not on
+ * page length. One call was enough while the account had fewer than 100 namespaces — and it had
+ * exactly 100 when this was found. Every sandbox session is a new namespace, so each visitor
+ * pushed the Wilson house closer to falling off page one: /proof's memory count would have dropped
+ * and the sandbox's hourly budget would have stopped seeing sessions it was meant to count.
+ * Same class of bug as the single page of 50 transfers in packages/chain.
+ */
+export async function listNamespaces(ns: Namespace = 'decisions') {
+  const c = client(ns);
+  const namespaces: Awaited<ReturnType<typeof c.listNamespaces>>['namespaces'] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < 20; page++) {
+    const r = await c.listNamespaces({ limit: 500, ...(cursor ? { cursor } : {}) });
+    namespaces.push(...r.namespaces);
+    if (!r.has_more || !r.next_cursor) break;
+    cursor = r.next_cursor;
+  }
+  return { namespaces };
+}

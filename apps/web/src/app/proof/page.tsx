@@ -11,20 +11,30 @@ import { agreement, deriveAll } from '@unwritten/policy';
    the architecture beat of the demo, so the product stays abstracted and the evidence stays
    findable. This is the only surface in the app where a hash appears. */
 export default function Proof() {
-  const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, beliefsUpTo, counts, seed, source } = useHouse();
+  const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, beliefsUpTo, beliefs: mainnetBeliefs, counts, seed, source } = useHouse();
   const { chain } = useChain();
   const total = Object.values(counts ?? {}).reduce<number>((a, b) => a + b, 0)
     || decisions.length + spendUpTo.length + topupsUpTo.length + beliefsUpTo.length;
 
   /* Re-derived on every render rather than imported, so this cannot silently become a snapshot
-     of a passing result. `week: 6` matches the seeded window. */
-  const checks = agreement(
-    deriveAll({
-      decisions, spend: spendUpTo, topups: topupsUpTo,
-      knobs: HOUSE.learning, policy: HOUSE.policy, week: 6,
-    }, wilsonProbes(6)),
-    BELIEFS, say,
-  );
+     of a passing result.
+
+     Same input, same function, same output: the beliefs on Mainnet were derived from the SEEDED
+     decisions, so that is what is re-derived here, and the result is compared with the beliefs
+     Mainnet actually holds — what every screen renders — not with a hand-written list.
+
+     Mixing inputs made it look broken. The daily job has written new decisions since the seed, and
+     re-deriving with them changes rules that no scheduled pass has re-written yet. That is shown
+     below as what it is — the engine responding to new evidence — instead of as "differs". */
+  const isSeeded = (d: { id: string }) => /^d\d+$/.test(d.id);
+  const seeded = decisions.filter(isSeeded);
+  const since = decisions.filter((d) => !isSeeded(d));
+  const input = { spend: spendUpTo, topups: topupsUpTo, knobs: HOUSE.learning, policy: HOUSE.policy, week: 6 };
+  const shown = source === 'mainnet' && mainnetBeliefs.length ? mainnetBeliefs : BELIEFS;
+  const checks = agreement(deriveAll({ ...input, decisions: seeded }, wilsonProbes(6)), shown, say);
+  const moved = since.length
+    ? agreement(deriveAll({ ...input, decisions }, wilsonProbes(6)), shown, say).filter((r) => !r.agrees)
+    : [];
 
   /* The rubric is one thing and the submission checklist is another. A reviewer ticking boxes
      should not have to work out which section answers which requirement. */
@@ -135,9 +145,10 @@ export default function Proof() {
       <Card>
         <Meta>
           Computed in your browser, right now. Every rule below was produced by running
-          <code> packages/policy</code> over the six weeks of events — the same function the seeder
-          called to write to Mainnet — and compared against what the screens show. If a rule were
-          hardcoded, this is where it would say <em>differs</em>.
+          <code> packages/policy</code> over the {seeded.length} seeded decisions — the same function
+          and the same input the seeder used — and compared against the beliefs{' '}
+          {shown === mainnetBeliefs ? 'Walrus Mainnet holds' : 'the screens show'}, sentence for
+          sentence. If a rule were hardcoded, this is where it would say <em>differs</em>.
         </Meta>
       </Card>
       {checks.map((r) => (
@@ -152,6 +163,27 @@ export default function Proof() {
           {!r.agrees && <Meta>screen says: {r.fixture}</Meta>}
         </Card>
       ))}
+
+      {since.length > 0 && (
+        <Card tone="note">
+          <Rule>
+            {since.length} decision{since.length === 1 ? ' has' : 's have'} arrived since the seed
+            {moved.length ? ` — and ${moved.length} rule${moved.length === 1 ? '' : 's'} would move` : ''}
+          </Rule>
+          <Meta>
+            Written by the daily job from real transfers ({since.map((d) => d.date).join(', ')}).
+            Re-deriving with them is the engine responding to new evidence, not a mismatch.
+            Writing those new versions is the scheduled derive pass, which is not built — disclosed
+            in the README.
+          </Meta>
+          {moved.map((r) => (
+            <div key={r.id} className="mt-2">
+              <Meta>{r.dimension} · on Mainnet: {r.fixture}</Meta>
+              <Meta>{r.dimension} · with new evidence: <span className="text-primary">{r.derived}</span></Meta>
+            </div>
+          ))}
+        </Card>
+      )}
 
       {/* The page proved Walrus and said nothing about Sui, which is half a proof. */}
       <H>the Sui side</H>

@@ -22,9 +22,11 @@ export interface ChainState {
   error?: string;
 }
 
-/** Any Sui explorer resolves these; a digest nobody can open is a digest taken on faith. */
-export const txUrl = (digest: string) => `https://suivision.xyz/txblock/${digest}`;
-export const addrUrl = (a: string) => `https://suivision.xyz/account/${a}`;
+/** A digest nobody can open is a digest taken on faith. Suiscan rather than SuiVision: SuiVision's
+    account pages sit behind a Cloudflare challenge that a link checker — and some reviewers'
+    browsers — stop at, while Suiscan serves both pages directly. */
+export const txUrl = (digest: string) => `https://suiscan.xyz/mainnet/tx/${digest}`;
+export const addrUrl = (a: string) => `https://suiscan.xyz/mainnet/account/${a}`;
 export const sui = (mist: number) => `${(mist / 1e9).toFixed(4)} SUI`;
 
 export function useChain() {
