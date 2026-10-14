@@ -204,6 +204,15 @@ Never cut the screens.
 - A page wrapped in the shared `Shell` inherits its styling for free through `Card`/`Page`/`Badge`
   from `primitives.tsx` — upgrade the primitive once rather than each page. The home page is the
   one screen that doesn't use them, which is why it was the one that needed a real rewrite.
+- A check must be able to fail. The derivation comparator cut sentences at "· n of m", so it could
+  not see the numbers after the count — and reported 7 of 7 while the screen and Mainnet disagreed.
+  Every comparator gets a test that tampers with the input and expects a failure.
+- Same function AND same input. Re-deriving from today's decisions and comparing with beliefs
+  derived from the seed is a different question; ask it separately, and label the answer.
+- Every list endpoint is paginated until proven otherwise. Two were single calls — transfers (50)
+  and namespaces (100) — and the namespace one had already crossed its boundary when found.
+- A number typed into a page drifts. The home page showcase is read from the same beliefs the
+  rule screen renders.
 - A guided path is tested by walking it the way a visitor arrives. The judge door set the role to
   "judge" and stop two of the judge's own path was gated to household adults — no page was broken
   on its own, only the sequence was. Each tour stop now names the role it needs (`lib/tours.ts`).
