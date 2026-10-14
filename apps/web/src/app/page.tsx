@@ -141,7 +141,7 @@ export default function Landing() {
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Note title="Setup asks one number">On purpose — so there is something for week five to correct.</Note>
+            <Note title="Setup asks one number">On purpose — so there is something for the first month to correct.</Note>
             <Note title="No wallet, no gas">Two keys in the whole system, and members join with a link.</Note>
           </div>
         </div>

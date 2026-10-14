@@ -125,7 +125,7 @@ fromWeek        int         // the week the pass that derived it ran in
 scope           { actor: ref|'*', category: string|'*' }
 confidence      0..1
 evidenceCount   int
-evidenceIds     [string]    // DecisionEvent ids or tx refs — the provenance drawer reads these
+evidenceIds     [string]    // DecisionEvent ids or tx refs — what a provenance view would read (not built)
 state           enum: observed|ratified|drifting
 ratifiedTx      string | null
 blobId          string
@@ -222,8 +222,8 @@ Belief; a rejected one produces nothing but sets `cooldownUntil` in the database
 | Contradictory evidence, no stable rule | no belief written; `confidence` stays below the floor |
 | Fewer than `minEvidence` events | no belief; the empty state states how many are still needed |
 | Quorum unsatisfiable (declared-but-inactive approvers) | block the band; never downgrade silently |
-| Derive pass would exceed the rate limit | Three limits, and the tightest is per-key: **30 points/min per delegate key** ÷ 5 per `remember` = **6 writes/min**. The account limits (500 points/hour, 60/min burst) bind later, at 100 writes/hour. One server key therefore caps the whole system at six writes a minute; `scripts/seed.mts` paces at 5.5s for that reason, and the relayer's own `SERVER_SUI_PRIVATE_KEYS` pool is the documented fix. `rememberBulk` exists in `packages/memory` and is the right tool for a derive pass once one is scheduled |
-| Blob expiry | The relayer chooses the storage period, not this app. The seed's blobs are paid for epochs 41→56 — 15 epochs × 2 weeks ≈ 7 months, past judging — readable per blob on Walruscan. This row used to claim 50 epochs ≈ 2 years, a number from the SDK docs that the onchain record contradicts. Renew rather than rewrite. |
+| Derive pass would exceed the rate limit | Documented relayer limits (docs.wal.app → relayer overview): **60 points/min** burst and **500/hour** per account, **30 points/min** per delegate key, 1 GB per account; a `remember` costs 5, a `recall` 1. They are the documented defaults, configurable by anyone self-hosting, and the Foundation does not publish what its hosted relayer runs — so they are a ceiling to design for, not a measurement. `scripts/seed.mts` spaces writes 5.5 s apart against the account burst. `rememberBulk` exists in `packages/memory` and is the right tool for a derive pass once one is scheduled |
+| Blob expiry | Walruscan shows the seed's blobs paid for epochs 41→56 — 15 epochs, about seven months at two weeks each, past judging. The SDK's `walrusEpochs` (default 50) is read only by its *manual* client; this app uses the relayer-backed one, where the relayer decides. An earlier version of this row claimed 50 epochs ≈ 2 years, a number from the SDK's config docs that the onchain record contradicts. Renew rather than rewrite. |
 | Seeded history | the seeder runs the real engine and is disclosed in the README |
 
 **Not built.** The daily derive pass this spec describes as the writer of `beliefs` does not exist

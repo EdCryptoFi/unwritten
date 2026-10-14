@@ -43,7 +43,7 @@ export const TOURS: Record<Exclude<Tour, null>, { name: string; stops: Stop[]; e
       { href: '/judge', title: 'Orientation', as: 'judge',
         look: 'The map: what each stop proves, and how Tatum and Walrus meet.' },
       { href: '/agreement', title: 'The Agreement', as: 'm1',
-        look: 'Rules derived, not written. Week 5: one is superseded, never edited.' },
+        look: 'Rules derived, not written. They form from week 3; one that moves is superseded, never edited.' },
       { href: '/reality', title: 'Reality check', as: 'm1',
         look: 'Tatum reads the wallet; Walrus holds the approvals. Rows with no match exist in neither.' },
       { href: '/digest', title: 'Weekly digest', as: 'm2',

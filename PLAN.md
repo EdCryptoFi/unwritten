@@ -62,8 +62,8 @@ functions must produce.
 2. `memory-schema.md`, `decision-flow.md`, `policy-learning.md`, `demo-script.md` — DONE
 3. **fixtures ported to a typed module** — DONE (`packages/fixtures`, Belief is a discriminated union)
 4. `apps/web` — DONE. 16 routes, all against fixtures, no backend. Role-based navigation, the
-   week scrubber shared across pages, and Tatum's own design tokens (adopted from the AI Builder
-   output). Verified: zero hashes in the 13 product routes, hashes only on /proof, /observer and
+   week scrubber shared across pages. (Its colours were first the AI Builder's tokens and were
+   later replaced by the claymorphism system in `templates/`; the token *names* remain.) Verified: zero hashes in the 13 product routes, hashes only on /proof, /observer and
    /schema. Visual review and adjustment pending.
    The first version of page 1 was generated on ai.tatum.io — see EdCryptoFi/unwritten-ai-builder.
 5. `packages/policy` — the seven dimensions as pure functions, asserted against the fixtures
@@ -77,7 +77,7 @@ functions must produce.
    Self-serve house creation is explicitly OUT: it needs Postgres, sessions, invites and the whole
    onboarding, costs days, and moves none of the four criteria. The README says it is the
    production path.
-7. the seeder — DONE. `pnpm seed --commit` wrote 48 memories to Mainnet as `wilson-v2`, with all seven beliefs derived by packages/policy rather than copied (7/7 agree with the screens)
+7. the seeder — DONE. `pnpm seed --commit` wrote 50 memories to Mainnet as `wilson-v2`, with all seven beliefs derived by packages/policy rather than copied (7/7 agree with the screens)
 8. `packages/chain` — the four Tatum reads + Smart Wallets as gas station
 9. Move: policy package + approval records (testnet)
 10. `onboarding.md`, `tatum-reads.md`, `seeding.md` — written during the build, they block nothing
@@ -170,8 +170,9 @@ Never cut the screens.
   standing commitment needs an approver, because it removes spend from anomaly detection.
 - `unclassified` is never a commitment. It stays in the anomaly set — fail safe.
 - The product never renders a hash. `/proof` carries every blobId and txDigest, and the app does
-  not link to it. The provenance drawer is the one deliberate leak, phrased in human terms.
-- Each role gets a different nav. A spender has three screens and no digest, reality check or keys.
+  not link to it from product screens. A provenance drawer was designed as the one deliberate leak,
+  phrased in human terms; it is not built.
+- Each role gets a different nav. A spender gets a short menu and no digest, reality check, keys or oversight screens.
 - Cap (per person) decides IF approval is needed; band (per amount) decides HOW MANY signatures.
   The house number is everyone's floor of autonomy; a personal cap is an actor-scoped `value_band`
   the agent proposes and an approver ratifies. Never configured at onboarding.
@@ -204,6 +205,20 @@ Never cut the screens.
 - A page wrapped in the shared `Shell` inherits its styling for free through `Card`/`Page`/`Badge`
   from `primitives.tsx` — upgrade the primitive once rather than each page. The home page is the
   one screen that doesn't use them, which is why it was the one that needed a real rewrite.
+- A demo claim is clicked on the DEPLOYED site, not asserted from the code. "Drag the weeks and watch
+  the rules form" was promised in the README, the home page, the judge page and the video script,
+  and on production the control showed nothing for weeks 1–5 — Mainnet held one derivation, the
+  fixtures held a hand-written story, and only the fixtures had been tested. Dragging it on the live
+  URL took ten seconds. Rules for each week now come from `policy.replay` over the decisions on
+  Mainnet.
+- A simulation never writes a log line that claims a write. The digest said "memory write: belief
+  v+1 appended" and wrote nothing; three documents repeated it. Anything simulated says SIMULATED
+  where it runs.
+- Do the arithmetic twice, from the constant. "$1.00 = 0.0003 SUI" was off by ten times, in three
+  places, one of them in a comment explaining why the scale was declared.
+- One MemWal account per application. A delegate key reads every namespace on its account, so the
+  server holding it can read everything else the account has ever stored. This account is shared
+  with earlier projects, which is a known gap: the plan is a dedicated account for this app.
 - A storage claim is read from the chain, not from the SDK's docs. /proof said "50 epochs ≈ 2 years";
   Walruscan shows the relayer paid for 15. Link the record instead of restating it.
 - Every outward link is opened in a real browser before it ships. A 200 title from a single-page

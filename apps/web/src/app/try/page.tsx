@@ -538,7 +538,7 @@ function TryInner() {
             <Meta>
               Across {byCat.map((c) => c.toLowerCase()).join(', ')}
               {askedLine} — every one went through without
-              discussion. In the Wilson house this arrives in week five, and the app proposes making
+              discussion. In the Wilson house this arrives in week four, and the app proposes making
               it a rule: a band nobody ever configured.
             </Meta>
             <Approved taken={taken} nameFor={nameFor} />

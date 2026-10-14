@@ -127,8 +127,9 @@ makes the demo non-deterministic; and learning in cadence is the honest model.
 
 ## 11. Ratification — two-phase commit
 
-> **Not built.** Signing on `/digest` resolves locally, including the simulated-failure path, and
-> writes the superseding belief to Mainnet. There is no transaction, so the ordering guarantee
+> **Not built.** Signing on `/digest` is simulated end to end, including the simulated-failure
+> path: no transaction, no memory write, only local state and log lines marked SIMULATED. The
+> ordering guarantee
 > below is a design this code is shaped for rather than one it currently exercises. The
 > `ratifiedTx` on a seeded belief is a placeholder.
 

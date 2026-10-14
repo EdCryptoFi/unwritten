@@ -1,9 +1,10 @@
 'use client';
 
 import {
-  BELIEFS, type Belief, DECISIONS, type DecisionEvent, HOUSE, type Member, type Ref,SPEND, 
-  type SpendEvent, TOPUPS,type TopUpEvent, 
+  BELIEFS, type Belief, DECISIONS, type DecisionEvent, HOUSE, type Member, type Ref, SPEND,
+  type SpendEvent, TOPUPS, type TopUpEvent, upTo, wilsonProbes,
 } from '@unwritten/fixtures';
+import { replay } from '@unwritten/policy';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 export type Viewer = Ref | 'judge';
@@ -127,14 +128,40 @@ export function useHouse() {
   const { house, week } = useApp();
   const upto = <T extends { week?: number; fromWeek?: number }>(xs: T[]) =>
     xs.filter((x) => (x.week ?? x.fromWeek ?? 0) <= week);
-  const live = house.beliefs.filter(
-    (b) => !new Set(house.beliefs.map((x) => x.supersedes).filter(Boolean)).has(b.id),
-  );
+  /* The rules at the selected week, derived — not read.
+     Mainnet holds ONE derivation (week 6, written by the seeder), because the scheduled weekly
+     pass that would have written one per week is not built. Reading Mainnet's beliefs filtered by
+     week therefore showed nothing for weeks 1–5 and everything at once in week 6, and no version
+     was ever superseded: the central claim of the product, invisible on the live site.
+     So the same function runs here, once per week, over the seeded decisions that ARE on
+     Mainnet. Week 6 equals Mainnet's seven rules, which /proof checks sentence for sentence.
+     Only the seeded story feeds it: decisions the daily job has written since (ids `s-…`) arrive
+     after the six weeks and would otherwise rewrite them. */
+  const story = useMemo(() => {
+    const seeded = house.decisions.filter((d) => /^d\d+$/.test(d.id));
+    return replay(
+      (w) => ({
+        decisions: upTo(seeded, w),
+        spend: upTo(house.spend, w),
+        topups: upTo(house.topups, w),
+        knobs: HOUSE.learning,
+        policy: HOUSE.policy,
+      }),
+      wilsonProbes,
+      6,
+    );
+  }, [house.decisions, house.spend, house.topups]);
+
   return {
     ...house,
     decisionsUpTo: upto(house.decisions),
     spendUpTo: upto(house.spend),
     topupsUpTo: upto(house.topups),
-    beliefsUpTo: upto(live),
+    /** The rules standing at the selected week, with their version chains. */
+    beliefsUpTo: story.live[Math.min(Math.max(week, 1), 6) - 1] ?? [],
+    /** Every version that ever stood, so a chain can be walked backwards. */
+    beliefHistory: story.versions,
+    /** The beliefs Mainnet actually holds, with real blob ids — what /proof shows. */
+    mainnetBeliefs: house.beliefs,
   };
 }

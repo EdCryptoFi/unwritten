@@ -16,11 +16,11 @@ import { TOURS, VIEWER_LABEL } from '@/lib/tours';
 
 const PROVES: Record<string, { icon: string; proves: string; tag: string; tone: 'primary' | 'secondary' | 'tertiary' }> = {
   '/agreement': { icon: 'gavel', tone: 'primary', tag: 'Walrus · learned over time',
-    proves: 'Beliefs derived from decisions on Walrus Mainnet, versioned. Drag weeks 1→6: rules form, and in week 5 one is superseded by a new version rather than edited.' },
+    proves: 'Beliefs derived from decisions on Walrus Mainnet, versioned. Drag weeks 1→6: nothing for two weeks, the first rules in week 3, and a rule that moves is superseded by a new version rather than edited.' },
   '/reality': { icon: 'travel_explore', tone: 'secondary', tag: 'Tatum · onchain data',
     proves: 'Tatum reads the house wallet, Walrus holds the approvals. The unapproved rows exist in neither source alone — plus a repriced subscription, an off-rhythm pizza, a split purchase.' },
   '/digest': { icon: 'draw', tone: 'primary', tag: 'Memory evolution',
-    proves: 'Sam can accept, only Alex can sign. A failed signature supersedes nothing. Disclosed: the onchain ratification is simulated — the new rule version is real.' },
+    proves: 'Sam can accept, only Alex can sign. A failed signature supersedes nothing. Disclosed: ratification is simulated end to end — no transaction and no memory write.' },
   '/keys': { icon: 'key_off', tone: 'tertiary', tag: 'Walrus · delegate keys',
     proves: 'Revoke the delegate and press remember(): the rotation counter moves and the write fails. Disclosed: a local rehearsal — revoking the real key would lock every visitor out.' },
   '/try': { icon: 'magic_button', tone: 'secondary', tag: 'Writing on Mainnet',
@@ -45,7 +45,7 @@ const RUBRIC: Array<{ title: string; weight: number; points: Array<[string, stri
     ['Paginated, retried Tatum reads; a daily job made idempotent by asking the chain', null],
   ] },
   { title: 'Creativity', weight: 20, points: [
-    ['The agreement is discovered, not configured — setup asks one number so week five has something to correct', '/house', 'm1'],
+    ['The agreement is discovered, not configured — setup asks one number so the first month has something to correct', '/house', 'm1'],
     ['Memory that learns across two kinds of actor: who the house defers to, and what an allowance is really for', '/agreement', 'm1'],
   ] },
   { title: 'Presentation', weight: 20, points: [

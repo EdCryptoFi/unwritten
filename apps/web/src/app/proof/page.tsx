@@ -12,10 +12,10 @@ import { agreement, deriveAll } from '@unwritten/policy';
    the architecture beat of the demo, so the product stays abstracted and the evidence stays
    findable. This is the only surface in the app where a hash appears. */
 export default function Proof() {
-  const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, beliefsUpTo, beliefs: mainnetBeliefs, counts, seed, source, account } = useHouse();
+  const { decisionsUpTo: decisions, spendUpTo, topupsUpTo, mainnetBeliefs, counts, seed, source, account } = useHouse();
   const { chain } = useChain();
   const total = Object.values(counts ?? {}).reduce<number>((a, b) => a + b, 0)
-    || decisions.length + spendUpTo.length + topupsUpTo.length + beliefsUpTo.length;
+    || decisions.length + spendUpTo.length + topupsUpTo.length + mainnetBeliefs.length;
 
   /* Re-derived on every render rather than imported, so this cannot silently become a snapshot
      of a passing result.
@@ -90,8 +90,8 @@ export default function Proof() {
           aggregator: Seal-encrypted, unreadable by design, and present, which is the claim.{' '}
           <strong>Walruscan</strong> shows the onchain record of the same blob — size, the epochs
           it is paid for, and the <code>seal_encrypt_fence</code> and <code>certify_blob</code>{' '}
-          transactions that stored it. The storage period is chosen by the relayer and differs per
-          blob, so it is read there rather than claimed here.
+          transactions that stored it. The epochs a blob is paid for are read there rather than claimed
+          here — for the seed's blobs, 41 to 56.
           <br />
           <br />
           <code className="text-text-brand-primary">pnpm verify</code>, from the repository, asks
@@ -115,6 +115,11 @@ export default function Proof() {
           ) : '—'}
           <br />
           <strong>tatumAccountId</strong> · supplied in the submission form, not printed on a public page.
+          <br />
+          <br />
+          Every count on this page is for the <code>wilson-v2-*</code> namespaces. The MemWal account
+          also holds namespaces from the author&apos;s earlier projects, so the account total on a
+          block explorer is larger than the {total} memories this app wrote for the Wilson house.
         </Meta>
       </Card>
 
@@ -167,8 +172,8 @@ export default function Proof() {
         </Card>
       ))}
 
-      <H>beliefs · supersession chain</H>
-      {beliefsUpTo.slice(0, 3).map((b) => (
+      <H>beliefs · the {mainnetBeliefs.length} rules Mainnet holds</H>
+      {mainnetBeliefs.slice(0, 3).map((b) => (
         <Card key={b.id}>
           <Meta>
             {b.id} · v{b.version}
@@ -181,7 +186,7 @@ export default function Proof() {
 
       {/* The strongest claim in the project — that the rules are derived, not written — used to
           be provable only by reading a terminal during a seed that can never be re-run. */}
-      <H>derived, not hardcoded · {checks.filter((r) => r.agrees).length} of {checks.length}</H>
+      <H id="derive">derived, not hardcoded · {checks.filter((r) => r.agrees).length} of {checks.length}</H>
       <Card>
         <Meta>
           Computed in your browser, right now. Every rule below was produced by running

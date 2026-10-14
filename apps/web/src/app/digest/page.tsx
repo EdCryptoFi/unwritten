@@ -2,24 +2,33 @@
 
 import { Badge, Card, Empty, Meta, Page, Rule } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
-import { PROPOSALS, say, upTo } from '@unwritten/fixtures';
+import { type Belief, PROPOSALS, BELIEFS as STORY, say, upTo } from '@unwritten/fixtures';
 import { useState } from 'react';
 
 type TxState = 'idle' | 'awaiting' | 'signing' | 'confirmed' | 'failed';
 
 export default function Digest() {
   const { week, role } = useApp();
-  const { beliefsUpTo, beliefs: BELIEFS } = useHouse();
+  const { beliefsUpTo } = useHouse();
+  /* Proposals were written against the hand-made story's ids (`b4-v1`); Mainnet's rules and the
+     replay carry other ids. What a proposal is ABOUT is dimension + who + what, which every source
+     agrees on — matching on the id listed the drift rule twice, as a proposal and as an orphan. */
+  const about = (b: Pick<Belief, 'dimension' | 'scope'>) => `${b.dimension}|${b.scope.actor}|${b.scope.category}`;
   const [tx, setTx] = useState<Record<string, TxState>>({});
   const [log, setLog] = useState<string[]>([]);
   const add = (s: string) => setLog((l) => [s, ...l].slice(0, 8));
 
   const open = upTo(PROPOSALS, week).filter((p) => p.status === 'pending' && !tx[p.id]);
-  const proposed = new Set(upTo(PROPOSALS, week).map((p) => p.beliefId));
+  const proposed = new Set(
+    upTo(PROPOSALS, week).flatMap((p) => {
+      const b = STORY.find((x) => x.id === p.beliefId);
+      return b ? [about(b)] : [];
+    }),
+  );
   // Drift is the rationale inside a proposal, never a card of its own. It stands alone only when
   // the evidence does not say which direction to propose — a section that never clears teaches
   // the admin to skip the digest.
-  const orphanDrift = beliefsUpTo.filter((b) => b.state === 'drifting' && !proposed.has(b.id));
+  const orphanDrift = beliefsUpTo.filter((b) => b.state === 'drifting' && !proposed.has(about(b)));
   const fresh = beliefsUpTo.filter((b) => b.fromWeek === week);
 
   /* An approver can ACCEPT. Only the owner key can sign it onchain, which makes the owner a
@@ -34,15 +43,15 @@ export default function Digest() {
      before the transaction confirms could leave an immortal rule with nothing behind it. */
   const sign = (id: string, fail = false) => {
     setTx((t) => ({ ...t, [id]: 'signing' }));
-    add('signing — owner key unlocked, tx built');
+    add('SIMULATED · signing — the owner key is not real here, no transaction is built');
     setTimeout(() => {
       if (fail) {
         setTx((t) => ({ ...t, [id]: 'failed' }));
-        add('tx FAILED — nothing superseded, no memory write happened');
+        add('SIMULATED · tx failed — nothing would be superseded and no memory write would happen');
       } else {
         setTx((t) => ({ ...t, [id]: 'confirmed' }));
-        add('tx confirmed onchain');
-        add('memory write: belief v+1 appended, the old version untouched');
+        add('SIMULATED · tx confirmed — nothing was sent to Sui');
+        add('SIMULATED · a real pass would now append belief v+1 and leave the old version untouched; nothing was written to Walrus');
       }
     }, 900);
   };
@@ -67,8 +76,9 @@ export default function Digest() {
 
       {open.length > 0 && <H>Proposals · {open.length}</H>}
       {open.map((p) => {
-        const drift = BELIEFS.find((b) => b.id === p.beliefId && b.state === 'drifting');
-        const belief = BELIEFS.find((b) => b.id === p.beliefId);
+        const target = STORY.find((x) => x.id === p.beliefId);
+        const belief = target ? beliefsUpTo.find((b) => about(b) === about(target)) : undefined;
+        const drift = belief?.state === 'drifting' ? belief : undefined;
         return (
           <Card key={p.id}>
             <div className="flex items-start justify-between gap-3.5">
@@ -86,7 +96,7 @@ export default function Digest() {
             <div className="bg-bg-tertiary mt-3 rounded-lg px-3 py-2.5">
               <Meta>
                 {p.effect === 'supersede'
-                  ? `This writes onchain and supersedes ${belief?.id} — irreversible, so it needs an explicit confirm. v${belief?.version} → v${(belief?.version ?? 1) + 1}, and the diff is arithmetic.`
+                  ? `This writes onchain and supersedes ${belief ? `${belief.id}` : 'the current rule'} — irreversible, so it needs an explicit confirm.${belief ? ` v${belief.version} → v${belief.version + 1},` : ''} and the diff is arithmetic.`
                   : 'This changes policy only. The observation stays true, so nothing is superseded.'}
               </Meta>
             </div>

@@ -233,9 +233,9 @@ export const weekOf = (date: string) =>
  *
  * The daily job moves real SUI on Mainnet, but a household's $40 shop moved as $40 of SUI would
  * spend the house wallet in a week. So transfers are scaled down and the decision records the
- * story amount. It used to divide MIST by 1000 inline — 1 SUI = $1,000, undeclared — which put a
+ * story amount. It used to divide MIST by 1000 inline — 1 SUI = $10,000, undeclared — which put a
  * $98.45 grocery run next to a seeded story whose shops are $25–45. Declared once, used by both
- * sides: $1.00 = 0.0003 SUI.
+ * sides: $1.00 = 0.00003 SUI (300 MIST a cent).
  */
 export const MIST_PER_CENT = 300;
 
@@ -383,7 +383,7 @@ export const BELIEFS: Belief[] = [
 
 export const PROPOSALS: Proposal[] = [
   { id: 'p1', beliefId: 'b1-v2', kind: 'raise', fromWeek: 4,
-    from: '$20 auto-approve', to: '$45 auto-approve',
+    from: '$18 auto-approve', to: '$45 auto-approve',
     rationale: '11 of 11 grocery carts in this band approved with no discussion.',
     status: 'accepted', effect: 'supersede' },
   { id: 'p2', beliefId: 'b4-v1', kind: 'remove', fromWeek: 6,
@@ -401,9 +401,13 @@ export const PROPOSALS: Proposal[] = [
     rejectedAtWeek: 5, cooldownUntilWeek: 11 },
 ];
 
+/* What the engine actually does week by week over the seeded decisions — checked by running it, not
+   written from the story. The earlier captions ("first proposal · allowance pattern", "ratified →
+   v2") described a hand-written timeline the engine does not reproduce. */
 export const WEEK_NOTE: Record<number, string> = {
-  1: 'collecting evidence', 2: 'collecting evidence', 3: 'first belief forms',
-  4: 'first proposal · allowance pattern', 5: 'ratified → v2', 6: 'drift + unapproved spend',
+  1: 'collecting evidence', 2: 'collecting evidence', 3: 'the first rules form',
+  4: 'the solo limit and the allowance pattern appear', 5: 'a rule moves, so it is superseded',
+  6: 'drift and unapproved spend',
 };
 
 // ---------------------------------------------------------------- helpers

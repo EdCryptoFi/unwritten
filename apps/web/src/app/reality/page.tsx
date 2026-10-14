@@ -53,6 +53,11 @@ function RealityInner() {
           about agreement, the memory knows what was agreed and nothing about whether it happened.
           Every row below was produced by comparing them. */}
       <H>What actually moved · read from Sui through Tatum</H>
+      <Meta>
+        Real transfers on Sui Mainnet. About one in five of the daily job&apos;s transfers is written
+        without a decision on purpose, so there is always something here to find — it is the
+        mechanism being shown, not a household mislaying money.
+      </Meta>
       {chainLoading && <Meta>reading the house wallet…</Meta>}
       {chain?.error && <Card><Meta>The chain is quiet right now: {chain.error}</Meta></Card>}
       {chain && !chain.error && (

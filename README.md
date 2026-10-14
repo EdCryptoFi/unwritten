@@ -39,10 +39,10 @@ and the `seal_encrypt_fence` / `certify_blob` transactions. Transfers link to Su
 pnpm verify
 ```
 
-Queries the live relayer and chain and prints: memory count per namespace, every blob id, the
-two-account Observer comparison, and the onchain policy state. The `/proof` page carries the same
-data with explorer links. **The app does not link to `/proof`** — the product is abstracted, the
-evidence is findable.
+Asks the live relayer and Tatum directly and prints the relayer's health, the current Sui
+checkpoint, and the memory count per namespace with a sample of each. The `/proof` page carries the
+same data, the blob ids and explorer links. **The product screens never show a hash** — they live on
+`/proof`, which the home page footer, the judge path and this README link to.
 
 ### Seed disclosure
 
@@ -50,6 +50,10 @@ The Wilson house is seeded. A deterministic script runs **the real engine** over
 household decisions and writes them to Walrus Mainnet. Nothing is faked downstream of that script,
 and every rule in the demo was derived by the same pure functions that run in production. We say
 this out loud because an undisclosed seed is the kind of thing a reader is right to distrust.
+
+What is not seeded: the wallet. A daily GitHub Actions job signs small real transfers through
+Tatum's gateway ($1.00 of story money is 0.00003 SUI). About one in five is written *without* a
+decision on purpose, so Reality check always has something to find; the screen says so.
 
 ### The screens read Mainnet
 
@@ -188,12 +192,14 @@ rather than by network.
 1. **There is no delete and no edit.** So a rule is never mutated — a new version supersedes the
    old one and names it. The constraint became the feature: you get an honest timeline of how the
    agreement changed. And data minimisation is structural, not hygiene — we never write item
-   names, member names, or anything a deletion request would have to reach. Identity lives in
-   Postgres, which *is* deletable; memory stores a stable ref and the role held at the time.
+   names, member names, or anything a deletion request would have to reach. Identity belongs in an
+   application database, which *is* deletable; memory stores a stable ref and the role held at the
+   time. (This demo has no database: the household's names are fixtures, and a visitor's typed
+   names stay in their browser.)
 2. **A namespace is not a privacy boundary.** Delegate authorization is account-wide. We use
    namespaces for organisation only, and the house's stated value is total transparency anyway.
    Differential visibility is solved by scoping the **write**: an aggregate-only digest written
-   into a second, Observer-owned account.
+   into a second, Observer-owned account. *Designed, not built — `/observer` illustrates it.*
 3. **Ratification touches two systems.** Chain first, memory second, always. A memory write before
    the transaction confirms could leave an immortal rule marked `ratified` with nothing behind it.
    The reverse order is recoverable: retry the write, keyed by belief id.
@@ -216,11 +222,19 @@ rather than by network.
   out of the house's memory — which is the property the screen demonstrates. So `/keys` plays the
   protocol's behaviour locally (the rotation counter moves, the next `remember()` fails) and says so
   on the screen.
-- **Onchain ratification is not built.** Signing a proposal on `/digest` resolves locally and
-  writes the new rule version to Mainnet; the Move package that would hold the ratified agreement
-  does not exist, and the `ratifiedTx` on a seeded belief is a placeholder rather than a real
-  digest. Every Walrus write and every Tatum read is real — this one thing is not, and a page that
-  discloses its seed should disclose this too.
+- **Ratification is a rehearsal, end to end.** Signing a proposal on `/digest` builds no transaction
+  and writes nothing to Walrus — it changes local state and prints log lines marked SIMULATED. The
+  Move package that would hold the ratified agreement does not exist, and the `ratifiedTx` on a
+  seeded belief is a placeholder rather than a real digest. Every Walrus write the product makes
+  (the seed, the daily job, a visitor's sandbox) and every Tatum read is real; ratification is the
+  part that is not.
+- **The week control is a replay.** Mainnet holds one derivation of the rules — week 6, written by
+  the seeder — because the scheduled weekly pass is not built. Moving the control runs the same
+  function over the decisions that are on Mainnet, as it would have run at the end of each week;
+  week 6 equals what Mainnet holds, and `/proof` checks that sentence by sentence.
+- **Members, invites and sessions are not built.** The role switcher stands in for logging in as
+  Alex, Sam or Carol. The owner key is not generated in a browser either: the MemWal account was
+  created in the Walrus console and the server holds only a delegate key.
 
 ## Repo
 
@@ -242,10 +256,17 @@ The first version of the main screen was generated on **[ai.tatum.io](https://ai
 kept in its own repository — **[EdCryptoFi/unwritten-ai-builder](https://github.com/EdCryptoFi/unwritten-ai-builder)** —
 rather than squashed into the first commit here, so the lineage is verifiable instead of asserted.
 
-Two things from it survived into this codebase: the design tokens in `apps/web/src/app/globals.css`
-are Tatum's own, extracted from that output, and `packages/chain` is built on its
-`server/tatum-client.mjs`. What did not survive was the single-file shape — the generated screen
-held state, fetching and rendering in one place, and the seven learning dimensions had to become
-pure functions before they could be tested without a browser.
+What survived into this codebase: `packages/chain` is built on its `server/tatum-client.mjs`, whose
+comments document four traps that each would have cost hours (a key works on `api.tatum.io` or
+`api.tatum.dev` but never both, and the wrong host answers 401; a spread `Headers` silently drops the
+key; read env per call; derive the gateway host from the API base). The semantic names in
+`globals.css` (`text-brand-primary`, `utility-brand-50`, `bg-primary-hover`…) also come from the
+generated tokens.
+
+What did not: the palette. The generated screen used Tatum's brand colours; the visual system was
+later replaced by a claymorphism one, so the colours and shapes you see are not Tatum's. Nor did the
+single-file shape survive — the generated screen held state, fetching and rendering in one place,
+and the seven learning dimensions had to become pure functions before they could be tested without
+a browser.
 
 MIT.

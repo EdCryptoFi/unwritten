@@ -39,10 +39,12 @@ export default function Observer() {
 
       <Card tone="note">
         <Meta>
-          Two MemWalAccounts, with the app&apos;s delegate key registered on both. Same question,
-          two answers, an auditable difference. The Observer possesses only the aggregate, so no
-          filtering trust is required — which is what makes this different from a server that
-          promises to redact.
+          <strong>An illustration, not a second account.</strong> The design is two MemWalAccounts
+          — the house&apos;s, and an Observer&apos;s that only ever receives aggregates — so the
+          Observer possesses nothing it could leak and no filtering trust is required, which is what
+          makes it different from a server that promises to redact. This build has one account; the
+          digest on the right is computed in your browser from the same decisions, to show what the
+          second account would hold.
         </Meta>
       </Card>
     </Page>

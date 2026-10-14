@@ -4,6 +4,7 @@ import { CATEGORY_LABEL, CategoryIcon } from '@/components/category-icon';
 import { Card, ClayAvatar, Empty, Meta, Page, Progress, Rule, StateBadge } from '@/components/primitives';
 import { useApp, useHouse } from '@/lib/state';
 import { type Belief, type Category, HOUSE, WEEK_NOTE, money, nameOf, say, soWhat } from '@unwritten/fixtures';
+import Link from 'next/link';
 
 /* A house-wide rule has no category to draw, so it gets the dimension's own glyph. */
 const DIMENSION_GLYPH: Record<Belief['dimension'], string> = {
@@ -17,7 +18,9 @@ const DIMENSION_LABEL: Record<Belief['dimension'], string> = {
 
 export default function Agreement() {
   const { week, me, role } = useApp();
-  const { beliefsUpTo: beliefs, decisionsUpTo, beliefs: allBeliefs } = useHouse();
+  const { beliefsUpTo: beliefs, decisionsUpTo, beliefHistory: allBeliefs } = useHouse();
+  /* The six-week story is the seeded decisions; the daily job's real ones arrive after it. */
+  const storyDecisions = decisionsUpTo.filter((d) => /^d\d+$/.test(d.id)).length;
 
   /* The chain walks the versions that are actually on Mainnet, not a local list. */
   const chainOf = (b: Belief): Belief[] => {
@@ -38,7 +41,7 @@ export default function Agreement() {
       title="The Agreement"
       lede={
         beliefs.length
-          ? `Nobody wrote these. They came out of ${decisionsUpTo.length} decisions over ${week} week${week > 1 ? 's' : ''} — this is what your house already does.`
+          ? `Nobody wrote these. They came out of ${storyDecisions} decisions over ${week} week${week > 1 ? 's' : ''} — this is what your house already does.`
           : `No rules yet — ${WEEK_NOTE[week]}.`
       }
     >
@@ -54,6 +57,13 @@ export default function Agreement() {
         </Card>
       )}
 
+      <p className="text-on-surface-variant mb-4 font-mono text-[11px] leading-relaxed">
+        Replayed week by week: the same function that wrote these rules to Walrus Mainnet, run over
+        the decisions that are on Mainnet, as it would have run at the end of each week. Mainnet
+        holds the week-6 result — <Link href="/proof#derive" className="text-primary">/proof</Link>{' '}
+        checks it sentence by sentence. The scheduled weekly pass is not built.
+      </p>
+
       {beliefs.length === 0 ? (
         /* An empty state is a first-class screen: the product is useless for roughly two weeks
            by construction, so it says what is missing instead of showing nothing. */
@@ -62,7 +72,7 @@ export default function Agreement() {
           <br />
           <span className="font-mono text-[11.5px]">
             A rule needs {minEvidence} decisions and {Math.round(confidenceFloor * 100)}% confidence
-            before it will claim anything. Keep going — week five is where it gets interesting.
+            before it will claim anything. Keep going — in the Wilson house the first rules form in week three.
           </span>
         </Empty>
       ) : (

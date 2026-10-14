@@ -171,9 +171,9 @@ export default function House() {
       </div>
       {recent.some(isLegacyScale) && (
         <p className="text-on-surface-variant mb-2 font-mono text-[11px]">
-          ¹ The daily job&apos;s first two decisions recorded the transfer at 1 SUI = $1,000, an
+          ¹ The daily job&apos;s first two decisions recorded the transfer at 1 SUI = $10,000, an
           undeclared scale that made a groceries run read $98.45. Memory has no edit, so they stay;
-          every decision since uses the declared scale of $1.00 = 0.0003 SUI.
+          every decision since uses the declared scale of $1.00 = 0.00003 SUI.
         </p>
       )}
       <p className="text-on-surface-variant mb-8 font-mono text-[11px]">

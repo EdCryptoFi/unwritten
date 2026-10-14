@@ -515,3 +515,84 @@ export function agreement(
     ];
   });
 }
+
+/**
+ * What a rule CLAIMS, as opposed to how much evidence backs it.
+ *
+ * A rule gets a new version when its claim moves — the allowance share going 67% → 70%, a Friday
+ * median changing — and not when it merely gains evidence: "8 of 8" becoming "11 of 11" under the
+ * same $45 is the same rule on firmer ground. Without this distinction every rule would be
+ * superseded every week and the version chain would say nothing.
+ */
+export function claimOf(b: Belief): string {
+  switch (b.dimension) {
+    case 'value_band':
+    case 'silence':
+      return String(b.thresholdCents);
+    case 'authority':
+      return String(Math.round((b.signsFirst[0] / Math.max(b.signsFirst[1], 1)) * 10));
+    case 'friction':
+      return String(b.rejections);
+    case 'drift':
+      return `${b.statedRule}|${Math.round(b.medianGapSeconds / 60)}`;
+    case 'member_pattern':
+      return String(b.sharePct);
+    case 'rhythm':
+      return `${b.cadence}|${b.weekday ?? ''}|${b.medianCents}`;
+  }
+}
+
+export interface Replay {
+  /** `live[w - 1]` — the rules standing at the end of week w, with their version chains. */
+  live: Belief[][];
+  /** Every version that ever stood, in its final state, so a chain can be walked backwards. */
+  versions: Belief[];
+}
+
+/**
+ * The derive pass, run once per week over the evidence that existed at the time.
+ *
+ * This is what a scheduled weekly pass would have written. That pass is not built, so the
+ * Mainnet seed holds only the week-6 result; this runs the SAME function over the SAME decisions,
+ * so the product can show how the rules formed rather than only where they ended up. Week 6 here
+ * equals what Mainnet holds, which /proof checks sentence by sentence.
+ *
+ * Pure: no I/O, no clock. Same decisions in, same history out.
+ */
+export function replay(
+  inputAt: (week: number) => Omit<Input, 'existing' | 'week'>,
+  probesAt: (week: number) => Probes,
+  weeks: number,
+): Replay {
+  const slot = new Map<string, { claim: string; version: number; since: number }>();
+  const last = new Map<string, Belief>();
+  const live: Belief[][] = [];
+
+  for (let w = 1; w <= weeks; w++) {
+    const row: Belief[] = [];
+    for (const b of deriveAll({ ...inputAt(w), week: w }, probesAt(w))) {
+      const key = `${b.dimension}|${b.scope.actor}|${b.scope.category}`;
+      const claim = claimOf(b);
+      const prior = slot.get(key);
+      const cur = !prior
+        ? { claim, version: 1, since: w }
+        : prior.claim === claim
+          ? prior
+          : { claim, version: prior.version + 1, since: w };
+      slot.set(key, cur);
+
+      const stem = b.id.replace(/-v\d+$/, '');
+      const versioned = {
+        ...b,
+        id: `${stem}-v${cur.version}`,
+        version: cur.version,
+        supersedes: cur.version > 1 ? `${stem}-v${cur.version - 1}` : null,
+        fromWeek: cur.since,
+      } as Belief;
+      row.push(versioned);
+      last.set(versioned.id, versioned);
+    }
+    live.push(row);
+  }
+  return { live, versions: [...last.values()] };
+}
