@@ -10,3 +10,5 @@ dist/
 .daily-last-success
 .daily.lock/
 .vercel
+.launchd.out.log
+.launchd.err.log

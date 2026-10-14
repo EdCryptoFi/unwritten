@@ -6,7 +6,7 @@ changes a convention.
 > Named **Unwritten** on 11 Oct 2026. During the design phase the project was called *House Money*;
 > that name was dropped because `housemoney.vercel.app` was already taken and because "playing with
 > house money" is an idiom about spending recklessly — the inverse of this product. Earlier entries
-> in `AVALIACAO-unwritten.md` use the old name.
+> in the private planning notes use the old name.
 >
 > `github.com/EdCryptoFi/unwritten` · deployed at `unwritten-house.vercel.app` — the exact
 > `unwritten.vercel.app` was already taken by another Vercel account, confirmed by three
