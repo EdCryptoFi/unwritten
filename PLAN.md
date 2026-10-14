@@ -204,6 +204,13 @@ Never cut the screens.
 - A page wrapped in the shared `Shell` inherits its styling for free through `Card`/`Page`/`Badge`
   from `primitives.tsx` — upgrade the primitive once rather than each page. The home page is the
   one screen that doesn't use them, which is why it was the one that needed a real rewrite.
+- A storage claim is read from the chain, not from the SDK's docs. /proof said "50 epochs ≈ 2 years";
+  Walruscan shows the relayer paid for 15. Link the record instead of restating it.
+- Every outward link is opened in a real browser before it ships. A 200 title from a single-page
+  app proves nothing (Walruscan answers 200 for a blob that does not exist), and an explorer behind
+  a bot challenge (SuiVision) fails a reviewer's link checker.
+- Scale and time are declared once and shared. The daily job divided MIST by 1000 inline and
+  stamped every decision week 1; both now come from fixtures (`MIST_PER_CENT`, `weekOf`).
 - A check must be able to fail. The derivation comparator cut sentences at "· n of m", so it could
   not see the numbers after the count — and reported 7 of 7 while the screen and Mainnet disagreed.
   Every comparator gets a test that tampers with the input and expects a failure.
