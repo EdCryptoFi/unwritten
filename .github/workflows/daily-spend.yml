@@ -19,6 +19,11 @@ on:
   # So a missed day can be driven by hand while it is still that UTC day.
   workflow_dispatch:
 
+# Read-only token. Neither job writes to the repository, and a public repo should not hand a
+# write-capable GITHUB_TOKEN to a workflow that does not need one.
+permissions:
+  contents: read
+
 concurrency:
   # Two overlapping runs would split coins from the same gas object and the second would fail on
   # a stale object version.

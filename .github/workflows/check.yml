@@ -15,6 +15,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Read-only token. Neither job writes to the repository, and a public repo should not hand a
+# write-capable GITHUB_TOKEN to a workflow that does not need one.
+permissions:
+  contents: read
+
 concurrency:
   group: check-${{ github.ref }}
   cancel-in-progress: true
