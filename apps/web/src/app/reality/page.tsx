@@ -3,7 +3,7 @@
 import { Gate, ROLES } from '@/components/gate';
 import { Badge, Card, Empty, Kpi, Meta, Page, Rule } from '@/components/primitives';
 import { type Reconciled, sui, txUrl, useChain } from '@/lib/chain';
-import { useHouse } from '@/lib/state';
+import { useApp, useHouse } from '@/lib/state';
 import { type DecisionEvent, HOUSE, RECIPIENTS, money, recipientSay } from '@unwritten/fixtures';
 
 /* The balance is read from the chain through Tatum — see `/api/chain`. Only the nudge threshold
@@ -11,6 +11,7 @@ import { type DecisionEvent, HOUSE, RECIPIENTS, money, recipientSay } from '@unw
 const TREASURY = { lastTopUpWeek: 5, lowThresholdMist: 500_000_000n };
 
 function RealityInner() {
+  const { week } = useApp();
   const { spendUpTo, decisionsUpTo } = useHouse();
   const { chain, loading: chainLoading } = useChain();
   const orphans: Reconciled[] = (chain?.reconciled ?? []).filter((r) => !r.approvalId);
@@ -64,7 +65,7 @@ function RealityInner() {
         <>
           <Kpi items={[
             ['Transfers onchain', String(chain.transfers)],
-            ['Decisions in memory', String(chain.decisions)],
+            ['Decisions recalled from Walrus', String(chain.decisions)],
             ['With no approval', String(orphans.length),
               orphans.length ? 'text-text-error-primary' : undefined],
           ]} />
@@ -101,7 +102,7 @@ function RealityInner() {
         ['House balance', chain?.balanceMist ? sui(Number(chain.balanceMist)) : '—',
           low ? 'text-text-warning-primary' : undefined],
         ['Last top-up', `wk ${TREASURY.lastTopUpWeek}`],
-        ['Decisions recorded', String(decisionsUpTo.length)],
+        [`Decisions through week ${week}`, String(decisionsUpTo.length)],
         ['Unaccounted', money(unaccounted), unaccounted ? 'text-text-error-primary' : undefined],
       ]} />
 

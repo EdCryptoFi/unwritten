@@ -88,7 +88,8 @@ export default function Keys() {
           <Rule>owner · house</Rule><Badge tone="success">owner</Badge>
         </div>
         <Meta>
-          held in the admin&apos;s browser, shown once, never sent to our server
+          by design: generated in the admin&apos;s browser, shown once, never sent to our server. In
+          this build the account was created in the Walrus console, and the server never holds it
           <br />
           used for: create · register delegate · revoke · freeze
         </Meta>
