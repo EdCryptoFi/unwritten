@@ -19,7 +19,9 @@ export const LINKS = {
   tatumDashboard: 'https://dashboard.tatum.io',
   walrusDocs: 'https://docs.wal.app/',
   /** The checklist's 'published blog post'. Fill in on publish. */
-  writeup: null as string | null,
+  writeup: 'https://inkray.xyz/article?id=unwritten-tatum-walrus-memory-8626addef1d422bb' as string | null,
+  /** The same write-up as an X article. */
+  writeupX: 'https://x.com/EdCriptoFi/status/2110682940132807117' as string | null,
   /** The checklist's 'working demo' video. Fill in on upload. */
   video: null as string | null,
 } as const;
