@@ -34,7 +34,7 @@ const PROVES: Record<string, { icon: string; proves: string; tag: string; tone: 
 const RUBRIC: Array<{ title: string; weight: number; points: Array<[string, string | null, Viewer?]> }> = [
   { title: 'Walrus and Tatum integration', weight: 30, points: [
     ['Walrus Memory on Mainnet: decisions, spend, top-ups and versioned rules, each a blob you can open on Walruscan', '/proof#walrus', 'judge'],
-    ['Tatum is the only way the app reads Sui — public fullnodes dropped JSON-RPC — and the daily transfers are signed through it', '/proof#tatum', 'judge'],
+    ['Tatum is the only way the app reads Sui — public fullnodes dropped JSON-RPC and the Tatum gateway now serves Sui as GraphQL — and the daily transfers are signed through it', '/proof#tatum', 'judge'],
     ['The two meet in Reality check: spend nobody agreed to exists in neither source alone', '/reality', 'm1'],
     ['Run both integrations live from the proof page', '/proof#live', 'judge'],
   ] },

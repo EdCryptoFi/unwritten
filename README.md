@@ -70,7 +70,7 @@ Mainnet is exactly the kind of lie this project exists to avoid.
 | Layer | What it does |
 |---|---|
 | **Walrus Memory** (Sui Mainnet) | every decision and every derived rule, append-only and versioned |
-| **Tatum** Sui RPC (gateway) | reads the household wallet; catches spend with no approval. Not the Data API — it does not cover Sui |
+| **Tatum** Sui gateway (GraphQL) | reads the household wallet; catches spend with no approval. Not the Data API — it does not cover Sui |
 | `packages/policy` | the learning — seven dimensions, **pure functions, no LLM** |
 
 ## Architecture
@@ -110,14 +110,14 @@ flowchart TB
   H -->|"recall · listNamespaces"| RL
   S -->|"validate → budget → remember"| RL
   C -->|"recall decisions"| RL
-  C -->|"suix_queryTransactionBlocks · suix_getAllBalances"| GW
+  C -->|"transactions · sentAddress · address · balances"| GW
   C --> REC
-  K -->|"sui_getLatestCheckpointSequenceNumber"| GW
+  K -->|"checkpoint · sequenceNumber"| GW
   RL --> WB
   WB --> AG
   UI -.->|"blob ids on /proof resolve here"| AG
   GW --> SUI
-  GH -->|"signAndExecuteTransaction"| GW
+  GH -->|"executeTransaction"| GW
   GH -->|"writeDecision"| RL
   DER -.-> UI
 ```
@@ -134,11 +134,11 @@ sequenceDiagram
   participant M as MemWal relayer
   participant W as Walrus Mainnet
   B->>A: open Reality check
-  A->>T: suix_queryTransactionBlocks · house wallet
+  A->>T: transactions · sentAddress · house wallet
   T->>S: read
   S-->>T: outgoing transfers
   T-->>A: transfers · paginated, retried on 503
-  A->>T: suix_getAllBalances
+  A->>T: address · balances
   T-->>A: balance → low-balance nudge
   A->>M: recall decisions
   M->>W: fetch blobs
@@ -159,12 +159,12 @@ sequenceDiagram
   participant S as Sui Mainnet
   participant M as MemWal relayer
   participant W as Walrus Mainnet
-  G->>T: has today already been sent? suix_queryTransactionBlocks
+  G->>T: has today already been sent? transactions · sentAddress
   T-->>G: count of today's transfers
   alt already sent
     G->>G: exit — the chain is the idempotence guard
   else not yet
-    G->>T: signAndExecuteTransaction · house key
+    G->>T: executeTransaction · house key
     T->>S: transfer
     S-->>T: digest
     T-->>G: confirmed

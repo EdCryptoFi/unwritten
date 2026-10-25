@@ -8,7 +8,7 @@
  * third of November, and so the two credentials are each proven independently.
  */
 import { readFileSync } from 'node:fs';
-import { health, tatumRpc } from '@unwritten/chain';
+import { health } from '@unwritten/chain';
 
 for (const line of readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n')) {
   const m = line.match(/^([A-Z_]+)=(.*)$/);
@@ -19,7 +19,7 @@ const ok = (s: string) => console.log(`  \x1b[32m✓\x1b[0m ${s}`);
 const bad = (s: string) => console.log(`  \x1b[31m✗\x1b[0m ${s}`);
 
 async function tatum() {
-  console.log(`\n── 1. Tatum · Sui RPC ${'─'.repeat(42)}`);
+  console.log(`\n── 1. Tatum · Sui GraphQL ${'─'.repeat(42)}`);
   // Which host does the key belong to? The wrong one 401s in a way that reads as a bad key.
   for (const base of ['https://api.tatum.io', 'https://api.tatum.dev']) {
     for (const [label, key] of [

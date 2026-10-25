@@ -36,14 +36,14 @@ export const ARCHITECTURE = `flowchart TB
   H -->|"recall · listNamespaces"| RL
   S -->|"validate → budget → remember"| RL
   C -->|"recall decisions"| RL
-  C -->|"suix_queryTransactionBlocks · suix_getAllBalances"| GW
+  C -->|"transactions · sentAddress · address · balances"| GW
   C --> REC
-  K -->|"sui_getLatestCheckpointSequenceNumber"| GW
+  K -->|"checkpoint · sequenceNumber"| GW
   RL --> WB
   WB --> AG
   UI -.->|"blob ids on /proof resolve here"| AG
   GW --> SUI
-  GH -->|"signAndExecuteTransaction"| GW
+  GH -->|"executeTransaction"| GW
   GH -->|"writeDecision"| RL
   DER -.-> UI`;
 
@@ -56,11 +56,11 @@ export const RECONCILE = `sequenceDiagram
   participant M as MemWal relayer
   participant W as Walrus Mainnet
   B->>A: open Reality check
-  A->>T: suix_queryTransactionBlocks · house wallet
+  A->>T: transactions · sentAddress · house wallet
   T->>S: read
   S-->>T: outgoing transfers
   T-->>A: transfers · paginated, retried on 503
-  A->>T: suix_getAllBalances
+  A->>T: address · balances
   T-->>A: balance → low-balance nudge
   A->>M: recall decisions
   M->>W: fetch blobs
@@ -77,12 +77,12 @@ export const WRITE_PATH = `sequenceDiagram
   participant S as Sui Mainnet
   participant M as MemWal relayer
   participant W as Walrus Mainnet
-  G->>T: has today already been sent? suix_queryTransactionBlocks
+  G->>T: has today already been sent? transactions · sentAddress
   T-->>G: count of today's transfers
   alt already sent
     G->>G: exit — the chain is the idempotence guard
   else not yet
-    G->>T: signAndExecuteTransaction · house key
+    G->>T: executeTransaction · house key
     T->>S: transfer
     S-->>T: digest
     T-->>G: confirmed

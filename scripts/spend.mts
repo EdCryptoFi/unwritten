@@ -11,9 +11,10 @@
  * history.
  */
 import { readFileSync } from 'node:fs';
-import { JsonRpcHTTPTransport, SuiJsonRpcClient } from '@mysten/sui/jsonRpc';
+import { SuiGraphQLClient } from '@mysten/sui/graphql';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Transaction } from '@mysten/sui/transactions';
+import { graphqlUrl } from '@unwritten/chain';
 import { MIST_PER_CENT, weekOf } from '@unwritten/fixtures';
 import type { Category, DecisionEvent } from '@unwritten/fixtures';
 import { writeDecision } from '@unwritten/memory';
@@ -44,11 +45,13 @@ const d = (s: string) => `\x1b[2m${s}\x1b[0m`;
  * Through Tatum, not a public fullnode — and not by preference.
  *
  * Public Sui fullnodes have deprecated JSON-RPC ("Please migrate to gRPC or GraphQL"), which is
- * the July 2026 sunset the Walrus relayer docs also warn about. Tatum's gateway still serves it,
- * so the gateway is not a convenience here: it is the path that exists.
+ * the July 2026 sunset the Walrus relayer docs also warn about. Tatum's gateway kept serving
+ * JSON-RPC until 22 Oct 2026, then dropped it: every call on the same host and key began to 404
+ * and this job failed three days running. The gateway now serves Sui as GraphQL, so this reads,
+ * simulates and signs through `@mysten/sui`'s GraphQL client pointed at it.
  */
-/* Throttled, because building one transfer costs several RPC calls (resolve coins, gas, dry run)
-   and the plan allows three a second. Unthrottled, the SDK 429s before it can sign anything. */
+/* Throttled, because building one transfer costs several calls (resolve coins, gas, dry run) and
+   the plan allows three a second. Unthrottled, the SDK 429s before it can sign anything. */
 let queue: Promise<unknown> = Promise.resolve();
 const spaced = <T>(fn: () => Promise<T>): Promise<T> => {
   const next = queue.then(() => new Promise((r) => setTimeout(r, 400))).then(fn);
@@ -63,35 +66,38 @@ const spaced = <T>(fn: () => Promise<T>): Promise<T> => {
  * consecutive attempts, measured 13 Oct 2026. Unretried, that is a day of history gone, and the
  * history is the one thing this script cannot recreate tomorrow.
  *
- * Retries only transient faults. A `signAndExecuteTransaction` that failed for a real reason —
- * insufficient gas, a stale object — must surface, because retrying a signature is how you send
- * twice.
+ * Retries only transient faults (502/503/504, upstream-unhealthy, network). A transaction that
+ * failed for a real reason — insufficient gas, a stale object — comes back as a 200 carrying the
+ * error and is never replayed here, because retrying a signature is how you send twice. (A
+ * resubmitted identical signed transaction has the same digest, so a network retry of the execute
+ * call cannot double-spend either.)
  */
 const TRANSIENT = /no healthy upstream|502|503|504|timeout|fetch failed|ECONNRESET|socket hang up/i;
 
-class ThrottledTransport extends JsonRpcHTTPTransport {
-  override async request<T>(input: Parameters<JsonRpcHTTPTransport['request']>[0]): Promise<T> {
-    let last: unknown;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        return await spaced(() => super.request<T>(input));
-      } catch (e) {
-        last = e;
-        const msg = e instanceof Error ? e.message : String(e);
-        if (!TRANSIENT.test(msg)) throw e;
-        process.stdout.write(d(`    gateway unhealthy, retry ${attempt + 1}/3\n`));
-        await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
-      }
+const throttledFetch: typeof fetch = async (input, init) => {
+  let last: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await spaced(() => fetch(input, init));
+      const text = res.ok ? '' : await res.clone().text();
+      if (!res.ok && TRANSIENT.test(`${res.status} ${text}`)) throw new Error(`HTTP ${res.status} ${text.slice(0, 120)}`);
+      return res;
+    } catch (e) {
+      last = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!TRANSIENT.test(msg)) throw e;
+      process.stdout.write(d(`    gateway unhealthy, retry ${attempt + 1}/3\n`));
+      await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
     }
-    throw last;
   }
-}
+  throw last;
+};
 
-const client = new SuiJsonRpcClient({
-  transport: new ThrottledTransport({
-    url: 'https://sui-mainnet.gateway.tatum.io',
-    rpc: { headers: { 'x-api-key': process.env.TATUM_API_KEY as string } },
-  }),
+const client = new SuiGraphQLClient({
+  url: graphqlUrl(),
+  network: 'mainnet',
+  fetch: throttledFetch,
+  headers: { 'x-api-key': process.env.TATUM_API_KEY as string },
 });
 const house = Ed25519Keypair.fromSecretKey(process.env.SUI_HOUSE_KEY as string);
 
@@ -202,7 +208,7 @@ console.log(`\n\x1b[1mSPEND\x1b[0m  ${today}  ${COMMIT ? '\x1b[31mSENDING\x1b[0m
 if (!plan.length) { console.log(d('  nothing scheduled for today\n')); process.exit(0); }
 
 const bal = await client.getBalance({ owner: house.toSuiAddress() });
-console.log(d(`  house balance ${Number(bal.totalBalance) / 1e9} SUI`));
+console.log(d(`  house balance ${Number(bal.balance.balance) / 1e9} SUI`));
 
 /**
  * Has today already been sent?
@@ -249,8 +255,10 @@ for (const p of plan) {
   const [coin] = tx.splitCoins(tx.gas, [p.mist]);
   tx.transferObjects([coin!], p.to);
   const res = await client.signAndExecuteTransaction({ signer: house, transaction: tx });
-  await client.waitForTransaction({ digest: res.digest });
-  console.log(d(`     ${g('✓')} ${res.digest}`));
+  if (res.$kind === 'FailedTransaction') throw new Error(`transfer failed on chain: ${res.FailedTransaction.digest}`);
+  const digest = res.Transaction.digest;
+  await client.waitForTransaction({ digest });
+  console.log(d(`     ${g('✓')} ${digest}`));
 
   /* The decision is written AFTER the transfer confirms, and only when the household agreed. An
      unapproved transfer leaves no trace in memory — which is precisely why reconciliation finds

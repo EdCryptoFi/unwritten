@@ -18,12 +18,12 @@ const CALLS: Array<{
   read: (j: Record<string, unknown>) => string[];
 }> = [
   {
-    key: 'checkpoint', label: 'Tatum · latest Sui checkpoint', via: 'sui_getLatestCheckpointSequenceNumber',
+    key: 'checkpoint', label: 'Tatum · latest Sui checkpoint', via: 'checkpoint · sequenceNumber',
     icon: 'deployed_code', url: '/api/checkpoint',
     read: (j) => [`checkpoint ${String(j.checkpoint ?? '—')}`, `host ${String(j.base ?? '')}`],
   },
   {
-    key: 'chain', label: 'Tatum · the house wallet', via: 'suix_queryTransactionBlocks + suix_getAllBalances',
+    key: 'chain', label: 'Tatum · the house wallet', via: 'transactions · sentAddress + address · balances',
     icon: 'account_balance_wallet', url: '/api/chain',
     read: (j) => {
       const rows = (j.reconciled as Array<{ approvalId: string | null }> | undefined) ?? [];

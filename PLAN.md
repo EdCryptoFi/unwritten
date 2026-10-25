@@ -137,10 +137,11 @@ Never cut the screens.
   `sandbox-*` namespace before a write, and validation runs before the budget call so junk costs
   nothing. A per-session cap bounds nothing on its own — a new id makes a new namespace.
 - **Public Sui fullnodes deprecated JSON-RPC in July 2026** and answer "migrate to gRPC or
-  GraphQL". Tatum's gateway still serves it, so the gateway is not a convenience — it is the path
-  that exists, for reads and for signing both.
+  GraphQL". Tatum's gateway served it until 22 Oct 2026, then moved Sui to GraphQL (same host, `/graphql`;
+  JSON-RPC now 404s, docs.tatum.io still lists it). The gateway is the path that exists, for
+  reads and for signing both.
 - **Tatum's Data API does not cover Sui.** `/v4/data/...` replies with the chains it accepts and
-  Sui is not among them. Wallet history comes from `suix_queryTransactionBlocks` over RPC.
+  Sui is not among them. Wallet history comes from `transactions · sentAddress` over the gateway's GraphQL.
 - Building one transfer costs several RPC calls, and the plan allows three a second. The SDK 429s
   before it can sign unless the transport is queued.
 - Reconciliation matches by **day and recipient, never by amount**: a decision records what was

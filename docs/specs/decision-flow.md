@@ -106,8 +106,8 @@ append-only store is the worse failure. **Only terminal states.**
 
 ## 9. Reconcile (background)
 
-Read the house wallet's transaction history via Tatum's Sui RPC gateway
-(`suix_queryTransactionBlocks`) — not the Data API, which does not cover Sui. Every outbound
+Read the house wallet's transaction history via Tatum's Sui GraphQL gateway
+(`transactions · sentAddress`) — not the Data API, which does not cover Sui. Every outbound
 transfer must match an approval. Unmatched transfers are classified before alerting:
 
 | Classification | Handling |

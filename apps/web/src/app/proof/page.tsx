@@ -42,7 +42,7 @@ export default function Proof() {
   const CHECKS: Array<[string, string, string | null]> = [
     ['Walrus Memory integrated and writing on Mainnet', `${total} memories across ${Object.keys(counts ?? {}).length || 4} namespaces, every blob id below resolvable`, '#walrus'],
     ['At least 10 memories stored on Mainnet', `${total}, counted with listNamespaces rather than recall`, '#walrus'],
-    ['Tatum RPC used for onchain data where relevant', 'four calls, and the only path that exists since fullnodes dropped JSON-RPC', '#tatum'],
+    ['Tatum RPC used for onchain data where relevant', 'four GraphQL calls, and the only path that exists since fullnodes dropped JSON-RPC', '#tatum'],
     ['Working demo', LINKS.video ? 'the video' : 'the application you are in; video not published yet', LINKS.video],
     ['Public repo', 'EdCryptoFi/unwritten', LINKS.repo],
     ['Published blog post', LINKS.writeup ? 'the write-up' : 'written, not published yet', LINKS.writeup],
@@ -254,27 +254,30 @@ export default function Proof() {
         </Card>
       ))}
 
-      <H id="tatum">the four Tatum reads</H>
+      <H id="tatum">the four Tatum calls</H>
       <Card>
         <Meta>
-          <strong>suix_queryTransactionBlocks</strong> · the house wallet&apos;s outgoing
+          <strong>transactions · sentAddress</strong> · the house wallet&apos;s outgoing
           transfers, which is the reconciliation&apos;s only source of truth about money.
           <code> api/chain</code>
           <br />
-          <strong>suix_getAllBalances</strong> · the treasury figure on <code>/reality</code> and
+          <strong>address · balances</strong> · the treasury figure on <code>/reality</code> and
           the low-balance nudge that branches on it. <code>api/chain</code>
           <br />
-          <strong>sui_getLatestCheckpointSequenceNumber</strong> · anchors a sandbox session
+          <strong>checkpoint · sequenceNumber</strong> · anchors a sandbox session
           against a chain height. <code>api/checkpoint</code>
           <br />
-          <strong>signAndExecuteTransaction</strong> · the transfers themselves are signed through
+          <strong>executeTransaction</strong> · the transfers themselves are signed through
           the gateway. <code>scripts/spend.mts</code>
           <br />
           <br />
-          endpoint: <code>sui-mainnet.gateway.tatum.io</code>. Not a convenience — public Sui
-          fullnodes deprecated JSON-RPC in July 2026 and answer &ldquo;migrate to gRPC or
-          GraphQL&rdquo;. The gateway is the path that exists. And Tatum&apos;s Data API does not
-          cover Sui at all, so wallet history comes over RPC rather than from <code>/v4/data</code>.
+          endpoint: <code>sui-mainnet.gateway.tatum.io/graphql</code>. Not a convenience — public
+          Sui fullnodes deprecated JSON-RPC in July 2026 and answer &ldquo;migrate to gRPC or
+          GraphQL&rdquo;. Tatum&apos;s gateway served JSON-RPC too, until 22 October, when it moved
+          Sui to GraphQL (and gRPC on a separate host): the same key answered 404 on every JSON-RPC
+          call, the daily job failed three days running, and this page is the migration. Tatum&apos;s
+          Data API does not cover Sui at all, so wallet history comes from the gateway rather than
+          from <code>/v4/data</code>.
         </Meta>
       </Card>
     </Page>
